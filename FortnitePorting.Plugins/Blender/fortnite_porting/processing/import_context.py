@@ -24,6 +24,7 @@ class ImportContext:
     def run(self, data):
         self.name = data.get("Name")
         self.type = EExportType(data.get("Type"))
+        self.primitive_type = EPrimitiveExportType(data.get("PrimitiveType"))
         self.scale = 0.01 if self.options.get("ScaleDown") else 1
         self.meshes = []
         self.override_materials = []
@@ -62,6 +63,9 @@ class ImportContext:
             case EPrimitiveExportType.MATERIAL:
                 self.import_material_standalone(data)
                 pass
+            case EPrimitiveExportType.MUTABLE:
+                self.import_mutable_data(data)
+                pass
 
     def import_mesh_data(self, data):
         rig_type = ERigType(self.options.get("RigType"))
@@ -89,6 +93,9 @@ class ImportContext:
             self.import_model(mesh, can_spawn_at_3d_cursor=True)
 
         self.import_light_data(data.get("Lights"))
+
+        if self.type in [EExportType.VEHICLE_BODY] and self.options.get("MergeArmatures"):
+            merge_armatures(self.imported_meshes)
             
         if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
             master_skeleton = merge_armatures(self.imported_meshes)
@@ -359,7 +366,16 @@ class ImportContext:
 
         mesh_path = os.path.join(self.assets_root, path.split(".")[0] + ".uemodel")
 
-        return UEFormatImport(options).import_file(mesh_path)
+        imported_object = UEFormatImport(options).import_file(mesh_path)
+        
+        if imported_object is not None and self.primitive_type == EPrimitiveExportType.MUTABLE:
+            bpy.context.view_layer.objects.active = imported_object
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.set_normals_from_faces()
+            bpy.ops.object.editmode_toggle()
+        
+        return imported_object
     
     def import_texture_data(self, data):
         import_method = ETextureImportMethod(self.options.get("TextureImportMethod"))
@@ -519,6 +535,14 @@ class ImportContext:
                 return None
             
             return node_links[0].from_node
+
+        def get_first_node(target_node, slots):
+            for slot in slots:
+                node_links = target_node.inputs[slot].links
+                if len(node_links) > 0:
+                    return node_links[0].from_node
+                
+            return None
 
         unused_parameter_height = 0
 
@@ -749,6 +773,30 @@ class ImportContext:
         if "M_HairParent_2023" in base_material_path or get_param(textures, "Hair Mask") is not None:
             replace_shader_node("FP Hair")
             socket_mappings = hair_mappings
+
+        if "MAT_Vehicle_Body_Base" in base_material_path: # Pre
+            replace_shader_node("FP Vehicle Body")
+            socket_mappings = vehicle_body_mappings
+
+        if "MAT_Vehicle_Chassis_Base" in base_material_path: # Possible emission crop
+            replace_shader_node("FP Vehicle Chassis")
+            socket_mappings = vehicle_chassis_mappings
+
+        if "M_Vehicle_Interior" in base_material_path:
+            replace_shader_node("FP Vehicle Interior")
+            socket_mappings = vehicle_interior_mappings
+
+        if "M_InteriorCombined" in base_material_path:
+            replace_shader_node("FP Vehicle Interior Combined")
+            socket_mappings = vehicle_interior_combined_mappings
+
+        if "MAT_Vehicle_Trim_Base" in base_material_path:
+            replace_shader_node("FP Vehicle Trim")
+            socket_mappings = vehicle_trim_mappings
+
+        if "M_WheelParent" in base_material_path: # Pre
+            replace_shader_node("FP Vehicle Wheel")
+            socket_mappings = vehicle_wheel_mappings
 
         setup_params(socket_mappings, shader_node, True)
 
@@ -1038,6 +1086,99 @@ class ImportContext:
             
             case "FP Layer":
                 if diffuse_node := get_node(shader_node, "Diffuse"):
+                    nodes.active = diffuse_node
+
+            case "FP Vehicle Interior":
+                set_param("AO", self.options.get("AmbientOcclusion"))
+                if diffuse_node := get_node(shader_node, "BaseColor"):
+                    nodes.active = diffuse_node
+                    
+            case "FP Vehicle Interior Combined":
+                set_param("AO", self.options.get("AmbientOcclusion"))
+                if diffuse_node := get_node(shader_node, "Filler_BaseColor"):
+                    nodes.active = diffuse_node
+            
+            case "FP Vehicle Body":
+                set_param("AO", self.options.get("AmbientOcclusion"))
+                
+                pre_vehicle_body_node = nodes.new(type="ShaderNodeGroup")
+                pre_vehicle_body_node.node_tree = bpy.data.node_groups.get("FP Pre Vehicle Body")
+                pre_vehicle_body_node.location = -600, -500
+                setup_params(socket_mappings, pre_vehicle_body_node, False)
+                
+                bottom_normal_base_node = get_node(shader_node, "BottomNormalBase")
+                if bottom_normal_base_node is None:
+                    bottom_normal_base_node = nodes.new(type="ShaderNodeTexImage")
+                    bottom_normal_base_node.image = bpy.data.images.get("T_Wrap_metallicFlakes_Small")
+                    bottom_normal_base_node.image.alpha_mode = 'CHANNEL_PACKED'
+                    bottom_normal_base_node.image.colorspace_settings.name = "Non-Color"
+                    bottom_normal_base_node.interpolation = "Smart"
+                    bottom_normal_base_node.hide = True
+                    x, y = get_socket_pos(shader_node, shader_node.inputs.find("BottomNormalBase"))
+                    bottom_normal_base_node.location = x - 300, y
+                    links.new(bottom_normal_base_node.outputs[0], shader_node.inputs["BottomNormalBase"])
+
+                links.new(pre_vehicle_body_node.outputs["UV_BottomNormal"], bottom_normal_base_node.inputs[0])
+                
+                if skin_base_color_node := get_node(shader_node, "SkinBaseColor"):
+                    links.new(pre_vehicle_body_node.outputs["UV"], skin_base_color_node.inputs[0])
+                if detail_base_node := get_node(shader_node, "DetailBase"):
+                    links.new(pre_vehicle_body_node.outputs["UV_Detail"], detail_base_node.inputs[0])
+                if detail_accent_node := get_node(shader_node, "DetailAccent"):
+                    links.new(pre_vehicle_body_node.outputs["UV_Detail"], detail_accent_node.inputs[0])
+                if bottom_normal_accent_node := get_node(shader_node, "BottomNormalAccent"):
+                    links.new(pre_vehicle_body_node.outputs["UV_BottomNormal"], bottom_normal_accent_node.inputs[0])
+                
+                if diffuse_node := get_node(shader_node, "BaseColor"):
+                    nodes.active = diffuse_node
+            
+            case "FP Vehicle Chassis":
+                set_param("AO", self.options.get("AmbientOcclusion"))
+
+                emission_slot = shader_node.inputs["EmissiveMasks"]
+                if (crop_bounds := get_param(vectors, "EmissiveUVs_RG_UpperLeftCorner_BA_LowerRightCorner")) and get_param(switches, "CroppedEmissive") and len(emission_slot.links) > 0:
+                    emission_node = emission_slot.links[0].from_node
+                    emission_node.extension = "CLIP"
+
+                    crop_texture_node = nodes.new("ShaderNodeGroup")
+                    crop_texture_node.node_tree = bpy.data.node_groups.get("FP Texture Cropping")
+                    crop_texture_node.location = emission_node.location + Vector((-200, 25))
+                    crop_texture_node.inputs["Left"].default_value = crop_bounds.get('R')
+                    crop_texture_node.inputs["Top"].default_value = crop_bounds.get('G')
+                    crop_texture_node.inputs["Right"].default_value = crop_bounds.get('B')
+                    crop_texture_node.inputs["Bottom"].default_value = crop_bounds.get('A')
+                    links.new(crop_texture_node.outputs[0], emission_node.inputs[0])
+                
+                if diffuse_node := get_node(shader_node, "BaseColor"):
+                    nodes.active = diffuse_node
+            
+            case "FP Vehicle Wheel":
+                set_param("Rim_AO", self.options.get("AmbientOcclusion"))
+                set_param("Tire_AO", self.options.get("AmbientOcclusion"))
+
+                pre_vehicle_wheel_node = nodes.new(type="ShaderNodeGroup")
+                pre_vehicle_wheel_node.node_tree = bpy.data.node_groups.get("FP Pre Vehicle Wheel")
+                setup_params(socket_mappings, pre_vehicle_wheel_node, False)
+                
+                tex_positions = []
+
+                if tire_diffuse := get_node(shader_node, "TireDiffuse"):
+                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_diffuse.inputs[0])
+                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("TireDiffuse"))[1])
+                if tire_color_mask := get_node(shader_node, "Tire_CustomColorMask"):
+                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_color_mask.inputs[0])
+                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("Tire_CustomColorMask"))[1])
+                if tire_pbr := get_node(shader_node, "TirePBR"):
+                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_pbr.inputs[0])
+                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("TirePBR"))[1])
+                if tire_normal := get_node(shader_node, "TireNormal"):
+                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_normal.inputs[0])
+                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("TireNormal"))[1])
+                
+                pre_node_y = (sum(tex_positions) / len(tex_positions)) if len(tex_positions) > 0 else -950
+                pre_vehicle_wheel_node.location = -300, pre_node_y
+                
+                if diffuse_node := get_first_node(shader_node, ["RimDiffuse", "TireDiffuse", "Rim_CustomColorMask", "Tire_CustomColorMask"]):
                     nodes.active = diffuse_node
 
     def import_sound_data(self, data):
@@ -1525,3 +1666,12 @@ class ImportContext:
                 self.import_material(mat_mesh.material_slots[material.get("Slot")], material, {})
             else:
                 self.import_material(None, material, {}, True)
+
+    def import_mutable_data(self, data):
+        objects = data.get("Objects")
+
+        if objects is None:
+            return
+            
+        for object in objects:
+            self.import_mesh_data(object)

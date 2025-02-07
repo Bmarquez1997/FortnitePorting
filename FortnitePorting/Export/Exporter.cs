@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CUE4Parse_Conversion.Animations;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
+using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
@@ -148,6 +149,7 @@ public static class Exporter
             UPoseAsset => EExportType.PoseAsset,
             UMaterialInstance => EExportType.MaterialInstance,
             UMaterial => EExportType.Material,
+            UCustomizableObject => EExportType.Mutable,
             _ => EExportType.None
         };
 
@@ -217,6 +219,7 @@ public static class Exporter
             EPrimitiveExportType.Font => new FontExport(name, asset, styles, exportType, metaData),
             EPrimitiveExportType.PoseAsset => new PoseAssetExport(name, asset, styles, exportType, metaData),
             EPrimitiveExportType.Material => new MaterialExport(name, asset, styles, exportType, metaData),
+            EPrimitiveExportType.Mutable => new MutableExport(name, asset, styles, exportType, metaData),
             _ => throw new NotImplementedException($"Exporting {primitiveType} assets is not supported yet.")
         };
         

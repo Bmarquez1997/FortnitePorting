@@ -32,6 +32,11 @@ class EExportType(IntEnum):
     BANNER = auto()
     LOADING_SCREEN = auto()
     EMOTE = auto()
+    KICKS = auto()
+    
+    # Rocket Racing
+    VEHICLE_BODY = auto()
+    VEHICLE_WHEEL = auto()
     
     # CREATIVE
     PROP = auto()
@@ -71,6 +76,7 @@ class EExportType(IntEnum):
     POSE_ASSET = auto()
     MATERIAL = auto()
     MATERIAL_INSTANCE = auto()
+    MUTABLE = auto()
 
 
 class EPrimitiveExportType(IntEnum):
@@ -81,6 +87,7 @@ class EPrimitiveExportType(IntEnum):
     FONT = auto()
     POSE_ASSET = auto()
     MATERIAL = auto()
+    MUTABLE = auto()
 
 
 class EFortCustomPartType(IntEnum):

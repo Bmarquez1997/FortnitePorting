@@ -107,6 +107,17 @@ public enum EExportType
 
     [Description("Emotes"), Export(EPrimitiveExportType.Animation)]
     Emote,
+
+    [Description("Kicks"), Export(EPrimitiveExportType.Mutable)]
+    Kicks,
+    
+    // Rocket Racing
+
+    [Description("Bodies"), Export(EPrimitiveExportType.Mutable)]
+    VehicleBody,
+
+    [Description("Wheels"), Export(EPrimitiveExportType.Mutable)]
+    VehicleWheel,
     
     // CREATIVE
 
@@ -155,7 +166,7 @@ public enum EExportType
     
     // LEGO
     
-    [Description("Outfits"), Export(EPrimitiveExportType.Mesh)]
+    [Description("Outfits"), Export(EPrimitiveExportType.Mutable)]
     LegoOutfit,
     
     [Description("Emotes"), Export(EPrimitiveExportType.Animation)]
@@ -199,7 +210,10 @@ public enum EExportType
     Material,
     
     [Description("MaterialInstance"), Export(EPrimitiveExportType.Material)]
-    MaterialInstance
+    MaterialInstance,
+    
+    [Description("Mutable"), Export(EPrimitiveExportType.Mutable)]
+    Mutable
 }
 
 public enum EPrimitiveExportType
@@ -223,7 +237,10 @@ public enum EPrimitiveExportType
     PoseAsset,
     
     [Description("Material")]
-    Material
+    Material,
+    
+    [Description("Mutable")]
+    Mutable
 }
 
 public enum EAssetSortType

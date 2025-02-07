@@ -676,3 +676,206 @@ superhero_mappings = MappingCollection(
         SlotMapping("ElasticStickerMult")
     ]
 )
+
+vehicle_body_mappings = MappingCollection(
+    textures=[
+        SlotMapping("BodyTextures", alpha_slot="BodyTextures Alpha"),
+        SlotMapping("SkinBaseColor"),
+        SlotMapping("SkinMask"),
+        SlotMapping("DetailBase"),
+        SlotMapping("DetailAccent"),
+        SlotMapping("BottomNormalBase"),
+        SlotMapping("BottomNormalAccent")
+    ],
+    vectors=[
+        SlotMapping("BaseColor"),
+        SlotMapping("AccentColor"),
+        SlotMapping("TrimColor"),
+        SlotMapping("PaintColor"),
+        SlotMapping("EmissiveColor"),
+        SlotMapping("EmissiveMaskSelector", alpha_slot="EmissiveMaskSelector Alpha")
+    ],
+    scalars=[
+        SlotMapping("Metallic_TeamColor"),
+        SlotMapping("Metallic_AccentColor"),
+        SlotMapping("Metallic_PaintColor"),
+        SlotMapping("Rough_TeamColor"),
+        SlotMapping("Rough_AccentColor"),
+        SlotMapping("Rough_PaintColor"),
+        SlotMapping("EmissiveBrightness"),
+        SlotMapping("CCRoughness_TeamColor"),
+        SlotMapping("CCRoughness_AccentColor"),
+        SlotMapping("CCRoughness_PaintColor"),
+        SlotMapping("CCThickness_TeamColor"),
+        SlotMapping("CCThickness_AccentColor"),
+        SlotMapping("CCThickness_PaintColor"),
+        SlotMapping("BottomNormalFlatness"),
+
+        SlotMapping("DetailTiling"),
+        SlotMapping("BottomNormalTiling")
+    ],
+    switches=[
+        SlotMapping("UseBaseColorTexture"),
+        SlotMapping("UseEmissiveColor"),
+        
+        SlotMapping("UVChannel2")
+    ]
+)
+
+vehicle_interior_mappings = MappingCollection(
+    textures=[
+        SlotMapping("BaseColor"),
+        SlotMapping("InteriorTextures"),
+        SlotMapping("Masks"),
+        SlotMapping("Normal")
+    ],
+    vectors=[
+        SlotMapping("CustomColor"),
+        SlotMapping("EmissiveColor")
+    ],
+    switches=[
+        SlotMapping("TintDiffuse")
+    ]
+)
+
+vehicle_interior_combined_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Filler_BaseColor"),
+        SlotMapping("Filler_PBR"),
+        SlotMapping("Filler_Mask"),
+        SlotMapping("Filler_Normal"),
+    ],
+    vectors=[
+        SlotMapping("BaseColor"),
+        SlotMapping("RimColor"),
+        SlotMapping("CustomColor"),
+        SlotMapping("Fabric_XForm", alpha_slot="Fabric_XForm Alpha"),
+        SlotMapping("FresnelNoise_XForm", alpha_slot="FresnelNoise_XForm Alpha"),
+        SlotMapping("Fabric_Normal_Strength")
+    ],
+    scalars=[
+        SlotMapping("Fabric_AO_Intensity"),
+        SlotMapping("Fresnel_Power"),
+        SlotMapping("Fresnel_Noise_Rotate"),
+        SlotMapping("Fresnel_Noise_Power"),
+        SlotMapping("Distort_FresnelNoise_w/FabricPattern"),
+        SlotMapping("FabricDistortionBlend"),
+    ],
+    switches=[
+        SlotMapping("TintDiffuse")
+    ]
+)
+
+vehicle_chassis_mappings = MappingCollection(
+    textures=[
+        SlotMapping("BaseColor"),
+        SlotMapping("ChassisTextures", alpha_slot="ChassisTextures Alpha"),
+        SlotMapping("Masks"),
+        SlotMapping("EmissiveMasks"),
+        SlotMapping("Normal")
+    ],
+    vectors=[
+        SlotMapping("Chassis_PaintColor"),
+        SlotMapping("Chassis_EmissiveBrightness", alpha_slot="Chassis_EmissiveBrightness Alpha"),
+        SlotMapping("Chassis_HeadlightColor"),
+        SlotMapping("Brake_Color"),
+        SlotMapping("Chassis_EmissivePartsColor"),
+        SlotMapping("Chassis_BoostColor"),
+    ],
+    scalars=[
+        SlotMapping("Chassis_ClearCoat"),
+        SlotMapping("Chassis_ClearCoatRoughness")
+    ]
+)
+
+vehicle_trim_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Masks"),
+        SlotMapping("ChassisTextures"),
+        SlotMapping("BodyTextures"),
+    ],
+    vectors=[
+        SlotMapping("TrimColor"),
+        SlotMapping("Trim_EmissiveColor")
+    ],
+    scalars=[
+        SlotMapping("Trim_EmissiveBrightness")
+    ],
+    switches=[
+        SlotMapping("ApplyTrim"),
+        SlotMapping("ApplyTrimEmissive")
+    ]
+)
+
+vehicle_wheel_mappings = MappingCollection(
+    textures=[
+        SlotMapping("RimDiffuse"),
+        SlotMapping("TireDiffuse"),
+        SlotMapping("Rim_CustomColorMask", alpha_slot="Rim_CustomColorMask Alpha"),
+        SlotMapping("Tire_CustomColorMask", alpha_slot="Tire_CustomColorMask Alpha"),
+        SlotMapping("RimPBR"),
+        SlotMapping("TirePBR"),
+        SlotMapping("Rim_EmissiveMask", alpha_slot="Rim_EmissiveMask Alpha"),
+        SlotMapping("Tire_EmissiveMask", alpha_slot="Tire_EmissiveMask Alpha"),
+        SlotMapping("RimNormal"),
+        SlotMapping("TireNormal")
+    ],
+    vectors=[
+        SlotMapping("RimColor"),
+        SlotMapping("CustomColor"),
+        SlotMapping("AccentColor"),
+        SlotMapping("TireColor"),
+        SlotMapping("TireCustomColor"),
+        SlotMapping("TireAccentColor"),
+        SlotMapping("Rim_AOChannelPicker", alpha_slot="Rim_AOChannelPicker Alpha"),
+        SlotMapping("Rim_CustomColorChannelPicker", alpha_slot="Rim_CustomColorChannelPicker Alpha"),
+        SlotMapping("Rim_AccentColorChannelPicker", alpha_slot="Rim_AccentColorChannelPicker Alpha"),
+        SlotMapping("Tire_AOChannelPicker", alpha_slot="Tire_AOChannelPicker Alpha"),
+        SlotMapping("Tire_CustomColorChannelPicker", alpha_slot="Tire_CustomColorChannelPicker Alpha"),
+        SlotMapping("Tire_AccentColorChannelPicker", alpha_slot="Tire_AccentColorChannelPicker Alpha"),
+        SlotMapping("Rim_EmissiveChannelPicker", alpha_slot="Rim_EmissiveChannelPicker Alpha"),
+        SlotMapping("Rim_EmissiveColor"),
+        SlotMapping("Tire_EmissiveChannelPicker", alpha_slot="Tire_EmissiveChannelPicker Alpha")
+    ],
+    scalars=[
+        SlotMapping("Rim_CustomColorBrightness"),
+        SlotMapping("Rim_AccentColorBrightness"),
+        SlotMapping("Tire_CustomColorBrightness"),
+        SlotMapping("Tire_AccentColorBrightness"),
+        SlotMapping("TreadUVDirection_X"),
+        SlotMapping("TreadUVDirection_Y"),
+        SlotMapping("RimSpecular"),
+        SlotMapping("RimMetallic"),
+        SlotMapping("RimMetallic_Painted"),
+        SlotMapping("RimRoughness"),
+        SlotMapping("RimRoughness_Painted"),
+        SlotMapping("TireSpecular"),
+        SlotMapping("TireMetallic"),
+        SlotMapping("TireMetallic_Painted"),
+        SlotMapping("TireRoughness"),
+        SlotMapping("TireRoughness_Painted"),
+        SlotMapping("Rim_EmissiveMultiplier"),
+        SlotMapping("Tire_EmissiveMultiplier"),
+    ],
+    switches=[
+        SlotMapping("RimUseColorRGBAsDiffuse"),
+        SlotMapping("ColorRimColorizeDiffuseTexture"),
+        SlotMapping("RimColorIsMasked"),
+        SlotMapping("EnableAccentColor"),
+        SlotMapping("ColorTireDiffuse"),
+        SlotMapping("TireColorIsMasked"),
+        SlotMapping("UseTireCustomColor"),
+        SlotMapping("UseTireAccentColor"),
+        SlotMapping("RimSpecularFromPBR"),
+        SlotMapping("RimMetallicFromPBR"),
+        SlotMapping("RimRoughnessFromPBR"),
+        SlotMapping("TireSpecularFromPBR"),
+        SlotMapping("TireMetallicFromPBR"),
+        SlotMapping("TireMetallicFromPainted"),
+        SlotMapping("TireRoughnessFromPBR"),
+        SlotMapping("TireRoughnessFromPainted"),
+        SlotMapping("UseRimEmissive"),
+        SlotMapping("UseTireEmissive"),
+        SlotMapping("Tire_EmissiveUseCustomColor"),
+    ]
+)

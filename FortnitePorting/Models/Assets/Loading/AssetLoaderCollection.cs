@@ -108,6 +108,10 @@ public partial class AssetLoaderCollection : ObservableObject
                 {
                     ClassNames = ["AthenaDanceItemDefinition"],
                     HideNames = ["_CT", "_NPC"]
+                },
+                new AssetLoader(EExportType.Kicks)
+                {
+                    ClassNames = ["CosmeticShoesItemDefinition"]
                 }
             ]
         },
@@ -399,59 +403,59 @@ public partial class AssetLoaderCollection : ObservableObject
                 },
             ]
         },
-        /*new AssetLoaderCategory(EAssetCategory.Lego)
-        {
-            Loaders = 
-            [
-                new AssetLoader(EExportType.LegoOutfit)
-                {
-                    ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
-                    IconHandler = asset =>
-                    {
-                        var meshSchema = asset.GetAnyOrDefault<UObject?>("AssembledMeshSchema", "LowDetailsAssembledMeshSchema");
-                        if (meshSchema is null) return null;
+        new AssetLoaderCategory(EAssetCategory.Lego)
+         {
+             Loaders = 
+             [
+                 new AssetLoader(EExportType.LegoOutfit)
+                 {
+                     ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
+                     IconHandler = asset =>
+                     {
+                         var meshSchema = asset.GetAnyOrDefault<UObject?>("AssembledMeshSchema", "LowDetailsAssembledMeshSchema");
+                         if (meshSchema is null) return null;
 
-                        var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
-                        foreach (var additionalData in additionalDatas)
-                        {
-                            var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
-                            if (previewImage is not null) return previewImage;
-                        }
+                         var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
+                         foreach (var additionalData in additionalDatas)
+                         {
+                             var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                             if (previewImage is not null) return previewImage;
+                         }
 
-                        return null;
-                    },
-                    DisplayNameHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text ?? asset.Name;
-                    },
-                    DescriptionHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
-                    }
-                },
-                new AssetLoader(EExportType.LegoEmote)
-                {
-                    ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
-                    IconHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
-                    },
-                    DisplayNameHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text ?? asset.Name;
-                    },
-                    DescriptionHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
-                    }
-                }
-            ]
-        }*/
+                         return null;
+                     },
+                     DisplayNameHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
+                         return baseItemDefinition?.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text ?? asset.Name;
+                     },
+                     DescriptionHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
+                         return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
+                     }
+                 },
+                 new AssetLoader(EExportType.LegoEmote)
+                 {
+                     ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
+                     IconHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                         return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                     },
+                     DisplayNameHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                         return baseItemDefinition?.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text ?? asset.Name;
+                     },
+                     DescriptionHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                         return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
+                     }
+                 }
+             ]
+         },
         new AssetLoaderCategory(EAssetCategory.FallGuys)
         {
             Loaders = 
@@ -461,6 +465,24 @@ public partial class AssetLoaderCollection : ObservableObject
                     ClassNames = ["AthenaCharacterItemDefinition"],
                     AllowNames = ["Bean_"],
                     PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Item_Outfit",
+                    HideRarity = true
+                }
+            ]
+        },
+        new AssetLoaderCategory(EAssetCategory.RocketRacing)
+        {
+            Loaders = 
+            [
+                new AssetLoader(EExportType.VehicleBody)
+                {
+                    ClassNames = ["FortVehicleCosmeticsItemDefinition_Body"],
+                    PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Generic",
+                    HideRarity = true
+                },
+                new AssetLoader(EExportType.VehicleWheel)
+                {
+                    ClassNames = ["FortVehicleCosmeticsItemDefinition_Wheel"],
+                    PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Generic",
                     HideRarity = true
                 }
             ]
