@@ -246,6 +246,62 @@ class ImportContext:
         # todo extract meta reading to function bc this is too big
         meta = self.gather_metadata("PoseData", "CurveTrackNames")
 
+        # Spline Mesh handling
+        if "CurveData" in mesh and mesh.get("CurveData") is not None:
+            curve_data = mesh.get("CurveData")
+            curve_name = "Curve_" + imported_object.name
+
+            curve = bpy.data.curves.new(name=curve_name, type='CURVE')
+            curve.dimensions = '3D'
+            curve.resolution_u = 10
+            curve.use_deform_bounds = True
+            curve.use_stretch = True
+            spline = curve.splines.new('BEZIER')
+            spline.resolution_u, spline.resolution_v = 20, 20
+            spline.bezier_points.add(1)
+            curve_obj = bpy.data.objects.new(curve_name, curve)
+            self.collection.objects.link(curve_obj)
+
+            start_point = curve_data.get("StartPoint")
+            bez_point_start = spline.bezier_points[0]
+            bez_point_start.co = make_vector(start_point.get("Position"), True) * self.scale
+            start_point_scale = start_point.get("Scale")
+            bez_point_start.radius = (start_point_scale.get("X") + start_point_scale.get("Y"))/2
+            bez_point_start.handle_right_type = 'ALIGNED'
+            bez_point_start.handle_left_type = 'ALIGNED'
+            bez_point_start.handle_left = make_vector(start_point.get("LeftHandle"), True) * self.scale
+            bez_point_start.handle_right = make_vector(start_point.get("RightHandle"), True) * self.scale
+            bez_point_start.tilt = start_point.get("Roll")
+
+            end_point = curve_data.get("EndPoint")
+            bez_point_end = spline.bezier_points[1]
+            bez_point_end.co = make_vector(end_point.get("Position"), True) * self.scale
+            end_point_scale = end_point.get("Scale")
+            bez_point_end.radius = (end_point_scale.get("X") + end_point_scale.get("Y"))/2
+            bez_point_end.handle_right_type = 'ALIGNED'
+            bez_point_end.handle_left_type = 'ALIGNED'
+            bez_point_end.handle_left = make_vector(end_point.get("LeftHandle"), True) * self.scale
+            bez_point_end.handle_right = make_vector(end_point.get("RightHandle"), True) * self.scale
+            bez_point_end.tilt = end_point.get("Roll")
+
+            # bez_point.handle_left = point[3:6]
+            # bez_point.handle_right = point[6:9]
+            #bez_point.tilt = radians(point[4])
+            curve_obj.location = imported_mesh.location
+            curve_obj.rotation_euler = imported_mesh.rotation_euler
+            curve_obj.scale = imported_mesh.scale
+            curve_obj.parent = imported_object.parent
+
+            imported_mesh.location = [0, 0, 0]
+            imported_mesh.rotation_euler = [0, 0, 0]
+            imported_mesh.scale = [1, 1, 1]
+            imported_mesh.parent = curve_obj
+
+            # add curve modifier to the object
+            curve_mod = imported_mesh.modifiers.new("Spline Mesh", 'CURVE')
+            curve_mod.object = curve_obj
+            curve_mod.deform_axis = 'POS_X'
+
         # pose asset
         if imported_mesh is not None:
             bpy.context.view_layer.objects.active = imported_mesh
@@ -331,26 +387,42 @@ class ImportContext:
             return
         
         for point_light in lights.get("PointLights"):
-            self.import_point_light(point_light, parent)
+            self.import_light_base(point_light, 'POINT', parent)
+        
+        for spot_light in lights.get("SpotLights"):
+            self.import_light_base(spot_light, 'SPOT', parent)
+        
+        for sun_light in lights.get("DirectionalLights"):
+            self.import_light_base(sun_light, 'SUN', parent)
     
-    def import_point_light(self, point_light, parent=None):
-        name = point_light.get("Name")
-        light_data = bpy.data.lights.new(name=name, type='POINT')
+    def import_light_base(self, base_light, light_type, parent=None):
+        name = base_light.get("Name")
+        light_data = bpy.data.lights.new(name=name, type=light_type)
         light = bpy.data.objects.new(name=name, object_data=light_data)
         self.collection.objects.link(light)
         
         light.parent = parent
-        light.rotation_euler = make_euler(point_light.get("Rotation"))
-        light.location = make_vector(point_light.get("Location"), unreal_coords_correction=True) * self.scale
-        light.scale = make_vector(point_light.get("Scale"))
+        light.rotation_euler = make_euler(base_light.get("Rotation"))
+        light.rotation_euler.y = light.rotation_euler.y - radians(90) # Rotation is off by -90 for some reason
+        light.location = make_vector(base_light.get("Location"), unreal_coords_correction=True) * self.scale
+        light.scale = make_vector(base_light.get("Scale"))
         
-        color = point_light.get("Color")
+        color = base_light.get("Color")
         light_data.color = (color["R"], color["G"], color["B"])
-        light_data.energy = point_light.get("Intensity")
-        light_data.use_custom_distance = True
-        light_data.cutoff_distance = point_light.get("AttenuationRadius") * self.scale
-        light_data.shadow_soft_size = point_light.get("Radius") * self.scale
-        light_data.use_shadow = point_light.get("CastShadows")
+        light_data.energy = base_light.get("Intensity")
+        light_data.use_shadow = base_light.get("CastShadows")
+        
+        if light_type != 'SUN':
+            light_data.shadow_soft_size = base_light.get("Radius") * self.scale
+            light_data.use_custom_distance = True
+            light_data.cutoff_distance = base_light.get("AttenuationRadius") * self.scale
+        else:
+            light_data.angle = radians(base_light.get("Radius"))
+        
+        if light_type == 'SPOT':
+            light_data.spot_size = radians(base_light.get("OuterConeAngle"))
+            light_data.spot_blend = base_light.get("InnerConeAngle") / base_light.get("OuterConeAngle")
+
 
     def import_mesh(self, path: str, can_reorient=True):
         options = UEModelOptions(scale_factor=self.scale,
