@@ -283,6 +283,8 @@ public class ExportContext
             exportWeapons.AddIfNotNull(Mesh(weaponMesh));
         }
         
+        if (exportWeapons.Count == 0) return exportWeapons;
+        
         if (exportWeapons.FirstOrDefault() is { } targetMesh 
             && weaponDefinition.GetDataListItem<FSoftObjectPath[]>("WeaponMaterialOverrides") is { } materialOverrides)
         {
@@ -294,11 +296,13 @@ public class ExportContext
                 slot++;
             }
         }
+        
+        exportWeapons.AddRangeIfNotNull(GetAttachmentMeshes(weaponDefinition));
 
         return exportWeapons;
     }
     
-    public static List<UObject> WeaponDefinitionMeshes(UObject weaponDefinition)
+    public List<UObject> WeaponDefinitionMeshes(UObject weaponDefinition)
     {
         var exportWeapons = new List<UObject>();
 
@@ -352,6 +356,37 @@ public class ExportContext
         exportWeapons.AddRangeIfNotNull(weaponDefinition.GetDataListItems<UObject>("PickupSkeletalMesh", "PickupStaticMesh"));
 
         return exportWeapons;
+    }
+
+    private List<ExportMesh> GetAttachmentMeshes(UObject weaponDefinition)
+    {
+        var attachmentMeshes = new List<ExportMesh>();
+
+        var modSlots = weaponDefinition.GetDataListItem<FStructFallback[]>("WeaponModSlots");
+        if (modSlots is not { Length: > 0 }) return attachmentMeshes;
+        
+        foreach (var modSlot in modSlots)
+        {
+            try
+            {
+                if (!modSlot.TryGetValue(out UObject modDefinition, "WeaponMod")) continue;
+                if (modDefinition is UBlueprintGeneratedClass blueprintGeneratedClass)
+                {
+                   attachmentMeshes.AddRangeIfNotNull(Blueprint(blueprintGeneratedClass)
+                       .Where(obj => obj is ExportMesh).Cast<ExportMesh>().ToList());
+                }
+                else
+                {
+                    attachmentMeshes.AddIfNotNull(Mesh(modDefinition));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warning("Exception thrown loading weapon mods for: {0}", weaponDefinition.Name);
+            }
+        }
+// Add spline component handling here?
+        return attachmentMeshes;
     }
     
     public List<ExportObject> LevelSaveRecord(ULevelSaveRecord levelSaveRecord)
@@ -459,6 +494,24 @@ public class ExportContext
         return extraMeshes;
     }
 
+    private List<ExportMesh> SplineComponents(UObject actor)
+    {
+        var extraMeshes = new List<ExportMesh>();
+        if (actor.TryGetValue(out FPackageIndex[] grindRails, "GrindRailMeshes"))
+        {
+            foreach (var grindRailLazy in grindRails)
+            {
+                if (grindRailLazy.TryLoad(out USplineMeshComponent loadedGrindRail))
+                {
+                    var exportGrindRailMesh = MeshComponent(loadedGrindRail);
+                    extraMeshes.AddIfNotNull(exportGrindRailMesh);
+                }
+            }
+        }
+
+        return extraMeshes;
+    }
+
     public List<ExportMesh> World(UWorld world)
     {
         if (world.PersistentLevel.Load() is not ULevel level) return [];
@@ -561,39 +614,68 @@ public class ExportContext
     public List<ExportMesh> Actor(UObject actor, bool loadTemplate = true)
     {
         var meshes = new List<ExportMesh>();
+        
+        // <SceneComponent>("RootComponent")
+        // empty exportMesh
+        // transforms
+        // add everything else as children
 
         if (Meta.WorldFlags.HasFlag(EWorldFlags.Actors))
         {
+            var hasParent = false;
+            ExportMesh? parentMesh = null;
+            if (actor.TryGetValue(out USceneComponent rootComponent, "RootComponent"))
+            {
+                hasParent = true;
+                parentMesh = MeshComponent(rootComponent) ?? new ExportMesh { IsEmpty = true };
+                var instanceTransform = rootComponent.GetAbsoluteTransform();
+
+                parentMesh.Location = instanceTransform.Translation;
+                parentMesh.Rotation = instanceTransform.Rotator();
+                parentMesh.Scale = instanceTransform.Scale3D;
+            }
+            
             if (actor.TryGetValue(out FPackageIndex[] instanceComponents, "InstanceComponents"))
             {
                 foreach (var instanceComponentLazy in instanceComponents)
                 {
-                    var instanceComponent = instanceComponentLazy.Load<UInstancedStaticMeshComponent>();
-                    if (instanceComponent is null) continue;
-                    if (instanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
-
+                    ExportMesh? exportMesh = null;
+                    USceneComponent? sceneComponent = null;
                     if (!Meta.WorldFlags.HasFlag(EWorldFlags.InstancedFoliage)) continue;
                     
-                    var exportMesh = MeshComponent(instanceComponent);
-                    if (exportMesh is null) continue;
+                    if (instanceComponentLazy.TryLoad<UInstancedStaticMeshComponent>(out var staticMeshInstanceComponent))
+                    {
+                        exportMesh = MeshComponent(staticMeshInstanceComponent);
+                        
+                        if (exportMesh == null || staticMeshInstanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
+                        sceneComponent = staticMeshInstanceComponent;
+                    }
+                    else if (instanceComponentLazy.TryLoad<USplineMeshComponent>(out var splineInstanceComponent))
+                    {
+                        exportMesh = MeshComponent(splineInstanceComponent); //9IQ76DL0BWAPJMACBUTRETQJW , BQC7HU97B6Z37YT1G2SJBGVRM
+                        sceneComponent = splineInstanceComponent;
+                    }
                     
-                    var instanceTransform = instanceComponent.GetAbsoluteTransform();
-                    
-                    exportMesh.Location = instanceTransform.Translation;
-                    exportMesh.Rotation = instanceTransform.Rotator();
-                    exportMesh.Scale = instanceTransform.Scale3D;
+                    if (exportMesh == null) continue;
 
-                    meshes.Add(exportMesh);
+                    if (sceneComponent != null)
+                    {
+                        var instanceTransform = sceneComponent.GetAbsoluteTransform();
+
+                        exportMesh.Location = instanceTransform.Translation;
+                        exportMesh.Rotation = instanceTransform.Rotator();
+                        exportMesh.Scale = instanceTransform.Scale3D;
+                    }
+
+                    meshes.AddIfNotNull(exportMesh);
                 }
             }
             
-            if (actor.TryGetValue(out UStaticMeshComponent staticMeshComponent, "StaticMeshComponent", "StaticMesh", "Mesh", "LightMesh"))
+            if (actor.TryGetValue(out UStaticMeshComponent staticMeshComponent, "StaticMeshComponent", "StaticMesh", "Mesh", "LightMesh", "RootComponent"))
             {
                 var exportMesh = MeshComponent(staticMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
-                exportMesh.Location = staticMeshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
-                exportMesh.Rotation = staticMeshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
-                exportMesh.Scale = staticMeshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
+                SetMeshComponentTransforms(exportMesh, staticMeshComponent);
 
                 foreach (var extraMesh in ExtraActorMeshes(actor))
                 {
@@ -636,14 +718,13 @@ public class ExportContext
             {
                 var exportMesh = MeshComponent(skeletalMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
-                exportMesh.Location = skeletalMeshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
-                exportMesh.Rotation = skeletalMeshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
-                exportMesh.Scale = skeletalMeshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
+                SetMeshComponentTransforms(exportMesh, skeletalMeshComponent);
 
                 foreach (var extraMesh in ExtraActorMeshes(actor))
                 {
                     exportMesh.Children.AddIfNotNull(extraMesh);
                 }
+                
                 
                 if (loadTemplate && actor.Template?.Load() is { } template)
                 {
@@ -656,6 +737,17 @@ public class ExportContext
                 }
 
                 meshes.Add(exportMesh);
+            }
+
+            if (actor.TryGetValue(out USplineComponent mainSpline, "Spline"))
+            {
+                var exportMesh = MeshComponent(mainSpline) ?? new ExportMesh { IsEmpty = true };
+                exportMesh.Name = actor.Name;
+                meshes.AddIfNotNull(exportMesh);
+                foreach (var component in SplineComponents(actor))
+                {
+                    exportMesh?.Children.AddIfNotNull(component);
+                }
             }
             
             // extra meshes i.e. doors and such
@@ -680,6 +772,24 @@ public class ExportContext
         }
 
         return meshes;
+    }
+
+    private void SetMeshComponentTransforms(ExportMesh exportMesh, USceneComponent meshComponent)
+    {
+        if (!exportMesh.IsEmpty)
+        // if (false)
+        {
+            var meshComponentAbsTransform = meshComponent.GetAbsoluteTransform();
+            exportMesh.Location = meshComponentAbsTransform.Translation;
+            exportMesh.Rotation = meshComponentAbsTransform.Rotator();
+            exportMesh.Scale = meshComponentAbsTransform.Scale3D;
+        }
+        else
+        {
+            exportMesh.Location = meshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
+            exportMesh.Rotation = meshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
+            exportMesh.Scale = meshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
+        }
     }
 
     public List<ExportObject> Blueprint(UBlueprintGeneratedClass blueprintGeneratedClass)
@@ -715,9 +825,9 @@ public class ExportContext
             {
                 objects.AddIfNotNull(MeshComponent(subStaticMeshComponent));
             }
-            else if (componentTemplate is ULightComponentBase pointLightComponent)
+            else if (Meta.Settings.ImportLights && componentTemplate is ULightComponentBase lightComponent)
             {
-                objects.AddIfNotNull(LightComponent(pointLightComponent));
+                objects.AddIfNotNull(LightComponent(lightComponent));
             }
         }
 
@@ -742,7 +852,7 @@ public class ExportContext
             {
                 objects.AddIfNotNull(MeshComponent(subStaticMeshComponent));
             }
-            else if (componentTemplate is ULightComponentBase pointLightComponent)
+            else if (Meta.Settings.ImportLights && componentTemplate is ULightComponentBase pointLightComponent)
             {
                 objects.AddIfNotNull(LightComponent(pointLightComponent));
             }
@@ -756,12 +866,14 @@ public class ExportContext
         lightComponent.GatherTemplateProperties();
         return lightComponent switch
         {
-            UPointLightComponent pointLightComponent => LightComponent(pointLightComponent),
+            USpotLightComponent spotLightComponent => SpotLightComponent(spotLightComponent),
+            UPointLightComponent pointLightComponent => PointLightComponent(pointLightComponent),
+            UDirectionalLightComponent directionalLightComponent => DirectionalLightComponent(directionalLightComponent),
             _ => null
         };
     }
 
-    public ExportLight LightComponent(UPointLightComponent pointLightComponent)
+    public ExportLight PointLightComponent(UPointLightComponent pointLightComponent)
     {
         return new ExportPointLight
         {
@@ -774,6 +886,40 @@ public class ExportContext
             CastShadows = pointLightComponent.CastShadows,
             AttenuationRadius = pointLightComponent.AttenuationRadius,
             Radius = pointLightComponent.SourceRadius
+        };
+    }
+
+    public ExportLight SpotLightComponent(USpotLightComponent spotLightComponent)
+    {
+        var outerConeAngle = spotLightComponent.OuterConeAngle != 0 ? spotLightComponent.OuterConeAngle : 30f;
+        return new ExportSpotLight
+        {
+            Name = spotLightComponent.Name,
+            Location = spotLightComponent.RelativeLocation,
+            Rotation = spotLightComponent.RelativeRotation,
+            Scale = spotLightComponent.RelativeScale3D,
+            Intensity = spotLightComponent.Intensity,
+            Color = spotLightComponent.LightColor.ToLinearColor(),
+            CastShadows = spotLightComponent.CastShadows,
+            AttenuationRadius = spotLightComponent.AttenuationRadius,
+            Radius = spotLightComponent.SourceRadius,
+            OuterConeAngle = outerConeAngle,
+            InnerConeAngle = spotLightComponent.InnerConeAngle != 0 ? spotLightComponent.InnerConeAngle : outerConeAngle
+        };
+    }
+    
+    public ExportLight DirectionalLightComponent(UDirectionalLightComponent directional)
+    {
+        return new ExportDirectionalLight
+        {
+            Name = directional.Name,
+            Location = directional.RelativeLocation,
+            Rotation = directional.RelativeRotation,
+            Scale = directional.RelativeScale3D,
+            Intensity = directional.Intensity,
+            Color = directional.LightColor.ToLinearColor(),
+            CastShadows = directional.CastShadows,
+            Radius = directional.LightSourceAngle
         };
     }
 
@@ -816,6 +962,11 @@ public class ExportContext
         var exportMesh = Mesh(mesh);
         if (exportMesh is null) return null;
         
+        if (meshComponent.TryGetValue(out FStructFallback SplineParams, "SplineParams"))
+        {
+            exportMesh.CurveData = new CurveData(SplineParams);
+        }
+        
         var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
         for (var idx = 0; idx < overrideMaterials.Length; idx++)
         {
@@ -829,6 +980,10 @@ public class ExportContext
         {
             exportMesh.OverrideVertexColors = overrideVertexColors.Data;
         }
+        
+        exportMesh.Location = meshComponent.RelativeLocation;
+        exportMesh.Rotation = meshComponent.RelativeRotation;
+        exportMesh.Scale = meshComponent.RelativeScale3D;
 
         return exportMesh;
     }
@@ -846,6 +1001,17 @@ public class ExportContext
 
         return exportMesh;
     }
+
+    // public ExportMesh? MeshComponent(USplineMeshComponent instanceComponent)
+    // {
+    //     var mesh = instanceComponent.GetOrDefault<UStaticMesh?>("StaticMesh");
+    //     var exportMesh = Mesh(mesh);
+    //     if (exportMesh is null) return null;
+    //     
+    //     
+    //     
+    //     return exportMesh;
+    // }
 
     public ExportMesh? Mesh(UObject obj)
     {

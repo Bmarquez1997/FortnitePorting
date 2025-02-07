@@ -60,6 +60,7 @@ public partial class BaseExportSettings : ViewModelBase
     
     [ObservableProperty] private EMeshFormat _meshFormat = EMeshFormat.UEFormat;
     [ObservableProperty] private bool _importInstancedFoliage = true;
+    [ObservableProperty] private bool _importLights = true;
     
     [ObservableProperty] private EAnimFormat _animFormat = EAnimFormat.UEFormat;
     [ObservableProperty] private bool _importLobbyPoses = false;

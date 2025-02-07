@@ -246,6 +246,12 @@
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             
+            <ui:SettingsExpander Header="Import Lights" Description="Whether or not to import lights.">
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding ImportLights}"/>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+            
         </StackPanel>
     </ScrollViewer>
 </UserControl>

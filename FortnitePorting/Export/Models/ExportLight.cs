@@ -7,12 +7,22 @@ namespace FortnitePorting.Export.Models;
 public class ExportLightCollection
 {
     public List<ExportPointLight> PointLights = [];
+    public List<ExportSpotLight> SpotLights = [];
+    public List<ExportDirectionalLight> DirectionalLights = [];
 
     public void Add(ExportLight exportLight)
     {
-        if (exportLight is ExportPointLight pointLight)
+        switch (exportLight)
         {
-            PointLights.Add(pointLight);
+            case ExportSpotLight spotLight:
+                SpotLights.Add(spotLight);
+                break;
+            case ExportPointLight pointLight:
+                PointLights.Add(pointLight);
+                break;
+            case ExportDirectionalLight directionalLight:
+                DirectionalLights.Add(directionalLight);
+                break;
         }
     }
     
@@ -34,4 +44,15 @@ public record ExportLight : ExportObject
 public record ExportPointLight : ExportLight
 {
     
+}
+
+public record ExportDirectionalLight : ExportLight
+{
+    
+}
+
+public record ExportSpotLight : ExportLight
+{
+    public float InnerConeAngle;
+    public float OuterConeAngle;
 }
