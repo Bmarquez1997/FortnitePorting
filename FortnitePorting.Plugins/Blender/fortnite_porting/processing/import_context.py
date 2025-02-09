@@ -441,7 +441,7 @@ class ImportContext:
         imported_object = UEFormatImport(options).import_file(mesh_path)
         
         if imported_object is not None and self.primitive_type == EPrimitiveExportType.MUTABLE:
-            bpy.context.view_layer.objects.active = imported_object
+            bpy.context.view_layer.objects.active = get_armature_mesh(imported_object)
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.set_normals_from_faces()
@@ -866,6 +866,7 @@ class ImportContext:
             replace_shader_node("FP Vehicle Trim")
             socket_mappings = vehicle_trim_mappings
 
+        # TODO: M_WheelParent_Simple
         if "M_WheelParent" in base_material_path: # Pre
             replace_shader_node("FP Vehicle Wheel")
             socket_mappings = vehicle_wheel_mappings

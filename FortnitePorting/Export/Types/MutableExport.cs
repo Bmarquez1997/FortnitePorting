@@ -77,7 +77,7 @@ public class MutableExport : BaseExport
        foreach (var mutableObject in mutableExporter.Objects)
        {
            var collectionName = exportType == EExportType.Mutable ? mutableObject.Key : name;
-           ProcessMutableObject(collectionName, mutableObject.Value, assetCodename);
+           ProcessMutableObject(customizableObject, collectionName, mutableObject.Value, assetCodename);
        }
     }
 
@@ -85,7 +85,7 @@ public class MutableExport : BaseExport
     {
     }
 
-    private void ProcessMutableObject(string objectName, List<Tuple<string, Mesh>> meshes, string? assetCodename)
+    private void ProcessMutableObject(UCustomizableObject customizableObject, string objectName, List<Tuple<string, Mesh>> meshes, string? assetCodename)
     {
         var exportMutable = new ExportMutable
         {
@@ -95,15 +95,20 @@ public class MutableExport : BaseExport
 
         foreach (var (path, mesh) in meshes)
         {
+            var partName = mesh.FileName.SubstringBeforeLast('.');
+            
             var fixedPath = path.StartsWith("/") ? path[1..] : path;
+            if (Exporter.Meta.CustomPath != null)
+            {
+                fixedPath = partName;
+            }
+            
             var directory = Path.Combine(Exporter.Meta.CustomPath ?? Exporter.Meta.AssetsRoot, fixedPath);
             Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
             var finalPath = $"{directory}.uemodel";
             File.WriteAllBytes(finalPath, mesh.FileData);
-
-            var partName = mesh.FileName.SubstringBeforeLast('.');
             
-            var partMaterial = assetCodename != null ? TryExportMaterial(assetCodename, partName) : null;
+            var partMaterial = TryExportMaterial(customizableObject, assetCodename, partName);
 
             var exportMesh = new ExportPart
             {
@@ -119,8 +124,15 @@ public class MutableExport : BaseExport
         Objects.Add(exportMutable);
     }
 
-    private ExportMaterial? TryExportMaterial(string assetCodename, string materialSlot)
+    private ExportMaterial? TryExportMaterial(UCustomizableObject customizableObject, string? assetCodename, string materialSlot)
     {
+        if (assetCodename == null) return null;
+        
+        var coPrivate = customizableObject.Get<FPackageIndex>("Private").Load();
+        var modelResources = coPrivate.Get<FStructFallback>("ModelResources");
+        var materials = modelResources.Get<FSoftObjectPath[]>("Materials");
+        // TODO: dynamic matching based on assetCodename parts and material slot
+        
         switch (Type)
         {
             case EExportType.VehicleBody:
