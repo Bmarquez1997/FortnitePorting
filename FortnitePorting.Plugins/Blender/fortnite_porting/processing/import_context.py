@@ -866,7 +866,7 @@ class ImportContext:
             replace_shader_node("FP Vehicle Trim")
             socket_mappings = vehicle_trim_mappings
 
-        # TODO: M_WheelParent_Simple
+        # TODO: M_WheelParent_Simple base material
         if "M_WheelParent" in base_material_path: # Pre
             replace_shader_node("FP Vehicle Wheel")
             socket_mappings = vehicle_wheel_mappings

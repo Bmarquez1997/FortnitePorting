@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Mutable;
-using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
-using CUE4Parse.UE4.Assets.Exports.CustomizableObject.Mutable;
-using CUE4Parse.UE4.Assets.Exports.CustomizableObject.Mutable.Image;
-using CUE4Parse.UE4.Assets.Exports.CustomizableObject.Mutable.Mesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
@@ -44,10 +41,15 @@ public class MutableExport : BaseExport
                 customizableObject = itemDef.Get<FSoftObjectPath>("CustomizableObject").Load<UCustomizableObject>();
                 break;
             case EExportType.VehicleWheel:
-
+                itemDef = asset.Get<FSoftObjectPath>("VehicleCosmeticsItemDef").Load();
+                var tireInfo = itemDef.Get<FInstancedStruct>("WheelTirePoppedInfo");
+                skeleton = tireInfo.NonConstStruct.Get<FSoftObjectPath>("WheelSkeletonReference").Load();
+                filterSkeletonName = skeleton.Name;
+                assetCodename = itemDef.Get<string[]>("CheatNames")?[0];
+                customizableObject = itemDef.Get<FSoftObjectPath>("CustomizableObject").Load<UCustomizableObject>();
                 break;
             case EExportType.LegoOutfit:
-
+                throw new NotImplementedException("Lego outfit export has not been implemented yet");
                 break;
             case EExportType.Kicks:
                 // Shoes_ToeBean.CharacterParts -> CosmeticPartDataList.CustomizableData -> CustomizableObject
@@ -61,7 +63,7 @@ public class MutableExport : BaseExport
                     .Get<FSoftObjectPath>("CustomizableData").Load<UObject>();
                 customizableObject = customizableData.Get<UCustomizableObject>("CustomizableObject");
                 assetCodename = characterPart.Name.Replace("CP_Shoes_", "");
-                filterSkeletonName = $"{assetCodename.SubstringBefore("_")}_Shoe_Skeleton";
+                filterSkeletonName = assetCodename.SubstringBefore("_");
                 break;
             case EExportType.Mutable:
                 customizableObject = (UCustomizableObject)asset;
@@ -79,6 +81,9 @@ public class MutableExport : BaseExport
            var collectionName = exportType == EExportType.Mutable ? mutableObject.Key : name;
            ProcessMutableObject(customizableObject, collectionName, mutableObject.Value, assetCodename);
        }
+
+       foreach (var image in mutableExporter.Images)
+           ExportMutableImage(image, customizableObject);
     }
 
     public MutableExport(string name, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
@@ -93,7 +98,14 @@ public class MutableExport : BaseExport
             Meshes = []
         };
 
-        foreach (var (path, mesh) in meshes)
+        var filteredMeshes = meshes;
+
+        if (assetCodename != null
+            && meshes.Any(obj => obj.Item1.Contains(assetCodename, StringComparison.OrdinalIgnoreCase)))
+            filteredMeshes = meshes.Where(obj => obj.Item1.Contains(assetCodename, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+        foreach (var (path, mesh) in filteredMeshes)
         {
             var partName = mesh.FileName.SubstringBeforeLast('.');
             
@@ -108,14 +120,14 @@ public class MutableExport : BaseExport
             var finalPath = $"{directory}.uemodel";
             File.WriteAllBytes(finalPath, mesh.FileData);
             
-            var partMaterial = TryExportMaterial(customizableObject, assetCodename, partName);
+            var partMaterial = TryExportMaterial(customizableObject, assetCodename, fixedPath.SubstringAfterLast("/"));
 
             var exportMesh = new ExportPart
             {
                 Name = Type == EExportType.Kicks && assetCodename != null ? assetCodename : partName,
                 Path = $"{path}.{partName}",
                 NumLods = 1,
-                Type = partName.Equals("Body", StringComparison.OrdinalIgnoreCase) ? EFortCustomPartType.Body : EFortCustomPartType.Head
+                Type = partName.Contains("Body", StringComparison.OrdinalIgnoreCase) ? EFortCustomPartType.Body : EFortCustomPartType.Head
             };
             exportMesh.Materials.AddIfNotNull(partMaterial);
             exportMutable.Meshes.Add(exportMesh);
@@ -123,24 +135,42 @@ public class MutableExport : BaseExport
 
         Objects.Add(exportMutable);
     }
+    
+    private void ExportMutableImage(SKBitmap bitmap, UCustomizableObject customizableObject)
+    {
+        if (bitmap == null) return;
+        try
+        {
+            var fileName = Path.Combine(customizableObject.GetPathName().SubstringBeforeLast('.'), bitmap.ColorType.ToString(), bitmap.GetHashCode().ToString());
+            var directory = Path.Combine(Exporter.Meta.CustomPath ?? Exporter.Meta.AssetsRoot, fileName);
+            
+            Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
+            using var fileStream = File.OpenWrite($"{directory}.png");
+            bitmap?.Encode(SKEncodedImageFormat.Png, 100).SaveTo(fileStream);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Image exporting failed: " + customizableObject.Name + ": " + bitmap?.GetHashCode());
+            Console.WriteLine(e);
+        }
+    }
 
     private ExportMaterial? TryExportMaterial(UCustomizableObject customizableObject, string? assetCodename, string materialSlot)
     {
         if (assetCodename == null) return null;
         
-        var coPrivate = customizableObject.Get<FPackageIndex>("Private").Load();
-        var modelResources = coPrivate.Get<FStructFallback>("ModelResources");
-        var materials = modelResources.Get<FSoftObjectPath[]>("Materials");
-        // TODO: dynamic matching based on assetCodename parts and material slot
-        
         switch (Type)
         {
             case EExportType.VehicleBody:
                 return TryExportVehicleMaterial(assetCodename, materialSlot);
-            case EExportType.Kicks:
-                return TryExportKicksMaterial(assetCodename);
+            case EExportType.VehicleWheel:
+                if (materialSlot.StartsWith("MI_") 
+                && CUE4ParseVM.Provider.TryLoadObject($"/VehicleCosmetics/Wheels/{materialSlot.Replace("MI_Wheel_", "")}/Materials/{materialSlot}", out UMaterialInterface materialInterface))
+                    return Exporter.Material(materialInterface, 0);
+                else
+                    return TryExportMaterialDynamic(customizableObject, assetCodename, materialSlot);
             default:
-                return null;
+                return TryExportMaterialDynamic(customizableObject, assetCodename, materialSlot);
         }
     }
     
@@ -150,10 +180,10 @@ public class MutableExport : BaseExport
         var materialPath =
             $"/VehicleCosmetics/Bodies/{assetCodename}/Materials/{materialType}_{assetCodename}_{materialSlot}";
 
-        if (materialSlot.Equals("GlassOpaque"))
+        if (materialSlot.Contains("GlassOpaque"))
             materialPath = "/VehicleCosmetics/SharedMaterials/MI_Glass_Opaque";
 
-        if (materialSlot.Equals("Glass"))
+        if (materialSlot.Contains("Glass") || materialSlot.Contains("Windshield"))
             materialPath = "/VehicleCosmetics/SharedMaterials/MI_Glass_DarkTint";
         
         // TODO: proper COPrivate.Materials search
@@ -193,38 +223,42 @@ public class MutableExport : BaseExport
         return null;
     }
 
-    private ExportMaterial? TryExportKicksMaterial(string assetCodename)
+    private ExportMaterial? TryExportMaterialDynamic(UCustomizableObject customizableObject, string assetCodename, string materialSlot)
     {
-        var materialBasePath = "/CosmeticShoes/Assets/FORT_Shoes";
-        var fixedAssetCodename = assetCodename.Replace("Peony", "_Peony")
-                                              .Replace("Calla", "_Calla")
-                                              .Replace("Crocus", "_Crocus");
-        
-        var materialPath = $"{materialBasePath}/Shoe_{fixedAssetCodename}/Materials/MI_Shoe_{fixedAssetCodename}";
-        if (CUE4ParseVM.Provider.TryLoadObject(materialPath, out UMaterialInterface materialInterface))
-            return Exporter.Material(materialInterface, 0);
-        
-        materialPath = $"{materialBasePath}/Shoe_{fixedAssetCodename}/Materials/MI_{fixedAssetCodename}_Shoe";
-        if (CUE4ParseVM.Provider.TryLoadObject(materialPath, out materialInterface))
-            return Exporter.Material(materialInterface, 0);
+        var coPrivate = customizableObject.Get<FPackageIndex>("Private").Load();
+        var modelResources = coPrivate.Get<FStructFallback>("ModelResources");
+        var materials = modelResources.Get<FSoftObjectPath[]>("Materials");
 
-        var assetName = fixedAssetCodename.SubstringBefore("_");
-        var skinName = fixedAssetCodename.SubstringAfter("_");
-        var skinMaterialBasePath = $"{materialBasePath}/Shoe_{assetName}/Skins/{skinName}/Materials";
+        var codenameParts = Regex.Matches(assetCodename, @"[A-Z][a-z]*|[a-z]+|\d+")
+            .Select(m => m.Value.ToLower())
+            .ToList();
+
+        var topScore = 0;
+        FSoftObjectPath bestMatch = new FSoftObjectPath();
+        foreach (var material in materials)
+        {
+            var score = ComputeMatchScore(material.AssetPathName.PlainText, codenameParts, materialSlot);
+            if (score <= topScore) continue;
+            
+            topScore = score;
+            bestMatch = material;
+        }
         
-        var skinMaterialPath = $"{skinMaterialBasePath}/MI_{fixedAssetCodename}_Shoe";
-        if (CUE4ParseVM.Provider.TryLoadObject(skinMaterialPath, out materialInterface))
-            return Exporter.Material(materialInterface, 0);
-        
-        skinMaterialPath = $"{skinMaterialBasePath}/MI_Shoe_{fixedAssetCodename}";
-        if (CUE4ParseVM.Provider.TryLoadObject(skinMaterialPath, out materialInterface))
-            return Exporter.Material(materialInterface, 0);
-        
-        skinMaterialPath = $"{skinMaterialBasePath}/MI_{skinName}_Shoe";
-        if (CUE4ParseVM.Provider.TryLoadObject(skinMaterialPath, out materialInterface))
+        if (topScore > 0 && bestMatch.TryLoad<UMaterialInterface>(out var materialInterface))
             return Exporter.Material(materialInterface, 0);
         
         return null;
+    }
+    
+    private int ComputeMatchScore(string material, List<string> codenameParts, string materialSlot)
+    {
+        var score = codenameParts.Count(word => material.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+        // Check material slot match
+        if (material.Contains(materialSlot, StringComparison.OrdinalIgnoreCase))
+            score++;
+
+        return score;
     }
 
     // private void ExportMutable(UCustomizableObject originalCustomizableObject)

@@ -810,21 +810,31 @@ vehicle_trim_mappings = MappingCollection(
 vehicle_wheel_mappings = MappingCollection(
     textures=[
         SlotMapping("RimDiffuse"),
+        SlotMapping("Rim_DiffuseTexture", "RimDiffuse"),
         SlotMapping("TireDiffuse"),
+        SlotMapping("Tire_DiffuseTexture", "TireDiffuse"),
         SlotMapping("Rim_CustomColorMask", alpha_slot="Rim_CustomColorMask Alpha"),
+        SlotMapping("Rim_MaskRGBA", "Rim_CustomColorMask", alpha_slot="Rim_CustomColorMask Alpha"),
         SlotMapping("Tire_CustomColorMask", alpha_slot="Tire_CustomColorMask Alpha"),
+        SlotMapping("Tire_MaskRGBA", "Tire_CustomColorMask", alpha_slot="Tire_CustomColorMask Alpha"),
         SlotMapping("RimPBR"),
         SlotMapping("TirePBR"),
         SlotMapping("Rim_EmissiveMask", alpha_slot="Rim_EmissiveMask Alpha"),
         SlotMapping("Tire_EmissiveMask", alpha_slot="Tire_EmissiveMask Alpha"),
         SlotMapping("RimNormal"),
-        SlotMapping("TireNormal")
+        SlotMapping("Rim_Normal", "RimNormal"),
+        SlotMapping("TireNormal"),
+        SlotMapping("Tire_Normal", "TireNormal")
     ],
     vectors=[
         SlotMapping("RimColor"),
+        SlotMapping("Rim_ColorA", "RimColor"),
         SlotMapping("CustomColor"),
+        SlotMapping("Rim_ColorB", "CustomColor"),
         SlotMapping("AccentColor"),
+        SlotMapping("Rim_ColorC", "AccentColor"),
         SlotMapping("TireColor"),
+        SlotMapping("Tire_ColorBase", "TireColor"),
         SlotMapping("TireCustomColor"),
         SlotMapping("TireAccentColor"),
         SlotMapping("Rim_AOChannelPicker", alpha_slot="Rim_AOChannelPicker Alpha"),
@@ -833,6 +843,7 @@ vehicle_wheel_mappings = MappingCollection(
         SlotMapping("Tire_AOChannelPicker", alpha_slot="Tire_AOChannelPicker Alpha"),
         SlotMapping("Tire_CustomColorChannelPicker", alpha_slot="Tire_CustomColorChannelPicker Alpha"),
         SlotMapping("Tire_AccentColorChannelPicker", alpha_slot="Tire_AccentColorChannelPicker Alpha"),
+        SlotMapping("Rim_ColorA_PBR", "RimPBR"),
         SlotMapping("Rim_EmissiveChannelPicker", alpha_slot="Rim_EmissiveChannelPicker Alpha"),
         SlotMapping("Rim_EmissiveColor"),
         SlotMapping("Tire_EmissiveChannelPicker", alpha_slot="Tire_EmissiveChannelPicker Alpha")
