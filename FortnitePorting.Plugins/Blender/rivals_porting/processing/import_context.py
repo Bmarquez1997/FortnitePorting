@@ -67,7 +67,6 @@ class ImportContext:
         rig_type = ERigType(self.options.get("RigType"))
         
         if rig_type == ERigType.TASTY:
-            self.options["MergeArmatures"] = True
             self.options["ReorientBones"] = True
         
         self.override_materials = data.get("OverrideMaterials")
@@ -90,7 +89,7 @@ class ImportContext:
 
         self.import_light_data(data.get("Lights"))
             
-        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
+        if self.type == EExportType.OUTFIT:
             master_skeleton = get_selected_armature()
             master_mesh = get_armature_mesh(master_skeleton)
             

@@ -59,12 +59,6 @@
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             
-            <ui:SettingsExpander Header="Merge Armatures" Description="All imported parts are merged together and properly parented. (Outfit Only)" IsVisible="{Binding !IsTastyRig}">
-                <ui:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding MergeArmatures}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
-            
             <ui:SettingsExpander Header="Reorient Bones" Description="Reorients bones to point to their average child position." IsVisible="{Binding !IsTastyRig}">
                 <ui:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding ReorientBones}"/>
