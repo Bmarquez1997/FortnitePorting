@@ -358,7 +358,16 @@ class ImportContext:
 
         mesh_path = os.path.join(self.assets_root, path.split(".")[0] + ".uemodel")
 
-        return UEFormatImport(options).import_file(mesh_path)
+        imported_object = UEFormatImport(options).import_file(mesh_path)
+
+        if imported_object is not None:
+            bpy.context.view_layer.objects.active = get_armature_mesh(imported_object)
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.set_normals_from_faces()
+            bpy.ops.object.editmode_toggle()
+
+        return imported_object
     
     def import_texture_data(self, data):
         import_method = ETextureImportMethod(self.options.get("TextureImportMethod"))
