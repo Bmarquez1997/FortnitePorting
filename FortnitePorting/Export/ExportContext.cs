@@ -112,7 +112,7 @@ public class ExportContext
                             PoseAsset(poseAssetNode.Get<UPoseAsset>("PoseAsset"), meta);
                         }
                         else if (skeletalMesh.ReferenceSkeleton.FinalRefBoneInfo.Any(bone => bone.Name.Text.Equals("FACIAL_C_FacialRoot", StringComparison.OrdinalIgnoreCase))
-                                 && CUE4ParseVM.Provider.TryLoadObject("/BRCosmetics/Characters/Player/Male/Medium/Heads/M_MED_Jonesy3L_Head/Meshes/3L/3L_lod2_Facial_Poses_PoseAsset", out UPoseAsset poseAsset))
+                                 && CUE4ParseVM.Provider.TryLoadPackageObject("/BRCosmetics/Characters/Player/Male/Medium/Heads/M_MED_Jonesy3L_Head/Meshes/3L/3L_lod2_Facial_Poses_PoseAsset", out UPoseAsset poseAsset))
                         {
                             PoseAsset(poseAsset, meta);
                         }
@@ -410,7 +410,7 @@ public class ExportContext
                 {
                     var textureDataPath = textureDataRawPaths[i];
                     if (textureDataPath is null || string.IsNullOrEmpty(textureDataPath)) continue;
-                    if (!CUE4ParseVM.Provider.TryLoadObject(textureDataPath, out UBuildingTextureData textureData)) continue;
+                    if (!CUE4ParseVM.Provider.TryLoadPackageObject(textureDataPath, out UBuildingTextureData textureData)) continue;
                     textureDatas.Add(i, textureData);
                 }
             }
@@ -708,7 +708,7 @@ public class ExportContext
                 {
                     var basePath = template.GetPathName().SubstringBeforeLast(".");
                     var blueprintPath = $"{basePath}.{basePath.SubstringAfterLast("/")}_C";
-                    var templateBlueprintGeneratedClass = CUE4ParseVM.Provider.LoadObject<UObject>(blueprintPath);
+                    var templateBlueprintGeneratedClass = CUE4ParseVM.Provider.LoadPackageObject<UObject>(blueprintPath);
                     
                     exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
                     exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
@@ -733,7 +733,7 @@ public class ExportContext
                 {
                     var basePath = template.GetPathName().SubstringBeforeLast(".");
                     var blueprintPath = $"{basePath}.{basePath.SubstringAfterLast("/")}_C";
-                    var templateBlueprintGeneratedClass = CUE4ParseVM.Provider.LoadObject<UObject>(blueprintPath);
+                    var templateBlueprintGeneratedClass = CUE4ParseVM.Provider.LoadPackageObject<UObject>(blueprintPath);
                     
                     exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
                     exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
