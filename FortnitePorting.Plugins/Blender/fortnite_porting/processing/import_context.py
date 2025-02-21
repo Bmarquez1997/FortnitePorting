@@ -385,15 +385,18 @@ class ImportContext:
     def import_light_data(self, lights, parent=None):
         if not lights:
             return
-        
-        for point_light in lights.get("PointLights"):
-            self.import_light_base(point_light, 'POINT', parent)
-        
-        for spot_light in lights.get("SpotLights"):
-            self.import_light_base(spot_light, 'SPOT', parent)
-        
-        for sun_light in lights.get("DirectionalLights"):
-            self.import_light_base(sun_light, 'SUN', parent)
+
+        if point_lights := lights.get("PointLights"):
+            for point_light in point_lights:
+                self.import_light_base(point_light, 'POINT', parent)
+
+        if spot_lights := lights.get("SpotLights"):
+            for spot_light in spot_lights:
+                self.import_light_base(spot_light, 'SPOT', parent)
+
+        if sun_lights := lights.get("DirectionalLights"):
+            for sun_light in sun_lights:
+                self.import_light_base(sun_light, 'SUN', parent)
     
     def import_light_base(self, base_light, light_type, parent=None):
         name = base_light.get("Name")
@@ -846,11 +849,11 @@ class ImportContext:
             replace_shader_node("FP Hair")
             socket_mappings = hair_mappings
 
-        if "MAT_Vehicle_Body_Base" in base_material_path: # Pre
+        if "MAT_Vehicle_Body_Base" in base_material_path:
             replace_shader_node("FP Vehicle Body")
             socket_mappings = vehicle_body_mappings
 
-        if "MAT_Vehicle_Chassis_Base" in base_material_path: # Possible emission crop
+        if "MAT_Vehicle_Chassis_Base" in base_material_path:
             replace_shader_node("FP Vehicle Chassis")
             socket_mappings = vehicle_chassis_mappings
 
@@ -867,9 +870,19 @@ class ImportContext:
             socket_mappings = vehicle_trim_mappings
 
         # TODO: M_WheelParent_Simple base material
-        if "M_WheelParent" in base_material_path: # Pre
+        if "M_WheelParent" in base_material_path:
             replace_shader_node("FP Vehicle Wheel")
             socket_mappings = vehicle_wheel_mappings
+
+        # TODO: TexColor builder?
+        if "M_Figure_DecoratedPlastic" in base_material_path:
+            replace_shader_node("FP Lego Minifig")
+            socket_mappings = minifig_body_mappings
+
+        # TODO: Minifig face mappings
+        if "M_Figure_RigDrivenFace_rc1" in base_material_path:
+            replace_shader_node("FP Lego Minifig")
+            socket_mappings = minifig_head_mappings
 
         setup_params(socket_mappings, shader_node, True)
 
@@ -1252,6 +1265,10 @@ class ImportContext:
                 pre_vehicle_wheel_node.location = -300, pre_node_y
                 
                 if diffuse_node := get_first_node(shader_node, ["RimDiffuse", "TireDiffuse", "Rim_CustomColorMask", "Tire_CustomColorMask"]):
+                    nodes.active = diffuse_node
+
+            case "FP Lego Minifig":
+                if diffuse_node := get_node(shader_node, "Tex Deco D"):
                     nodes.active = diffuse_node
 
     def import_sound_data(self, data):
