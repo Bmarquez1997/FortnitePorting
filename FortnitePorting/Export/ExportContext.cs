@@ -484,9 +484,12 @@ public class ExportContext
             else if (actor.TryGetValue(out UStaticMesh doubleDoorMesh, "DoubleDoorMesh"))
             {
                 var exportDoubleDoorMesh = Mesh(doubleDoorMesh)!;
-                exportDoubleDoorMesh.Location = doorOffset;
-                exportDoubleDoorMesh.Rotation = doorRotation;
-                extraMeshes.AddIfNotNull(exportDoubleDoorMesh);
+                if (exportDoubleDoorMesh != null)
+                {
+                    exportDoubleDoorMesh.Location = doorOffset;
+                    exportDoubleDoorMesh.Rotation = doorRotation;
+                    extraMeshes.AddIfNotNull(exportDoubleDoorMesh);
+                }
             }
                 
         }
