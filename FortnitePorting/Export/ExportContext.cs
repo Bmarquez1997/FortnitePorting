@@ -708,10 +708,11 @@ public class ExportContext
                 {
                     var basePath = template.GetPathName().SubstringBeforeLast(".");
                     var blueprintPath = $"{basePath}.{basePath.SubstringAfterLast("/")}_C";
-                    var templateBlueprintGeneratedClass = CUE4ParseVM.Provider.LoadPackageObject<UObject>(blueprintPath);
-                    
-                    exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
-                    exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
+                    if (CUE4ParseVM.Provider.TryLoadPackageObject(blueprintPath, out var templateBlueprintGeneratedClass))
+                    {
+                        exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
+                        exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
+                    }
                 }
 
                 meshes.Add(exportMesh);
@@ -733,10 +734,11 @@ public class ExportContext
                 {
                     var basePath = template.GetPathName().SubstringBeforeLast(".");
                     var blueprintPath = $"{basePath}.{basePath.SubstringAfterLast("/")}_C";
-                    var templateBlueprintGeneratedClass = CUE4ParseVM.Provider.LoadPackageObject<UObject>(blueprintPath);
-                    
-                    exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
-                    exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
+                    if (CUE4ParseVM.Provider.TryLoadPackageObject(blueprintPath, out var templateBlueprintGeneratedClass))
+                    {
+                        exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
+                        exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
+                    }
                 }
 
                 meshes.Add(exportMesh);
