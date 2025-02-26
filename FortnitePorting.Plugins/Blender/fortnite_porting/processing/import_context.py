@@ -850,38 +850,38 @@ class ImportContext:
             socket_mappings = hair_mappings
 
         if "MAT_Vehicle_Body_Base" in base_material_path:
-            replace_shader_node("FP Vehicle Body")
+            replace_shader_node("FPv3 Vehicle Body")
             socket_mappings = vehicle_body_mappings
 
         if "MAT_Vehicle_Chassis_Base" in base_material_path:
-            replace_shader_node("FP Vehicle Chassis")
+            replace_shader_node("FPv3 Vehicle Chassis")
             socket_mappings = vehicle_chassis_mappings
 
         if "M_Vehicle_Interior" in base_material_path:
-            replace_shader_node("FP Vehicle Interior")
+            replace_shader_node("FPv3 Vehicle Interior")
             socket_mappings = vehicle_interior_mappings
 
         if "M_InteriorCombined" in base_material_path:
-            replace_shader_node("FP Vehicle Interior Combined")
+            replace_shader_node("FPv3 Vehicle Interior Combined")
             socket_mappings = vehicle_interior_combined_mappings
 
         if "MAT_Vehicle_Trim_Base" in base_material_path:
-            replace_shader_node("FP Vehicle Trim")
+            replace_shader_node("FPv3 Vehicle Trim")
             socket_mappings = vehicle_trim_mappings
 
         # TODO: M_WheelParent_Simple base material
         if "M_WheelParent" in base_material_path:
-            replace_shader_node("FP Vehicle Wheel")
+            replace_shader_node("FPv3 Vehicle Wheel")
             socket_mappings = vehicle_wheel_mappings
 
         # TODO: TexColor builder?
         if "M_Figure_DecoratedPlastic" in base_material_path:
-            replace_shader_node("FP Lego Minifig")
+            replace_shader_node("FPv3 Lego Minifig")
             socket_mappings = minifig_body_mappings
 
         # TODO: Minifig face mappings
         if "M_Figure_RigDrivenFace_rc1" in base_material_path:
-            replace_shader_node("FP Lego Minifig")
+            replace_shader_node("FPv3 Lego Minifig")
             socket_mappings = minifig_head_mappings
 
         setup_params(socket_mappings, shader_node, True)
@@ -1006,7 +1006,7 @@ class ImportContext:
 
                 if get_param(switches, "Use Engine Colorized GMap"):
                     gmap_node = nodes.new(type="ShaderNodeGroup")
-                    gmap_node.node_tree = bpy.data.node_groups.get(".FP GMap Material")
+                    gmap_node.node_tree = bpy.data.node_groups.get(".FPv3 GMap Material")
                     gmap_node.location = -1100, -69
                     if len(shader_node.inputs["Diffuse"].links) > 0:
                         nodes.remove(shader_node.inputs["Diffuse"].links[0].from_node)
@@ -1021,7 +1021,7 @@ class ImportContext:
                     links.new(gradient_node.outputs[0], shader_node.inputs[0])
 
                     gmap_node = nodes.new(type="ShaderNodeGroup")
-                    gmap_node.node_tree = bpy.data.node_groups.get(".FP GMap")
+                    gmap_node.node_tree = bpy.data.node_groups.get(".FPv3 GMap")
                     gmap_node.location = -1120, -240
                     setup_params(gmap_mappings, gmap_node, False)
 
@@ -1174,21 +1174,21 @@ class ImportContext:
                 if diffuse_node := get_node(shader_node, "Diffuse"):
                     nodes.active = diffuse_node
 
-            case "FP Vehicle Interior":
+            case "FPv3 Vehicle Interior":
                 set_param("AO", self.options.get("AmbientOcclusion"))
                 if diffuse_node := get_node(shader_node, "BaseColor"):
                     nodes.active = diffuse_node
                     
-            case "FP Vehicle Interior Combined":
+            case "FPv3 Vehicle Interior Combined":
                 set_param("AO", self.options.get("AmbientOcclusion"))
                 if diffuse_node := get_node(shader_node, "Filler_BaseColor"):
                     nodes.active = diffuse_node
             
-            case "FP Vehicle Body":
+            case "FPv3 Vehicle Body":
                 set_param("AO", self.options.get("AmbientOcclusion"))
                 
                 pre_vehicle_body_node = nodes.new(type="ShaderNodeGroup")
-                pre_vehicle_body_node.node_tree = bpy.data.node_groups.get("FP Pre Vehicle Body")
+                pre_vehicle_body_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Vehicle Body")
                 pre_vehicle_body_node.location = -600, -500
                 setup_params(socket_mappings, pre_vehicle_body_node, False)
                 
@@ -1218,7 +1218,7 @@ class ImportContext:
                 if diffuse_node := get_node(shader_node, "BaseColor"):
                     nodes.active = diffuse_node
             
-            case "FP Vehicle Chassis":
+            case "FPv3 Vehicle Chassis":
                 set_param("AO", self.options.get("AmbientOcclusion"))
 
                 emission_slot = shader_node.inputs["EmissiveMasks"]
@@ -1227,7 +1227,7 @@ class ImportContext:
                     emission_node.extension = "CLIP"
 
                     crop_texture_node = nodes.new("ShaderNodeGroup")
-                    crop_texture_node.node_tree = bpy.data.node_groups.get("FP Texture Cropping")
+                    crop_texture_node.node_tree = bpy.data.node_groups.get("FPv3 Texture Cropping")
                     crop_texture_node.location = emission_node.location + Vector((-200, 25))
                     crop_texture_node.inputs["Left"].default_value = crop_bounds.get('R')
                     crop_texture_node.inputs["Top"].default_value = crop_bounds.get('G')
@@ -1238,12 +1238,12 @@ class ImportContext:
                 if diffuse_node := get_node(shader_node, "BaseColor"):
                     nodes.active = diffuse_node
             
-            case "FP Vehicle Wheel":
+            case "FPv3 Vehicle Wheel":
                 set_param("Rim_AO", self.options.get("AmbientOcclusion"))
                 set_param("Tire_AO", self.options.get("AmbientOcclusion"))
 
                 pre_vehicle_wheel_node = nodes.new(type="ShaderNodeGroup")
-                pre_vehicle_wheel_node.node_tree = bpy.data.node_groups.get("FP Pre Vehicle Wheel")
+                pre_vehicle_wheel_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Vehicle Wheel")
                 setup_params(socket_mappings, pre_vehicle_wheel_node, False)
                 
                 tex_positions = []
@@ -1267,7 +1267,7 @@ class ImportContext:
                 if diffuse_node := get_first_node(shader_node, ["RimDiffuse", "TireDiffuse", "Rim_CustomColorMask", "Tire_CustomColorMask"]):
                     nodes.active = diffuse_node
 
-            case "FP Lego Minifig":
+            case "FPv3 Lego Minifig":
                 if diffuse_node := get_node(shader_node, "Tex Deco D"):
                     nodes.active = diffuse_node
 

@@ -379,6 +379,7 @@ glass_mappings = MappingCollection(
     vectors=[
         SlotMapping("ColorFront", "Color"),
         SlotMapping("Base Color", "Color"),
+        SlotMapping("GlassDiffuse", "Color"),
     ]
 )
 
