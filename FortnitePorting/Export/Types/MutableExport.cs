@@ -92,6 +92,7 @@ public class MutableExport : BaseExport
 
     private void ProcessMutableObject(UCustomizableObject customizableObject, string objectName, List<Tuple<string, Mesh>> meshes, string? assetCodename)
     {
+        var numDuplicates = 0;
         var exportMutable = new ExportMutable
         {
             Name = objectName,
@@ -114,6 +115,13 @@ public class MutableExport : BaseExport
             {
                 fixedPath = partName;
             }
+
+            if (exportMutable.Meshes.Any(existing => existing.Name.Equals(partName)))
+            {
+                Log.Debug("Duplicate mesh found: {}", partName);
+                numDuplicates++;
+                continue;
+            }
             
             var directory = Path.Combine(Exporter.Meta.CustomPath ?? Exporter.Meta.AssetsRoot, fixedPath);
             Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
@@ -132,7 +140,7 @@ public class MutableExport : BaseExport
             exportMesh.Materials.AddIfNotNull(partMaterial);
             exportMutable.Meshes.Add(exportMesh);
         }
-
+        Log.Debug("Number of duplicate meshes found for {}: {}",objectName, numDuplicates);
         Objects.Add(exportMutable);
     }
     
