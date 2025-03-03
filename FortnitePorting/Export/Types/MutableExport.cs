@@ -52,7 +52,6 @@ public class MutableExport : BaseExport
                 throw new NotImplementedException("Lego outfit export has not been implemented yet");
                 break;
             case EExportType.Kicks:
-                // Shoes_ToeBean.CharacterParts -> CosmeticPartDataList.CustomizableData -> CustomizableObject
                 var characterPart = asset.Get<UObject[]>("CharacterParts")?[0];
                 if (styles.Length > 0 && ((AssetStyleData)styles[0]).StyleData.TryGetValue(out UObject[] styleParts, "VariantParts")
                                       && styleParts.Length > 0)
@@ -128,7 +127,7 @@ public class MutableExport : BaseExport
             var finalPath = $"{directory}.uemodel";
             File.WriteAllBytes(finalPath, mesh.FileData);
             
-            var partMaterial = TryExportMaterial(customizableObject, assetCodename, fixedPath.SubstringAfterLast("/"));
+            var partMaterial = TryExportMaterial(customizableObject, assetCodename, fixedPath.SubstringAfterLast("_"));
 
             var exportMesh = new ExportPart
             {
@@ -188,7 +187,7 @@ public class MutableExport : BaseExport
         var materialPath =
             $"/VehicleCosmetics/Bodies/{assetCodename}/Materials/{materialType}_{assetCodename}_{materialSlot}";
 
-        if (materialSlot.Contains("GlassOpaque"))
+        if (materialSlot.Contains("GlassOpaque") || materialSlot.Contains("Glass_Opaque"))
             materialPath = "/VehicleCosmetics/SharedMaterials/MI_Glass_Opaque";
 
         if (materialSlot.Contains("Glass") || materialSlot.Contains("Windshield"))
