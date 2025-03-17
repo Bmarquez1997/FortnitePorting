@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,17 +36,14 @@ using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Unreal;
 using FortnitePorting.Models.Unreal.Landscape;
-using FortnitePorting.Shared;
 using FortnitePorting.Shared.Extensions;
-
 using FortnitePorting.Shared.Models.Fortnite;
 using FortnitePorting.Shared.Services;
 using Serilog;
-using SixLabors.ImageSharp;
 using SkiaSharp;
 using Image = System.Drawing.Image;
-using ULightComponentBase = CUE4Parse.UE4.Assets.Exports.Component.ULightComponentBase;
 using Lights = CUE4Parse.UE4.Assets.Exports.Component.Lights;
+using Spline = CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 
 namespace FortnitePorting.Export;
 
@@ -484,12 +480,11 @@ public class ExportContext
             else if (actor.TryGetValue(out UStaticMesh doubleDoorMesh, "DoubleDoorMesh"))
             {
                 var exportDoubleDoorMesh = Mesh(doubleDoorMesh)!;
-                if (exportDoubleDoorMesh != null)
-                {
-                    exportDoubleDoorMesh.Location = doorOffset;
-                    exportDoubleDoorMesh.Rotation = doorRotation;
-                    extraMeshes.AddIfNotNull(exportDoubleDoorMesh);
-                }
+                if (exportDoubleDoorMesh == null) return extraMeshes;
+                
+                exportDoubleDoorMesh.Location = doorOffset;
+                exportDoubleDoorMesh.Rotation = doorRotation;
+                extraMeshes.AddIfNotNull(exportDoubleDoorMesh);
             }
                 
         }
@@ -500,16 +495,14 @@ public class ExportContext
     private List<ExportMesh> SplineComponents(UObject actor)
     {
         var extraMeshes = new List<ExportMesh>();
-        if (actor.TryGetValue(out FPackageIndex[] grindRails, "GrindRailMeshes"))
+        if (!actor.TryGetValue(out FPackageIndex[] grindRails, "GrindRailMeshes")) return extraMeshes;
+        
+        foreach (var grindRailLazy in grindRails)
         {
-            foreach (var grindRailLazy in grindRails)
-            {
-                if (grindRailLazy.TryLoad(out USplineMeshComponent loadedGrindRail))
-                {
-                    var exportGrindRailMesh = MeshComponent(loadedGrindRail);
-                    extraMeshes.AddIfNotNull(exportGrindRailMesh);
-                }
-            }
+            if (!grindRailLazy.TryLoad(out Spline.USplineMeshComponent loadedGrindRail)) continue;
+                
+            var exportGrindRailMesh = MeshComponent(loadedGrindRail);
+            extraMeshes.AddIfNotNull(exportGrindRailMesh);
         }
 
         return extraMeshes;
@@ -653,7 +646,7 @@ public class ExportContext
                         if (exportMesh == null || staticMeshInstanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
                         sceneComponent = staticMeshInstanceComponent;
                     }
-                    else if (instanceComponentLazy.TryLoad<USplineMeshComponent>(out var splineInstanceComponent))
+                    else if (instanceComponentLazy.TryLoad<Spline.USplineMeshComponent>(out var splineInstanceComponent))
                     {
                         exportMesh = MeshComponent(splineInstanceComponent); //9IQ76DL0BWAPJMACBUTRETQJW , BQC7HU97B6Z37YT1G2SJBGVRM
                         sceneComponent = splineInstanceComponent;
@@ -964,13 +957,8 @@ public class ExportContext
         var mesh = meshComponent.GetStaticMesh().Load<UStaticMesh>();
         if (mesh is null) return null;
 
-        var exportMesh = Mesh(mesh);
+        var exportMesh = meshComponent is Spline.USplineMeshComponent splineComp ? Mesh(splineComp) : Mesh(mesh);
         if (exportMesh is null) return null;
-        
-        if (meshComponent.TryGetValue(out FStructFallback SplineParams, "SplineParams"))
-        {
-            exportMesh.CurveData = new CurveData(SplineParams);
-        }
         
         var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
         for (var idx = 0; idx < overrideMaterials.Length; idx++)
@@ -1006,17 +994,6 @@ public class ExportContext
 
         return exportMesh;
     }
-
-    // public ExportMesh? MeshComponent(USplineMeshComponent instanceComponent)
-    // {
-    //     var mesh = instanceComponent.GetOrDefault<UStaticMesh?>("StaticMesh");
-    //     var exportMesh = Mesh(mesh);
-    //     if (exportMesh is null) return null;
-    //     
-    //     
-    //     
-    //     return exportMesh;
-    // }
 
     public ExportMesh? Mesh(UObject obj)
     {
@@ -1075,6 +1052,37 @@ public class ExportContext
         {
             Name = mesh.Name,
             Path = Export(mesh),
+            NumLods = convertedMesh.LODs.Count
+        };
+
+        var sections = convertedMesh.LODs[0].Sections.Value;
+        foreach (var (index, section) in sections.Enumerate())
+        {
+            if (section.Material is null) continue;
+            if (!section.Material.TryLoad(out var materialObject)) continue;
+            if (materialObject is not UMaterialInterface material) continue;
+
+            exportPart.Materials.AddIfNotNull(Material(material, index));
+        }
+
+        return exportPart;
+    }
+    
+    public ExportMesh? Mesh(Spline.USplineMeshComponent? mesh)
+    {
+        return Mesh<ExportMesh>(mesh);
+    }
+    
+    public T? Mesh<T>(Spline.USplineMeshComponent? mesh) where T : ExportMesh, new()
+    {
+        if (mesh is null) return null;
+        if (!mesh.TryConvert(out var convertedMesh)) return null;
+        if (convertedMesh.LODs.Count <= 0) return null;
+
+        var exportPart = new T
+        {
+            Name = mesh.Name,
+            Path = Export(mesh, embeddedAsset: true),
             NumLods = convertedMesh.LODs.Count
         };
 
@@ -1346,7 +1354,7 @@ public class ExportContext
     {
         var extension = asset switch
         {
-            USkeletalMesh or UStaticMesh or USkeleton => Meta.Settings.MeshFormat switch
+            USkeletalMesh or UStaticMesh or USkeleton or Spline.USplineMeshComponent => Meta.Settings.MeshFormat switch
             {
                 EMeshFormat.UEFormat => "uemodel",
                 EMeshFormat.ActorX => "psk",
@@ -1377,6 +1385,12 @@ public class ExportContext
         var path = GetExportPath(asset, extension, embeddedAsset, excludeGamePath: Meta.CustomPath is not null);
         
         var returnValue = returnRealPath ? path : (embeddedAsset ? $"{asset.Owner.Name}/{asset.Name}.{asset.Name}" : asset.GetPathName());
+        
+        if (asset is Spline.USplineMeshComponent splineComponent)
+        {
+            var assetName = $"{asset.Name}-{splineComponent.GetMeshId().AsSpan(0, 6)}";
+            returnValue = $"{asset.Owner.Name}/{assetName}.{assetName}";
+        }
 
         var shouldExport = asset switch
         {
@@ -1447,6 +1461,15 @@ public class ExportContext
                 foreach (var skel in exporter.MeshLods)
                 {
                     File.WriteAllBytes(path, skel.FileData);
+                }
+                break;
+            }
+            case Spline.USplineMeshComponent splineMesh:
+            {
+                var exporter = new MeshExporter(splineMesh, FileExportOptions);
+                foreach (var spline in exporter.MeshLods)
+                {
+                    File.WriteAllBytes(path, spline.FileData);
                 }
                 break;
             }
@@ -1586,6 +1609,11 @@ public class ExportContext
 
         var directory = Path.Combine(Meta.CustomPath ?? Meta.AssetsRoot, path);
         Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
+
+        if (obj is Spline.USplineMeshComponent splineComponent)
+        {
+            directory += string.Concat("-", splineComponent.GetMeshId().AsSpan(0, 6));
+        }
 
         var finalPath = $"{directory}.{ext.ToLower()}";
         return finalPath;

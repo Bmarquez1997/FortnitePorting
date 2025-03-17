@@ -27,7 +27,6 @@ public record ExportMesh : ExportObject
     public readonly List<ExportTransform> Instances = [];
     public FColor[] OverrideVertexColors = [];
     public ExportLightCollection Lights = new();
-    public CurveData? CurveData;
 
     public void AddChildren(IEnumerable<ExportObject> objects)
     {
@@ -43,54 +42,6 @@ public record ExportMesh : ExportObject
             }
         }
     }
-}
-
-public record CurveData
-{
-    public CurvePoint StartPoint;
-    public CurvePoint EndPoint;
-
-    public CurveData(FStructFallback SplineParams)
-    {
-        var startPosition = SplineParams.GetOrDefault("StartPos", FVector.ZeroVector);
-        var startTangent = SplineParams.GetOrDefault("StartTangent", FVector.ZeroVector);
-        var endPosition = SplineParams.GetOrDefault("EndPos", FVector.ZeroVector);
-        var endTangent = SplineParams.GetOrDefault("EndTangent", FVector.ZeroVector);
-
-        var startLeft = startPosition - (1.0f / 3.0f) * startTangent;
-        var startRight = startPosition + (1.0f / 3.0f) * startTangent;
-        var endLeft = endPosition - (1.0f / 3.0f) * endTangent;
-        var endRight = endPosition + (1.0f / 3.0f) * endTangent;
-
-        StartPoint = new()
-        {
-            Position = startPosition,
-            LeftHandle = startLeft,
-            RightHandle = startRight,
-            Offset = SplineParams.GetOrDefault("StartOffset", FVector2D.ZeroVector),
-            Scale = SplineParams.GetOrDefault("StartScale", new FVector2D(1, 1)),
-            Roll = SplineParams.GetOrDefault("StartRoll", 0f)
-        };
-        EndPoint = new()
-        {
-            Position = endPosition,
-            LeftHandle = endLeft,
-            RightHandle = endRight,
-            Offset = SplineParams.GetOrDefault("EndOffset", FVector2D.ZeroVector),
-            Scale = SplineParams.GetOrDefault("EndScale", new FVector2D(1, 1)),
-            Roll = SplineParams.GetOrDefault("EndRoll", 0f)
-        };
-    }
-}
-
-public record CurvePoint
-{
-    public FVector Position;
-    public FVector LeftHandle;
-    public FVector RightHandle;
-    public FVector2D Offset;
-    public FVector2D Scale;
-    public float Roll;
 }
 
 public record ExportPart : ExportMesh
