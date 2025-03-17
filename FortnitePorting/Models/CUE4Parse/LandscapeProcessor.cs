@@ -17,6 +17,7 @@ using CUE4Parse.Utils;
 using DynamicData;
 using FortnitePorting.Models.Unreal.Landscape;
 using Newtonsoft.Json;
+using ULandscapeComponent = FortnitePorting.Models.Unreal.Landscape.ULandscapeComponent;
 
 namespace FortnitePorting.Models.CUE4Parse;
 

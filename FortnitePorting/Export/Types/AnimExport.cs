@@ -47,23 +47,23 @@ public class AnimExport : BaseExport
             {
                 switch (asset)
                 {
-                    case UAnimSequence animSequence:
+                    case UAnimMontage animMontage:
+                    {
+                        AnimMontage(animMontage);
+                        break;
+                    }
+                    case UAnimSequenceBase animSequence:
                     {
                         if (animSequence.Skeleton.Load<USkeleton>() is { } skeleton)
                         {
                             Skeleton = Exporter.Skeleton(skeleton);
                         }
-                        
+
                         Sections.AddIfNotNull(Exporter.AnimSequence(animSequence));
                         break;
                     }
-                    case UAnimMontage animMontage:
-                    {
-                        AnimMontage(animMontage);
-                        
-                        break;
-                    }
                 }
+
                 break;
             }
             case EExportType.Emote:

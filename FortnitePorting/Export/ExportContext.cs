@@ -15,7 +15,6 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
-using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
 using CUE4Parse.UE4.Assets.Exports.Material;
@@ -38,7 +37,6 @@ using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Unreal;
 using FortnitePorting.Models.Unreal.Landscape;
-using FortnitePorting.Models.Unreal.Lights;
 using FortnitePorting.Shared;
 using FortnitePorting.Shared.Extensions;
 
@@ -48,6 +46,8 @@ using Serilog;
 using SixLabors.ImageSharp;
 using SkiaSharp;
 using Image = System.Drawing.Image;
+using ULightComponentBase = CUE4Parse.UE4.Assets.Exports.Component.ULightComponentBase;
+using Lights = CUE4Parse.UE4.Assets.Exports.Component.Lights;
 
 namespace FortnitePorting.Export;
 
@@ -830,7 +830,7 @@ public class ExportContext
             {
                 objects.AddIfNotNull(MeshComponent(subStaticMeshComponent));
             }
-            else if (Meta.Settings.ImportLights && componentTemplate is ULightComponentBase lightComponent)
+            else if (Meta.Settings.ImportLights && componentTemplate is Lights.ULightComponentBase lightComponent)
             {
                 objects.AddIfNotNull(LightComponent(lightComponent));
             }
@@ -857,7 +857,7 @@ public class ExportContext
             {
                 objects.AddIfNotNull(MeshComponent(subStaticMeshComponent));
             }
-            else if (Meta.Settings.ImportLights && componentTemplate is ULightComponentBase pointLightComponent)
+            else if (Meta.Settings.ImportLights && componentTemplate is Lights.ULightComponentBase pointLightComponent)
             {
                 objects.AddIfNotNull(LightComponent(pointLightComponent));
             }
@@ -866,19 +866,19 @@ public class ExportContext
         return objects;
     }
 
-    public ExportLight? LightComponent(ULightComponentBase lightComponent)
+    public ExportLight? LightComponent(Lights.ULightComponentBase lightComponent)
     {
         lightComponent.GatherTemplateProperties();
         return lightComponent switch
         {
-            USpotLightComponent spotLightComponent => SpotLightComponent(spotLightComponent),
-            UPointLightComponent pointLightComponent => PointLightComponent(pointLightComponent),
-            UDirectionalLightComponent directionalLightComponent => DirectionalLightComponent(directionalLightComponent),
+            Lights.USpotLightComponent spotLightComponent => SpotLightComponent(spotLightComponent),
+            Lights.UPointLightComponent pointLightComponent => PointLightComponent(pointLightComponent),
+            Lights.UDirectionalLightComponent directionalLightComponent => DirectionalLightComponent(directionalLightComponent),
             _ => null
         };
     }
 
-    public ExportLight PointLightComponent(UPointLightComponent pointLightComponent)
+    public ExportLight PointLightComponent(Lights.UPointLightComponent pointLightComponent)
     {
         return new ExportPointLight
         {
@@ -894,7 +894,7 @@ public class ExportContext
         };
     }
 
-    public ExportLight SpotLightComponent(USpotLightComponent spotLightComponent)
+    public ExportLight SpotLightComponent(Lights.USpotLightComponent spotLightComponent)
     {
         var outerConeAngle = spotLightComponent.OuterConeAngle != 0 ? spotLightComponent.OuterConeAngle : 30f;
         return new ExportSpotLight
@@ -913,7 +913,7 @@ public class ExportContext
         };
     }
     
-    public ExportLight DirectionalLightComponent(UDirectionalLightComponent directional)
+    public ExportLight DirectionalLightComponent(Lights.UDirectionalLightComponent directional)
     {
         return new ExportDirectionalLight
         {
@@ -1105,7 +1105,7 @@ public class ExportContext
     }
 
     
-    public ExportAnimSection? AnimSequence(UAnimSequence? animSequence, float time = 0.0f)
+    public ExportAnimSection? AnimSequence(UAnimSequenceBase? animSequence, float time = 0.0f)
     {
         if (animSequence is null) return null;
         var exportSequence = new ExportAnimSection
@@ -1115,8 +1115,15 @@ public class ExportContext
             Length = animSequence.SequenceLength,
             Time = time
         };
+
+        var floatCurves = animSequence switch
+        {
+            UAnimSequence sequence => sequence.CompressedCurveData.FloatCurves ?? [],
+            UAnimStreamable sequence => sequence.RawCurveData.GetOrDefault<FFloatCurve[]>("FloatCurves"),
+            _ => []
+        };
         
-        var floatCurves = animSequence.CompressedCurveData.FloatCurves ?? [];
+        //var floatCurves = animSequence.CompressedCurveData.FloatCurves ?? [];
         foreach (var curve in floatCurves)
         {
             exportSequence.Curves.Add(new ExportCurve
@@ -1346,7 +1353,7 @@ public class ExportContext
                 EMeshFormat.Gltf2 => "glb",
                 EMeshFormat.OBJ => "obj",
             },
-            UAnimSequence => Meta.Settings.AnimFormat switch
+            UAnimSequenceBase => Meta.Settings.AnimFormat switch
             {
                 EAnimFormat.UEFormat => "ueanim",
                 EAnimFormat.ActorX => "psa"
@@ -1446,6 +1453,15 @@ public class ExportContext
             case UAnimSequence animSequence:
             {
                 var exporter = new AnimExporter(animSequence, FileExportOptions);
+                foreach (var sequence in exporter.AnimSequences)
+                {
+                    File.WriteAllBytes(path, sequence.FileData);
+                }
+                break;
+            }
+            case UAnimSequenceBase animSequenceBase:
+            {
+                var exporter = new AnimExporter(animSequenceBase, FileExportOptions);
                 foreach (var sequence in exporter.AnimSequences)
                 {
                     File.WriteAllBytes(path, sequence.FileData);

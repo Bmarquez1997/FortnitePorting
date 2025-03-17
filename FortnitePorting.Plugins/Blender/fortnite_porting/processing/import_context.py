@@ -96,7 +96,15 @@ class ImportContext:
         self.import_light_data(data.get("Lights"))
 
         if self.type in [EExportType.VEHICLE_BODY] and self.options.get("MergeArmatures"):
-            merge_armatures(self.imported_meshes)
+            master_skeleton = merge_armatures(self.imported_meshes)
+            master_mesh = get_armature_mesh(master_skeleton)
+
+            for material, elements in self.partial_vertex_crunch_materials.items():
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Vertex Crunch")
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                for name, value in elements.items():
+                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
             
         if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
             master_skeleton = merge_armatures(self.imported_meshes)
@@ -1355,7 +1363,8 @@ class ImportContext:
                 path = section.get("Path")
 
                 total_frames += time_to_frame(section.get("Length"))
-
+                
+                # TODO: Allow for import without file (just face animation)?
                 anim = self.import_anim(path, skeleton)
                 clear_children_bone_transforms(skeleton, anim, "faceAttach")
 
