@@ -642,32 +642,17 @@ public class ExportContext
                     var instanceComponent = instanceComponentLazy.Load<UInstancedStaticMeshComponent>();
                     if (instanceComponent is null) continue;
                     if (instanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
+
+                    var exportMesh = MeshComponent(instanceComponent);
+                    if (exportMesh is null) continue;
                     
-                    if (instanceComponentLazy.TryLoad<UInstancedStaticMeshComponent>(out var staticMeshInstanceComponent))
-                    {
-                        exportMesh = MeshComponent(staticMeshInstanceComponent);
-                        
-                        if (exportMesh == null || staticMeshInstanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
-                        sceneComponent = staticMeshInstanceComponent;
-                    }
-                    else if (instanceComponentLazy.TryLoad<Spline.USplineMeshComponent>(out var splineInstanceComponent))
-                    {
-                        exportMesh = MeshComponent(splineInstanceComponent); //9IQ76DL0BWAPJMACBUTRETQJW , BQC7HU97B6Z37YT1G2SJBGVRM
-                        sceneComponent = splineInstanceComponent;
-                    }
+                    var instanceTransform = instanceComponent.GetAbsoluteTransform();
                     
-                    if (exportMesh == null) continue;
+                    exportMesh.Location = instanceTransform.Translation;
+                    exportMesh.Rotation = instanceTransform.Rotator();
+                    exportMesh.Scale = instanceTransform.Scale3D;
 
-                    if (sceneComponent != null)
-                    {
-                        var instanceTransform = sceneComponent.GetAbsoluteTransform();
-
-                        exportMesh.Location = instanceTransform.Translation;
-                        exportMesh.Rotation = instanceTransform.Rotator();
-                        exportMesh.Scale = instanceTransform.Scale3D;
-                    }
-
-                    meshes.AddIfNotNull(exportMesh);
+                    meshes.Add(exportMesh);
                 }
             }
             
@@ -978,6 +963,7 @@ public class ExportContext
         return exportMesh;
     }
     
+    //9IQ76DL0BWAPJMACBUTRETQJW , BQC7HU97B6Z37YT1G2SJBGVRM
     public ExportMesh? MeshComponent(UStaticMeshComponent meshComponent)
     {
         var mesh = meshComponent.GetStaticMesh().Load<UStaticMesh>();
