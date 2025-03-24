@@ -93,7 +93,7 @@ class ImportContext:
         self.meshes = target_meshes
         for i, mesh in enumerate(target_meshes):
             self.import_model(mesh, can_spawn_at_3d_cursor=True)
-            Log.info(f"Completed {i} / {len(target_meshes)} mutable meshes")
+            Log.info(f"Completed {i+1} / {len(target_meshes)} meshes")
 
         self.import_light_data(data.get("Lights"))
 
