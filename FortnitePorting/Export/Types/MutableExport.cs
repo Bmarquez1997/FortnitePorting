@@ -49,6 +49,15 @@ public class MutableExport : BaseExport
                 customizableObject = itemDef.Get<FSoftObjectPath>("CustomizableObject").Load<UCustomizableObject>();
                 break;
             case EExportType.LegoOutfit:
+                if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema")
+                    && ams.TryGetValue(out UObject coi, "CustomizableObjectInstance")
+                    && coi.TryGetValue(out FStructFallback descriptor, "Descriptor"))
+                {
+                    customizableObject = descriptor.Get<UCustomizableObject>("CustomizableObject");
+                    assetCodename = coi.Name.Replace("COI_Figure_", "");
+                }
+                // Prompt to ask if user wants to continue if file is in CO_Figure (or Recipe)?
+                // https://github.com/h4lfheart/FortnitePorting/commit/69732c1360d4d8d9d6b85e02a37c6efc4ffb8487#diff-4e523351690223eb266eff00616d9206a43003c903a859ca8f3aeb9896df1a0aR15-R131
                 throw new NotImplementedException("Lego outfit export has not been implemented yet");
                 break;
             case EExportType.Kicks:

@@ -29,6 +29,7 @@ default_mappings = MappingCollection(
         SlotMapping("CliffTexture", "Diffuse"),
         SlotMapping("PM_Diffuse", "Diffuse"),
         SlotMapping("___Diffuse", "Diffuse"),
+        SlotMapping("BaseColorTexture", "Diffuse"),
 
         SlotMapping("Background Diffuse", alpha_slot="Background Diffuse Alpha"),
         SlotMapping("BG Diffuse Texture", "Background Diffuse", alpha_slot="Background Diffuse Alpha"),
@@ -50,6 +51,7 @@ default_mappings = MappingCollection(
         SlotMapping("Cliff Spec Texture", "SpecularMasks"),
         SlotMapping("PM_SpecularMasks", "SpecularMasks"),
         SlotMapping("__PBR Masks", "SpecularMasks"),
+        SlotMapping("MetallicRoughnessTexture", "SpecularMasks"),
 
         SlotMapping("Normals"),
         SlotMapping("N", "Normals"),
@@ -62,6 +64,7 @@ default_mappings = MappingCollection(
         SlotMapping("CliffNormal", "Normals"),
         SlotMapping("PM_Normals", "Normals"),
         SlotMapping("_Normal", "Normals"),
+        SlotMapping("NormalTexture", "Normals"),
         
         SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
         SlotMapping("AnisotropigTangentWeight", "AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
@@ -155,6 +158,8 @@ default_mappings = MappingCollection(
         
     ],
     vectors=[
+        SlotMapping("BaseColorFactor", "Background Diffuse"),
+        
         SlotMapping("Skin Boost Color And Exponent", "Skin Color", alpha_slot="Skin Boost"),
         SlotMapping("SkinTint", "Skin Color", alpha_slot="Skin Boost"),
         SlotMapping("SkinColor", "Skin Color", alpha_slot="Skin Boost"),
