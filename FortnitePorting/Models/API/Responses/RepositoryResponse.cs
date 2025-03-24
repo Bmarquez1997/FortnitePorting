@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using FortnitePorting.Shared.Models;
 
-namespace FortnitePorting.Launcher.Models.API.Response;
+namespace FortnitePorting.Models.API.Responses;
 
 public class RepositoryResponse
 {

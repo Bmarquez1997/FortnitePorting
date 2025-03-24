@@ -524,12 +524,15 @@ public class ExportContext
             
             actors.AddRangeIfNotNull(Level(streamingLevel));
         }
-        
-        if (Meta.WorldFlags.HasFlag(EWorldFlags.WorldPartitionGrids) && level.GetOrDefault<UObject>("WorldSettings") is { } worldSettings
-            && worldSettings.GetOrDefault<UObject>("WorldPartition") is { } worldPartition
-            && worldPartition.GetOrDefault<UObject>("RuntimeHash") is { } runtimeHash)
+
+        var exportWorldPartition = Meta.WorldFlags.HasFlag(EWorldFlags.WorldPartitionGrids);
+        var exportHLODs = Meta.WorldFlags.HasFlag(EWorldFlags.HLODs);
+        if ((exportWorldPartition || exportHLODs) && level.GetOrDefault<UObject>("WorldSettings") is { } worldSettings
+                                   && worldSettings.GetOrDefault<UObject>("WorldPartition") is { } worldPartition
+                                   && worldPartition.GetOrDefault<UObject>("RuntimeHash") is { } runtimeHash)
         {
-            Meta.WorldFlags |= EWorldFlags.Actors;
+            if (exportWorldPartition)
+                Meta.WorldFlags |= EWorldFlags.Actors;
             
             foreach (var streamingData in runtimeHash.GetOrDefault("RuntimeStreamingData", Array.Empty<FStructFallback>()))
             {
@@ -581,6 +584,7 @@ public class ExportContext
         var actors = new List<ExportMesh>();
         var totalActors = level.Actors.Length;
         var currentActor = 0;
+        
         foreach (var actorLazy in level.Actors)
         {
             currentActor++;
@@ -631,13 +635,13 @@ public class ExportContext
                 parentMesh.Scale = instanceTransform.Scale3D;
             }
             
-            if (actor.TryGetValue(out FPackageIndex[] instanceComponents, "InstanceComponents"))
+            if (Meta.WorldFlags.HasFlag(EWorldFlags.InstancedFoliage) && actor.TryGetValue(out FPackageIndex[] instanceComponents, "InstanceComponents"))
             {
                 foreach (var instanceComponentLazy in instanceComponents)
                 {
-                    ExportMesh? exportMesh = null;
-                    USceneComponent? sceneComponent = null;
-                    if (!Meta.WorldFlags.HasFlag(EWorldFlags.InstancedFoliage)) continue;
+                    var instanceComponent = instanceComponentLazy.Load<UInstancedStaticMeshComponent>();
+                    if (instanceComponent is null) continue;
+                    if (instanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
                     
                     if (instanceComponentLazy.TryLoad<UInstancedStaticMeshComponent>(out var staticMeshInstanceComponent))
                     {
@@ -767,6 +771,28 @@ public class ExportContext
             exportMesh.Location = transform.Translation;
             exportMesh.Scale = transform.Scale3D;
             meshes.Add(exportMesh);
+        }
+
+        if (Meta.WorldFlags.HasFlag(EWorldFlags.HLODs))
+        {
+            if (actor.ExportType == "FortMainHLOD")
+            {
+                var instanceComponents = actor.GetOrDefault<FPackageIndex[]>("InstanceComponents", []);
+                foreach (var instanceComponentLazy in instanceComponents)
+                {
+                    var instanceComponent = instanceComponentLazy.Load<USceneComponent>();
+                    if (instanceComponent is null) continue;
+                    
+                    var component = MeshComponent(instanceComponent);
+                    if (component is null) continue;
+
+                    var transform = instanceComponent.GetAbsoluteTransform();
+                    component.Location = transform.Translation;
+                    component.Rotation = transform.Rotation.Rotator();
+                    component.Scale = transform.Scale3D;
+                    meshes.AddIfNotNull(component);
+                }
+            }
         }
 
         return meshes;
@@ -1051,7 +1077,7 @@ public class ExportContext
         var exportPart = new T
         {
             Name = mesh.Name,
-            Path = Export(mesh),
+            Path = Export(mesh, embeddedAsset: mesh.Owner?.Name.SubstringAfterLast("/") != mesh.Name),
             NumLods = convertedMesh.LODs.Count
         };
 
