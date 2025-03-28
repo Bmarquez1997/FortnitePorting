@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
+using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -31,6 +32,7 @@ using FortnitePorting.Models.Files;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Leaderboard;
 using FortnitePorting.Models.Unreal;
+using FortnitePorting.Models.Unreal.Material;
 using FortnitePorting.OnlineServices.Packet;
 using FortnitePorting.Services;
 using FortnitePorting.Shared;
@@ -269,6 +271,16 @@ public partial class FilesViewModel : ViewModelBase
             case UTexture texture:
             {
                 TexturePreviewWindow.Preview(name, texture);
+                break;
+            }
+            case UMaterial material:
+            {
+                MaterialPreviewWindow.Preview(material);
+                break;
+            }
+            case UMaterialFunction materialFunction:
+            {
+                MaterialPreviewWindow.Preview(materialFunction);
                 break;
             }
             case UStaticMesh:

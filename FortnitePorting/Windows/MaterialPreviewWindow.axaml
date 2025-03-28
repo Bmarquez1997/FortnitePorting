@@ -1,0 +1,218 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:FortnitePorting.ViewModels"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:ext="clr-namespace:FortnitePorting.Shared.Extensions;assembly=FortnitePorting.Shared"
+        xmlns:windowModels="clr-namespace:FortnitePorting.WindowModels"
+        xmlns:windows="clr-namespace:FortnitePorting.Windows"
+        xmlns:nodify="https://miroiu.github.io/nodify"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:material="clr-namespace:FortnitePorting.Models.Material"
+        x:Class="FortnitePorting.Windows.MaterialPreviewWindow"
+        x:DataType="windowModels:MaterialPreviewWindowModel"
+        Width="960" Height="540" RequestedThemeVariant="Dark" FontFamily="Segoe UI" Background="#FF202020"
+        ExtendClientAreaToDecorationsHint="True" WindowStartupLocation="CenterOwner"
+        Icon="/Assets/LogoV3.ico"
+        Title="Material Viewer">
+    <Grid RowDefinitions="Auto, *">
+        <ui:TabView Grid.Row="0" IsAddTabButtonVisible="False" SelectionChanged="OnTabSelectionChanged" TabCloseRequested="OnTabClosed"
+                    TabItems="{Binding LoadedMaterialDatas}" 
+                    SelectedItem="{Binding SelectedMaterialData, Mode=TwoWay}">
+            <ui:TabView.TabItemTemplate>
+                <DataTemplate x:DataType="material:MaterialData">
+                    <TextBlock Text="{Binding DataName}"/>
+                </DataTemplate>
+            </ui:TabView.TabItemTemplate>
+            <ui:TabView.Styles>
+                <Style Selector="Border#RightBottomBorderLine">
+                    <Setter Property="IsVisible" Value="False"/>
+                </Style>
+                <Style Selector="Border#LeftRightBottomBorderLine">
+                    <Setter Property="IsVisible" Value="False"/>
+                </Style>
+            </ui:TabView.Styles>
+            <ui:TabView.TabStripHeaderTemplate>
+                <DataTemplate>
+                    <Border Background="Transparent" PointerPressed="OnTitleBarPressed">
+                        <TextBlock Text="Material Viewer" FontWeight="SemiBold" FontSize="16"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{ext:Space 1.5, 0, 1, 0}" />
+                    </Border>
+                </DataTemplate>
+            </ui:TabView.TabStripHeaderTemplate>
+            <ui:TabView.TabStripFooterTemplate>
+                <DataTemplate>
+                    <Border Background="Transparent" PointerPressed="OnTitleBarPressed"/>
+                </DataTemplate>
+            </ui:TabView.TabStripFooterTemplate>
+        </ui:TabView>
+        
+        <Grid Grid.Row="1" Background="#FF1A1A1C">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+            
+            <nodify:NodifyEditor Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2" x:Name="Editor" DataContext="{Binding SelectedMaterialData}"
+                                 ItemsSource="{Binding Nodes}"
+                                 Connections="{Binding Connections}"
+                                 SelectedItem="{Binding SelectedNode}"
+                                 CanSelectMultipleItems="False"
+                                 Background="Transparent" ViewportZoom="1" MaxViewportZoom="3"
+                                 KeyDown="OnEditorKeyDown">
+                <nodify:NodifyEditor.ItemTemplate>
+                    <DataTemplate>
+                       <ContentControl Content="{Binding}">
+                           <ContentControl.DataTemplates>
+                               <DataTemplate DataType="material:MaterialNodeReroute">
+                                   <nodify:KnotNode BorderBrush="LightGray" Opacity="0.5"/>
+                               </DataTemplate>
+                               
+                               <DataTemplate DataType="material:MaterialNodeComment">
+                                   <nodify:GroupingNode Header="{Binding DisplayName}"
+                                                        Width="{Binding Size.Width}"
+                                                        Height="{Binding Size.Height}"
+                                                        HeaderBrush="{Binding HeaderBrush}"
+                                                        Background="{Binding BackgroundBrush}">
+                                       <nodify:GroupingNode.HeaderTemplate>
+                                           <DataTemplate x:DataType="x:String">
+                                               <TextBlock Text="{Binding}" Classes="BodyStrongTextBlockStyle">
+                                                   <TextBlock.Effect>
+                                                       <DropShadowEffect Color="Black" Opacity="0.5" OffsetX="1" OffsetY="1" BlurRadius="0"/>
+                                                   </TextBlock.Effect>
+                                               </TextBlock>
+                                           </DataTemplate>
+                                       </nodify:GroupingNode.HeaderTemplate>
+                                   </nodify:GroupingNode>
+                               </DataTemplate>
+                               
+                               <DataTemplate DataType="material:MaterialNode">
+                                   <nodify:Node Header="{Binding DisplayName}" 
+                                                Input="{Binding Inputs}"
+                                                Output="{Binding Outputs}"
+                                                Content="{Binding Content}"
+                                                HeaderBrush="{Binding HeaderBrush}" 
+                                                BorderBrush="{Binding BorderBrush}"
+                                                Background="{Binding BackgroundBrush}"
+                                                BorderThickness="2" Footer="{Binding FooterContent}"
+                                                ContentBrush="Transparent" PointerPressed="OnNodePressed">
+                                       <nodify:Node.Styles>
+                                           <Style Selector="Border#PART_Header">
+                                               <Setter Property="CornerRadius" Value="3 3 0 0"/>
+                                               <Setter Property="Padding" Value="{ext:Space 1, 0.5, 1, 0.5}"/>
+                                           </Style>
+                                       </nodify:Node.Styles>
+                                       <nodify:Node.HeaderTemplate>
+                                           <DataTemplate x:DataType="x:String">
+                                               <TextBlock Text="{Binding}" Classes="BodyStrongTextBlockStyle">
+                                                   <TextBlock.Effect>
+                                                       <DropShadowEffect Color="Black" Opacity="0.5" OffsetX="1" OffsetY="1" BlurRadius="0"/>
+                                                   </TextBlock.Effect>
+                                               </TextBlock>
+                                           </DataTemplate>
+                                       </nodify:Node.HeaderTemplate>
+                                       <nodify:Node.InputConnectorTemplate>
+                                           <DataTemplate DataType="{x:Type material:MaterialNodeSocket}">
+                                               <nodify:NodeInput Header="{Binding Name}"
+                                                                 Anchor="{Binding Anchor, Mode=OneWayToSource}"
+                                                                 IsConnected="True" Background="Transparent" BorderBrush="{Binding SocketBrush}">
+                                                   <nodify:NodeInput.HeaderTemplate>
+                                                       <DataTemplate DataType="x:String">
+                                                           <TextBlock Text="{Binding}" FontSize="12">
+                                                               <TextBlock.Effect>
+                                                                   <DropShadowEffect Color="Black" Opacity="0.5" OffsetX="1" OffsetY="1" BlurRadius="0"/>
+                                                               </TextBlock.Effect>
+                                                           </TextBlock>
+                                                       </DataTemplate>
+                                                   </nodify:NodeInput.HeaderTemplate>
+                                               </nodify:NodeInput>
+                                           </DataTemplate>
+                                       </nodify:Node.InputConnectorTemplate>
+
+                                       <nodify:Node.OutputConnectorTemplate>
+                                           <DataTemplate DataType="{x:Type material:MaterialNodeSocket}">
+                                               <nodify:NodeOutput Header="{Binding Name}"
+                                                                  Anchor="{Binding Anchor, Mode=OneWayToSource}"
+                                                                  IsConnected="True" Background="Transparent" BorderBrush="{Binding SocketBrush}">
+                                                   <nodify:NodeOutput.HeaderTemplate>
+                                                       <DataTemplate DataType="x:String">
+                                                           <TextBlock Text="{Binding}" FontSize="12">
+                                                               <TextBlock.Effect>
+                                                                   <DropShadowEffect Color="Black" Opacity="0.5" OffsetX="1" OffsetY="1" BlurRadius="0"/>
+                                                               </TextBlock.Effect>
+                                                           </TextBlock>
+                                                       </DataTemplate>
+                                                   </nodify:NodeOutput.HeaderTemplate>
+                                               </nodify:NodeOutput>
+                                           </DataTemplate>
+                                       </nodify:Node.OutputConnectorTemplate>
+                                   </nodify:Node>
+                               </DataTemplate>
+                           </ContentControl.DataTemplates>
+                       </ContentControl>
+                    </DataTemplate>
+                </nodify:NodifyEditor.ItemTemplate>
+                <nodify:NodifyEditor.ConnectionTemplate>
+                    <DataTemplate DataType="{x:Type material:MaterialNodeConnection}">
+                        <nodify:Connection Source="{Binding From.Anchor}"
+                                               Target="{Binding To.Anchor}"
+                                               ArrowEnds="None" 
+                                               SourceOffsetMode="None" TargetOffsetMode="None"
+                                               Fill="LightGray" Stroke="LightGray" Opacity="0.5"/>
+                    </DataTemplate>
+                </nodify:NodifyEditor.ConnectionTemplate>
+                <nodify:NodifyEditor.ItemContainerTheme>
+                    <ControlTheme TargetType="{x:Type nodify:ItemContainer}" x:DataType="material:MaterialNodeBase">
+                        <Setter Property="Location"
+                                Value="{Binding Location, Mode=TwoWay}" />
+                        <Setter Property="IsSelectable"
+                                Value="True" />
+                        <Setter Property="IsSelected"
+                                Value="{Binding IsSelected, Mode=TwoWay}" />
+                    </ControlTheme>
+                </nodify:NodifyEditor.ItemContainerTheme>
+            </nodify:NodifyEditor>
+            
+            <ui:FABorder Grid.Row="0" Grid.Column="0" DataContext="{Binding SelectedMaterialData.SelectedNode}"
+                         IsVisible="{Binding Converter={x:Static ObjectConverters.IsNotNull}}"
+                         Margin="{ext:Space 1}" Background="{Binding BackgroundBrush}">
+                <Grid Margin="{ext:Space 1}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{ext:Space 1}"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Grid.Row="0" Text="{Binding ExpressionName}"
+                               Classes="SubtitleTextBlockStyle" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    
+                    <ItemsControl Grid.Row="2" ItemsSource="{Binding Properties}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="{ext:Space 1}">
+                                    <TextBlock Text="{Binding Key}"
+                                               Classes="BodyStrongTextBlockStyle" 
+                                               HorizontalAlignment="Left" VerticalAlignment="Center"
+                                               Margin="{ext:Space 0, 0, 1, 0}"/>
+                                    
+                                    <TextBlock Text="{Binding Value}"
+                                               Classes="BodyTextBlockStyle" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </ui:FABorder>
+            
+            <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{ext:Space 1}">
+                <Button ToolTip.Tip="Refresh" IsVisible="{Binding SelectedMaterialData.Asset, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Content="{avalonia:MaterialIconExt Refresh}" 
+                        Command="{Binding SelectedMaterialData.RefreshCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

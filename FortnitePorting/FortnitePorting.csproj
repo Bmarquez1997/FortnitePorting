@@ -35,6 +35,7 @@
         <PackageReference Include="Material.Icons.Avalonia" Version="2.1.9" />
         <PackageReference Include="NAudio" Version="2.2.1" />
         <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+        <PackageReference Include="NodifyAvalonia" Version="6.5.0" />
         <PackageReference Include="ReactiveUI" Version="20.0.1" />
         <PackageReference Include="RestSharp" Version="110.2.1-alpha.0.20" />
         <PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="110.2.1-alpha.0.20" />
