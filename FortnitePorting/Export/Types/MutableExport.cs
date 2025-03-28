@@ -124,8 +124,8 @@ public class MutableExport : BaseExport
         foreach (var (path, mesh) in filteredMeshes)
         {
             var partName = mesh.FileName.SubstringBeforeLast('.');
-            
-            var fixedPath = path.StartsWith("/") ? path[1..] : path;
+            var packagePath = Path.Combine(customizableObject.GetPathName().SubstringBeforeLast('.'), path);
+            var fixedPath = packagePath.StartsWith("/") ? packagePath[1..] : packagePath;
             if (Exporter.Meta.CustomPath != null)
             {
                 fixedPath = partName;
@@ -139,8 +139,8 @@ public class MutableExport : BaseExport
             }
             
             var directory = Path.Combine(Exporter.Meta.CustomPath ?? Exporter.Meta.AssetsRoot, fixedPath);
-            Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
             var finalPath = $"{directory}.uemodel";
+            Directory.CreateDirectory(Path.GetDirectoryName(finalPath));
             File.WriteAllBytes(finalPath, mesh.FileData);
             
             var partMaterial = TryExportMaterial(customizableObject, assetCodename, fixedPath.SubstringAfterLast("_"));
@@ -148,7 +148,7 @@ public class MutableExport : BaseExport
             var exportMesh = new ExportPart
             {
                 Name = Type == EExportType.Kicks && assetCodename != null ? assetCodename : partName,
-                Path = $"{path}.{partName}",
+                Path = $"{packagePath}.{partName}",
                 NumLods = 1,
                 Type = partName.Contains("Body", StringComparison.OrdinalIgnoreCase) ? EFortCustomPartType.Body : EFortCustomPartType.Head
             };
@@ -164,10 +164,20 @@ public class MutableExport : BaseExport
         if (bitmap == null) return;
         try
         {
-            var fileName = Path.Combine(customizableObject.GetPathName().SubstringBeforeLast('.'), bitmap.ColorType.ToString(), bitmap.GetHashCode().ToString());
-            var directory = Path.Combine(Exporter.Meta.CustomPath ?? Exporter.Meta.AssetsRoot, fileName);
+            var path = customizableObject.GetPathName().SubstringBeforeLast('.');
             
-            Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
+            var fixedPath = path.StartsWith("/") ? path[1..] : path;
+            var partName = Path.Combine(bitmap.ColorType.ToString(), bitmap.GetHashCode().ToString());
+            fixedPath = Path.Combine(fixedPath, "textures", partName);
+            if (Exporter.Meta.CustomPath != null)
+            {
+                fixedPath = partName;
+            }
+            
+            var directory = Path.Combine(Exporter.Meta.CustomPath ?? Exporter.Meta.AssetsRoot, fixedPath);
+
+            var finalPath = $"{directory}.png";
+            Directory.CreateDirectory(Path.GetDirectoryName(finalPath));
             using var fileStream = File.OpenWrite($"{directory}.png");
             bitmap?.Encode(SKEncodedImageFormat.Png, 100).SaveTo(fileStream);
         }
