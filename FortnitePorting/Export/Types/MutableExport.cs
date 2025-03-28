@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Mutable;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Objects;
@@ -35,9 +36,15 @@ public class MutableExport : BaseExport
         {
             case EExportType.VehicleBody:
                 var itemDef = asset.Get<FSoftObjectPath>("VehicleCosmeticsItemDef").Load();
-                var skeleton = itemDef.Get<FSoftObjectPath>("WheelAttachSkeletonReference").Load();
-                filterSkeletonName = skeleton.Name;
                 assetCodename = itemDef.Get<string[]>("CheatNames")?[0];
+                filterSkeletonName = assetCodename;
+                if (itemDef.TryGetValue(out FSoftObjectPath skeletonPath, "WheelAttachSkeletonReference")
+                    && skeletonPath.TryLoad(out UObject skeleton))
+                {
+                    filterSkeletonName = skeleton.Name;
+                }
+                
+                
                 customizableObject = itemDef.Get<FSoftObjectPath>("CustomizableObject").Load<UCustomizableObject>();
                 break;
             case EExportType.VehicleWheel:

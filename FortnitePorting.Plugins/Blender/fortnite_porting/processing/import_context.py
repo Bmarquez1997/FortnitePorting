@@ -1857,10 +1857,10 @@ class ImportContext:
                 self.import_material(None, material, {}, True)
 
     def import_mutable_data(self, data):
-        objects = data.get("Objects")
-
-        if objects is None:
+        groups = data.get("Objects")
+        if groups is None:
             return
             
-        for object in objects:
-            self.import_mesh_data(object)
+        for i, group in enumerate(groups):
+            self.import_mesh_data(group)
+            Log.info(f"Completed {i+1} / {len(groups)} mutable objects")
