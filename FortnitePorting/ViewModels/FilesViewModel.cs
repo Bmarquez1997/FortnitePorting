@@ -391,7 +391,7 @@ public partial class FilesViewModel : ViewModelBase
         var isValidExtension = path.EndsWith(".uasset") || path.EndsWith(".umap") || path.EndsWith(".ufont");
         var isOptionalSegment = path.Contains(".o.");
         var isVerse = path.Contains("/_Verse/");
-        return isValidExtension && !isOptionalSegment && !isVerse;
+        return AppSettings.Current.Debug.ShowAllFilesInFilesTab || (isValidExtension && !isOptionalSegment && !isVerse);
     }
     
     private Func<FlatItem, bool> CreateAssetFilter((string, bool, ObservableCollection<string>) items)

@@ -23,6 +23,7 @@ public partial class DebugSettingsViewModel : ViewModelBase
     [ObservableProperty] private int _requestTimeoutSeconds = 10;
     [ObservableProperty] private bool _showMapDebugInfo = false;
     [ObservableProperty] private bool _isConsoleVisible = false;
+    [ObservableProperty] private bool _showAllFilesInFilesTab = false;
     
     protected override async void OnPropertyChanged(PropertyChangedEventArgs e)
     {

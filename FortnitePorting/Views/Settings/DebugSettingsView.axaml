@@ -57,6 +57,12 @@
                     <ToggleSwitch IsChecked="{Binding ShowMapDebugInfo}"/>
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
+            
+            <ui:SettingsExpander Header="Show All Files in Files Tab" Description="Displays all files (including bulk, optional, and verse) in the Files tab.">
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding ShowAllFilesInFilesTab}"/>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
