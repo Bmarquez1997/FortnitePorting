@@ -2,6 +2,8 @@ import bpy
 import re
 
 from .enums import *
+from .mappings import *
+from ..logger import Log
 from ..utils import *
 from math import radians
 from mathutils import Matrix, Vector, Euler, Quaternion
@@ -279,3 +281,11 @@ def clear_children_bone_transforms(skeleton, anim, bone_name):
 def set_geo_nodes_param(geo_node_modifier, name, value):
     identifier = geo_node_modifier.node_group.interface.items_tree[name].identifier
     geo_node_modifier[identifier] = value
+
+def get_curve_name(curve_name, is_metahuman_anim):
+    fixed_curve_name = curve_name.replace("CTRL_expressions_", "").replace("ctrl_expressions_", "")
+    curve_name_map = metahuman_curve_names if is_metahuman_anim else legacy_curve_names
+    if found := first(curve_name_map, lambda name: name.casefold() == fixed_curve_name.casefold()):
+        return found
+    Log.warn(f"No matching names found for curve {fixed_curve_name}")
+    return fixed_curve_name

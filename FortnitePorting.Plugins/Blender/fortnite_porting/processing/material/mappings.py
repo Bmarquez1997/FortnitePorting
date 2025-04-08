@@ -263,6 +263,7 @@ toon_mappings = MappingCollection(
         SlotMapping("Color_Lit_Map", "LitDiffuse"),
         SlotMapping("ShadedDiffuse"),
         SlotMapping("Color_Shaded_Map", "ShadedDiffuse"),
+        SlotMapping("Diffuse", "ShadedDiffuse"),
         SlotMapping("DistanceField_InkLines"),
         SlotMapping("DFL_Map", "DistanceField_InkLines"),
         SlotMapping("InkLineColor_Texture"),
@@ -284,6 +285,9 @@ toon_mappings = MappingCollection(
         SlotMapping("Color_Shaded", "ShadedDiffuse"),
         SlotMapping("SpecularTint"),
         SlotMapping("Specular Tint", "SpecularTint"),
+    ],
+    switches=[
+        SlotMapping("UseFakePBR", "Use PBR Shading")
     ]
 )
 

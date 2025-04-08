@@ -189,13 +189,13 @@ public partial class MaterialData : ObservableObject
                         node.ExpressionName.Equals(targetExpression.Name, StringComparison.OrdinalIgnoreCase));
                     if (targetRerouteNode is null) continue;
 
-                    var existingInputs = Connections.Where(con => con.To.Parent.Equals(targetRerouteNode)).ToArray();
+                    var existingInputs = Connections.Where(con => targetRerouteNode.Equals(con.To.Parent)).ToArray();
                     foreach (var existingInput in existingInputs)
                     {
                         Connections.Add(new MaterialNodeConnection(existingInput.From, pinInput));
                     }
                     
-                    var existingOutputs = Connections.Where(con => con.From.Parent.Equals(targetRerouteNode)).ToArray();
+                    var existingOutputs = Connections.Where(con => targetRerouteNode.Equals(con.From.Parent)).ToArray();
                     foreach (var existingOutput in existingOutputs)
                     {
                         Connections.Add(new MaterialNodeConnection(startPinNode.GetOutput(pinName)!, existingOutput.To));
@@ -227,13 +227,13 @@ public partial class MaterialData : ObservableObject
                     var targetRerouteNode = (MaterialNode?) Nodes.FirstOrDefault(node => node.ExpressionName.Equals(targetExpression.Name, StringComparison.OrdinalIgnoreCase));
                     if (targetRerouteNode is null) continue;
                     
-                    var existingInputs = Connections.Where(con => con.To.Parent.Equals(targetRerouteNode)).ToArray();
+                    var existingInputs = Connections.Where(con => targetRerouteNode.Equals(con.To.Parent)).ToArray();
                     foreach (var existingInput in existingInputs)
                     {
                         Connections.Add(new MaterialNodeConnection(existingInput.From, endPinNode.GetInput(pinName)!));
                     }
                     
-                    var existingOutputs = Connections.Where(con => con.From.Parent.Equals(targetRerouteNode)).ToArray();
+                    var existingOutputs = Connections.Where(con => targetRerouteNode.Equals(con.From.Parent)).ToArray();
                     foreach (var existingOutput in existingOutputs)
                     {
                         Connections.Add(new MaterialNodeConnection(pinOutput, existingOutput.To));
@@ -334,6 +334,12 @@ public partial class MaterialData : ObservableObject
         var targetNode = (MaterialNode?) Nodes.FirstOrDefault(node => node.ExpressionName.Equals(subExpression.Name, StringComparison.OrdinalIgnoreCase)) ?? AddNode(subExpression);
 
         var inputSocket = node.AddInput(new MaterialNodeSocket(nameOverride ?? expressionInput.InputName.Text));
+
+        if (targetNode.Outputs.Count == 0)
+        {
+            Log.Warning("Target node {0} has no outputs", targetNode.DisplayName);
+            return;
+        }
         
         if (expressionInput.OutputIndex >= targetNode.Outputs.Count)
             Log.Warning("Expression {expressionName} has no output index {outputIndex}", targetNode.ExpressionName, expressionInput.OutputIndex);
@@ -533,7 +539,7 @@ public partial class MaterialData : ObservableObject
                         constantColor.A = 1;
                         break;
                     case "MaterialExpressionVectorParameter":
-                        node.Label = expression.Get<FName>("ParameterName").Text;
+                        node.Label = expression.GetOrDefault<FName?>("ParameterName")?.Text ?? expression.Name;
                         break;
                 }
                 
@@ -591,7 +597,7 @@ public partial class MaterialData : ObservableObject
             
             case "MaterialExpressionScalarParameter":
             {
-                var name = expression.Get<FName>("ParameterName").Text;
+                var name = expression.GetOrDefault<FName?>("ParameterName")?.Text ?? expression.Name;
                 var sliderMin = expression.GetOrDefault<float>("SliderMin", 0);
                 var sliderMax = expression.GetOrDefault<float>("SliderMax", 1);
                 var defaultValue = expression.GetOrDefault<float>("DefaultValue");

@@ -207,7 +207,7 @@ public class AnimExport : BaseExport
         {
             var expressionStack = expr.Expression.Select(element => element switch
                 {
-                    OpElement<EOperator> op => new ExportCurveExpressionElement(OpElement.EOperator, op.Value),
+                    OpElement<EOperator> op => new ExportCurveExpressionElement(OpElement.EOperator, (int)op.Value),
                     OpElement<FName> name => new ExportCurveExpressionElement(OpElement.FName, name.Value.Text),
                     OpElement<FFunctionRef> functionRef => new ExportCurveExpressionElement(OpElement.FFunctionRef, functionRef.Value.Index),
                     OpElement<float> single => new ExportCurveExpressionElement(OpElement.Float, single.Value),
