@@ -11,11 +11,11 @@ using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.UE4.IO;
 using CUE4Parse.Utils;
 using FortnitePorting.Application;
+using FortnitePorting.Framework;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Map;
 using FortnitePorting.OnlineServices.Packet;
 using FortnitePorting.Services;
-using FortnitePorting.Shared.Framework;
 using Serilog;
 
 namespace FortnitePorting.ViewModels;

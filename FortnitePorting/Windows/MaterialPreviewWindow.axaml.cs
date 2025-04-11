@@ -18,11 +18,11 @@ using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Core.Math;
 using FluentAvalonia.UI.Controls;
+using FortnitePorting.Framework;
 using FortnitePorting.Models.Material;
 using FortnitePorting.Models.Unreal.Material;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Framework;
 using FortnitePorting.Shared.Services;
 using FortnitePorting.ViewModels;
 using FortnitePorting.WindowModels;
@@ -140,10 +140,19 @@ public partial class MaterialPreviewWindow : WindowBase<MaterialPreviewWindowMod
 
     private void CenterViewport()
     {
-        var nodes = WindowModel.SelectedMaterialData!.Nodes;
-        var avgX = nodes.Sum(node => node.Location.X) / nodes.Count;
-        var avgY = nodes.Sum(node => node.Location.Y) / nodes.Count;
+        var nodes = WindowModel.SelectedMaterialData?.NodeCache.Items.ToArray() ?? [];
+        var avgX = nodes.Sum(node => node.Location.X) / nodes.Length;
+        var avgY = nodes.Sum(node => node.Location.Y) / nodes.Length;
 
         Editor.ViewportLocation = new Point(avgX - Editor.ViewportSize.Width / 2, avgY - Editor.ViewportSize.Height / 2);
+    }
+
+    private void OnSearchSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ListBox listBox) return;
+        if (listBox.SelectedItem is not MaterialNodeBase selectedNode) return;
+
+        WindowModel.SelectedMaterialData.SelectedNode = selectedNode;
+        Editor.ViewportLocation = new Point(selectedNode.Location.X - Editor.ViewportSize.Width / 2, selectedNode.Location.Y - Editor.ViewportSize.Height / 2);
     }
 }
