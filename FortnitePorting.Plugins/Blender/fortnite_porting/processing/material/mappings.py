@@ -181,7 +181,7 @@ default_mappings = MappingCollection(
 
         SlotMapping("FlipbookTint"),
         
-        SlotMapping("CloatcoatMaskChannel")
+        SlotMapping("CloatcoatMaskChannel", "Clear Coat Channel")
     ],
     switches=[
         SlotMapping("SwizzleRoughnessToGreen"),
@@ -205,9 +205,9 @@ default_mappings = MappingCollection(
         SlotMapping("Cloth Channel"),
         SlotMapping("ClothFuzzMaskChannel", "Cloth Channel"),
         SlotMapping("Clear Coat Channel"),
-        SlotMapping("ClearCoatChannel"),
-        SlotMapping("CloatcoatMaskChannel"),
-        SlotMapping("ClearcoatMaskChannel"),
+        SlotMapping("ClearCoatChannel", "Clear Coat Channel"),
+        SlotMapping("CloatcoatMaskChannel", "Clear Coat Channel"),
+        SlotMapping("ClearcoatMaskChannel", "Clear Coat Channel"),
     ]
 )
 
