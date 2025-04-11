@@ -2,17 +2,10 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using AvaloniaEdit.Folding;
 using FortnitePorting.Application;
-using FortnitePorting.Models;
-using Avalonia.VisualTree;
-using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
+using FortnitePorting.Models;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Framework;
-using FortnitePorting.Shared.Services;
-using FortnitePorting.ViewModels;
 using FortnitePorting.WindowModels;
 
 namespace FortnitePorting.Windows;

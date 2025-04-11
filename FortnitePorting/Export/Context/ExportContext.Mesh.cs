@@ -4,6 +4,7 @@ using CUE4Parse_Conversion.Meshes;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
+using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
@@ -89,6 +90,37 @@ public partial class ExportContext
         return exportPart;
     }
     
+    public ExportMesh? Mesh(USplineMeshComponent? mesh)
+    {
+        return Mesh<ExportMesh>(mesh);
+    }
+    
+    public T? Mesh<T>(USplineMeshComponent? mesh) where T : ExportMesh, new()
+    {
+        if (mesh is null) return null;
+        if (!mesh.TryConvert(out var convertedMesh)) return null;
+        if (convertedMesh.LODs.Count <= 0) return null;
+
+        var exportPart = new T
+        {
+            Name = mesh.Name,
+            Path = Export(mesh, embeddedAsset: true),
+            NumLods = convertedMesh.LODs.Count
+        };
+
+        var sections = convertedMesh.LODs[0].Sections.Value;
+        foreach (var (index, section) in sections.Enumerate())
+        {
+            if (section.Material is null) continue;
+            if (!section.Material.TryLoad(out var materialObject)) continue;
+            if (materialObject is not UMaterialInterface material) continue;
+
+            exportPart.Materials.AddIfNotNull(Material(material, index));
+        }
+
+        return exportPart;
+    }
+    
     public ExportMesh? Skeleton(USkeleton? skeleton)
     {
         if (skeleton is null) return null;
@@ -139,7 +171,7 @@ public partial class ExportContext
         var mesh = meshComponent.GetStaticMesh().Load<UStaticMesh>();
         if (mesh is null) return null;
 
-        var exportMesh = Mesh(mesh);
+        var exportMesh = meshComponent is USplineMeshComponent splineComp ? Mesh(splineComp) : Mesh(mesh);;
         if (exportMesh is null) return null;
         
         var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());

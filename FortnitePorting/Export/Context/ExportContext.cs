@@ -14,6 +14,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
+using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
 using CUE4Parse.UE4.Assets.Exports.Material;
@@ -36,7 +37,6 @@ using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Unreal;
 using FortnitePorting.Models.Unreal.Landscape;
-using FortnitePorting.Models.Unreal.Lights;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Shared.Models.Fortnite;
 using FortnitePorting.Shared.Services;
@@ -97,6 +97,12 @@ public partial class ExportContext
         
         var returnValue = returnRealPath ? path : (embeddedAsset ? $"{asset.Owner.Name}/{asset.Name}.{asset.Name}" : asset.GetPathName());
 
+        if (asset is USplineMeshComponent splineComponent)
+        {
+            var assetName = $"{asset.Name}-{splineComponent.GetMeshId().AsSpan(0, 6)}";
+            returnValue = $"{asset.Owner.Name}/{assetName}.{assetName}";
+        }
+        
         var shouldExport = asset switch
         {
             UTexture texture => IsTextureHigherResolutionThanExisting(texture, path),
@@ -176,6 +182,15 @@ public partial class ExportContext
             case UAnimSequence animSequence:
             {
                 var exporter = new AnimExporter(animSequence, FileExportOptions);
+                foreach (var sequence in exporter.AnimSequences)
+                {
+                    File.WriteAllBytes(path, sequence.FileData);
+                }
+                break;
+            }
+            case UAnimSequenceBase animSequenceBase:
+            {
+                var exporter = new AnimExporter(animSequenceBase, FileExportOptions);
                 foreach (var sequence in exporter.AnimSequences)
                 {
                     File.WriteAllBytes(path, sequence.FileData);
@@ -301,6 +316,11 @@ public partial class ExportContext
         var directory = Path.Combine(Meta.CustomPath ?? Meta.AssetsRoot, path);
         Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
 
+        if (obj is USplineMeshComponent splineComponent)
+        {
+            directory += string.Concat("-", splineComponent.GetMeshId().AsSpan(0, 6));
+        }
+        
         var finalPath = $"{directory}.{ext.ToLower()}";
         return finalPath;
     }

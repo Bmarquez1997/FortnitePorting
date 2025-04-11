@@ -3,13 +3,14 @@ using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Objects.Engine.Animation;
 using FortnitePorting.Export.Models;
+using FortnitePorting.Models.Unreal;
 using Serilog;
 
 namespace FortnitePorting.Export.Context;
 
 public partial class ExportContext
 {
-    public ExportAnimSection? AnimSequence(UAnimSequence? animSequence, float time = 0.0f)
+    public ExportAnimSection? AnimSequence(UAnimSequenceBase? animSequence, float time = 0.0f)
     {
         if (animSequence is null) return null;
         var exportSequence = new ExportAnimSection
@@ -20,7 +21,13 @@ public partial class ExportContext
             Time = time
         };
         
-        var floatCurves = animSequence.CompressedCurveData.FloatCurves ?? [];
+        var floatCurves = animSequence switch
+        {
+            UAnimSequence sequence => sequence.CompressedCurveData.FloatCurves ?? [],
+            UAnimStreamable sequence => sequence.RawCurveData.GetOrDefault<FFloatCurve[]>("FloatCurves"),
+            _ => []
+        };
+        
         foreach (var curve in floatCurves)
         {
             exportSequence.Curves.Add(new ExportCurve

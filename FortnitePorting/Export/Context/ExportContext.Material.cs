@@ -1,7 +1,5 @@
 using System;
 using System.Linq;
-using CUE4Parse.UE4.Assets;
-using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.Material.Editor;
 using CUE4Parse.UE4.Assets.Exports.Texture;

@@ -1,21 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CUE4Parse.GameTypes.FN.Assets.Exports;
-using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component;
+using CUE4Parse.UE4.Assets.Exports.Component.Lights;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
-using CUE4Parse.UE4.Assets.Exports.Material;
-using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
-using CUE4Parse.UE4.Assets.Exports.StaticMesh;
-using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
-using CUE4Parse.UE4.Objects.Engine.Animation;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Export.Models;
@@ -23,9 +16,7 @@ using FortnitePorting.Extensions;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Unreal;
 using FortnitePorting.Models.Unreal.Landscape;
-using FortnitePorting.Models.Unreal.Lights;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Models.Fortnite;
 using Serilog;
 
 namespace FortnitePorting.Export.Context;
@@ -314,9 +305,9 @@ public partial class ExportContext
             {
                 objects.AddIfNotNull(MeshComponent(subStaticMeshComponent));
             }
-            else if (componentTemplate is ULightComponentBase pointLightComponent)
+            else if (Meta.Settings.ImportLights && componentTemplate is ULightComponentBase lightComponent)
             {
-                objects.AddIfNotNull(LightComponent(pointLightComponent));
+                objects.AddIfNotNull(LightComponent(lightComponent));
             }
         }
 
@@ -355,12 +346,14 @@ public partial class ExportContext
         lightComponent.GatherTemplateProperties();
         return lightComponent switch
         {
-            UPointLightComponent pointLightComponent => LightComponent(pointLightComponent),
+            USpotLightComponent spotLightComponent => SpotLightComponent(spotLightComponent),
+            UPointLightComponent pointLightComponent => PointLightComponent(pointLightComponent),
+            UDirectionalLightComponent directionalLightComponent => DirectionalLightComponent(directionalLightComponent),
             _ => null
         };
     }
 
-    public ExportLight LightComponent(UPointLightComponent pointLightComponent)
+    public ExportLight PointLightComponent(UPointLightComponent pointLightComponent)
     {
         return new ExportPointLight
         {
@@ -373,6 +366,40 @@ public partial class ExportContext
             CastShadows = pointLightComponent.CastShadows,
             AttenuationRadius = pointLightComponent.AttenuationRadius,
             Radius = pointLightComponent.SourceRadius
+        };
+    }
+
+    public ExportLight SpotLightComponent(USpotLightComponent spotLightComponent)
+    {
+        var outerConeAngle = spotLightComponent.OuterConeAngle != 0 ? spotLightComponent.OuterConeAngle : 30f;
+        return new ExportSpotLight
+        {
+            Name = spotLightComponent.Name,
+            Location = spotLightComponent.RelativeLocation,
+            Rotation = spotLightComponent.RelativeRotation,
+            Scale = spotLightComponent.RelativeScale3D,
+            Intensity = spotLightComponent.Intensity,
+            Color = spotLightComponent.LightColor.ToLinearColor(),
+            CastShadows = spotLightComponent.CastShadows,
+            AttenuationRadius = spotLightComponent.AttenuationRadius,
+            Radius = spotLightComponent.SourceRadius,
+            OuterConeAngle = outerConeAngle,
+            InnerConeAngle = spotLightComponent.InnerConeAngle != 0 ? spotLightComponent.InnerConeAngle : outerConeAngle
+        };
+    }
+    
+    public ExportLight DirectionalLightComponent(UDirectionalLightComponent directional)
+    {
+        return new ExportDirectionalLight
+        {
+            Name = directional.Name,
+            Location = directional.RelativeLocation,
+            Rotation = directional.RelativeRotation,
+            Scale = directional.RelativeScale3D,
+            Intensity = directional.Intensity,
+            Color = directional.LightColor.ToLinearColor(),
+            CastShadows = directional.CastShadows,
+            Radius = directional.LightSourceAngle
         };
     }
 }

@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CUE4Parse.GameTypes.FN.Assets.Exports;
-using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -19,6 +17,7 @@ using FortnitePorting.Extensions;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Shared.Models.Fortnite;
+using Serilog;
 
 namespace FortnitePorting.Export.Context;
 
@@ -144,6 +143,8 @@ public partial class ExportContext
                 slot++;
             }
         }
+        
+        exportWeapons.AddRangeIfNotNull(GetAttachmentMeshes(weaponDefinition));
 
         return exportWeapons;
     }
@@ -202,6 +203,37 @@ public partial class ExportContext
         exportWeapons.AddRangeIfNotNull(weaponDefinition.GetDataListItems<UObject>("PickupSkeletalMesh", "PickupStaticMesh"));
 
         return exportWeapons;
+    }
+    
+    private List<ExportMesh> GetAttachmentMeshes(UObject weaponDefinition)
+    {
+        var attachmentMeshes = new List<ExportMesh>();
+
+        var modSlots = weaponDefinition.GetDataListItem<FStructFallback[]>("WeaponModSlots");
+        if (modSlots is not { Length: > 0 }) return attachmentMeshes;
+        
+        foreach (var modSlot in modSlots)
+        {
+            try
+            {
+                if (!modSlot.TryGetValue(out UObject modDefinition, "WeaponMod")) continue;
+                if (modDefinition is UBlueprintGeneratedClass blueprintGeneratedClass)
+                {
+                    attachmentMeshes.AddRangeIfNotNull(Blueprint(blueprintGeneratedClass)
+                        .Where(obj => obj is ExportMesh).Cast<ExportMesh>().ToList());
+                }
+                else
+                {
+                    attachmentMeshes.AddIfNotNull(Mesh(modDefinition));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warning("Exception thrown loading weapon mods for: {0}", weaponDefinition.Name);
+            }
+        }
+
+        return attachmentMeshes;
     }
     
     public ExportTextureData? TextureData(UBuildingTextureData? textureData, int index = 0)
@@ -300,6 +332,8 @@ public partial class ExportContext
             else if (actor.TryGetValue(out UStaticMesh doubleDoorMesh, "DoubleDoorMesh"))
             {
                 var exportDoubleDoorMesh = Mesh(doubleDoorMesh)!;
+                if (exportDoubleDoorMesh == null) return extraMeshes;
+                
                 exportDoubleDoorMesh.Location = doorOffset;
                 exportDoubleDoorMesh.Rotation = doorRotation;
                 extraMeshes.AddIfNotNull(exportDoubleDoorMesh);
