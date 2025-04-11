@@ -56,7 +56,7 @@ public partial class AssetItem : Base.BaseAssetItem
         Rarity = CreationData.Object.GetOrDefault("Rarity", EFortRarity.Uncommon);
         
         var seasonTag = CreationData.GameplayTags?.GetValueOrDefault("Cosmetics.Filter.Season.")?.Text;
-        Season = int.TryParse(seasonTag?.SubstringAfterLast("."), out var seasonNumber) ? seasonNumber : int.MaxValue;
+        Season = int.TryParse(seasonTag?.SubstringAfterLast("."), out var seasonNumber) ? seasonNumber : 0;
 
         if (CreationData.Object.GetDataListItem<FPackageIndex>("Series") is { } seriesPackage)
         {
