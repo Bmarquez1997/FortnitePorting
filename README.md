@@ -12,6 +12,12 @@ FortnitePorting - Automation of the Fortnite Porting Process
 
 ![image](https://github.com/user-attachments/assets/960d0dc5-695f-43b6-be0c-db74efdf1a17)
 
+## Add to Portle
+Add the following URL in the Repositories tab of Portle
+```
+https://raw.githubusercontent.com/Bmarquez1997/FortnitePorting/refs/heads/v3-mutable/Repository.json
+```
+
 ## Building FortnitePorting
 
 To build FortnitePorting from source, first clone the repository and all of its submodules.

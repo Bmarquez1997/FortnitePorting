@@ -1,0 +1,13 @@
+{
+  "Id": "FortnitePorting-Mutable",
+  "Title": "Fortnite Porting - Mutable Edition",
+  "Description": "The experimental branch of Fortnite Porting with mutable support",
+  "Icon": "https://raw.githubusercontent.com/Bmarquez1997/FortnitePorting/refs/heads/v3-mutable/FortnitePorting/Assets/LogoV3.png",
+  "Versions": [
+    {
+      "Version": "v3.0.7",
+      "ExecutableURL": "https://github.com/Bmarquez1997/FortnitePorting/releases/download/3.0.7-Mutables-Alpha/FortnitePorting-Mutable.exe",
+      "UploadTime": "03-03-2025"
+    }
+  ]
+}

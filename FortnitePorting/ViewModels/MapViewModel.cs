@@ -95,14 +95,21 @@ public partial class MapViewModel : ViewModelBase
             "/BlastBerryMap/Maps/BlastBerry_Terrain",
             "/BlastBerryMapUI/Minimap/Capture_Iteration_Discovered_BlastBerry",
             "/BlastBerryMapUI/MiniMap/T_MiniMap_Mask",
-            0.023f, -20, 215, 150, 12800, false
+            0.0235f, -20, 210, 153, 12800, false
         ),
         new(
             "PunchBerry",
             "/632de27e-4506-41f8-532f-93ac01dc10ca/Maps/PunchBerry_Terrain",
             "/BlastBerryMapUI/MiniMap/Discovered_PunchBerry",
             "/BlastBerryMapUI/MiniMap/T_PB_MiniMap_Mask",
-            0.023f, -20, 215, 150, 12800, true
+            0.0235f, -20, 210, 153, 12800, true
+        ),
+        new(
+            "DashBerry",
+            "/f4032749-42c4-7fe9-7fa2-c78076f34f54/DashBerry",
+            "/BlastBerryMapUI/MiniMap/Discovered_DashBerry",
+            "/BlastBerryMapUI/MiniMap/MMap_DasBerry_Mask",
+            0.0235f, -20, 210, 153, 12800, true
         ),
         new(
             "FeralCorgi_2Bombsite_Map",
@@ -120,6 +127,7 @@ public partial class MapViewModel : ViewModelBase
     [
         "FMJam_",
         "PunchBerry_Terrain",
+        "DashBerry",
         "FeralCorgi_2Bombsite_Map"
     ];
 

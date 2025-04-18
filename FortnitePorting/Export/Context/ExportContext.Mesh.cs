@@ -171,7 +171,7 @@ public partial class ExportContext
         var mesh = meshComponent.GetStaticMesh().Load<UStaticMesh>();
         if (mesh is null) return null;
 
-        var exportMesh = meshComponent is USplineMeshComponent splineComp ? Mesh(splineComp) : Mesh(mesh);;
+        var exportMesh = meshComponent is USplineMeshComponent splineComp ? Mesh(splineComp) : Mesh(mesh);
         if (exportMesh is null) return null;
         
         var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
