@@ -9,7 +9,7 @@
         Width="1160" Height="770" RequestedThemeVariant="Dark" FontFamily="Segoe UI" Background="{x:Null}"
         TransparencyLevelHint="{Binding Theme.TransparencyHints}" ExtendClientAreaToDecorationsHint="True"
         WindowStartupLocation="CenterScreen" ClosingBehavior="OwnerAndChildWindows" ExtendClientAreaTitleBarHeightHint="35"
-        Icon="/Assets/LogoV3.ico"
+        Icon="/Assets/LogoV3_Mutable.ico"
         Title="Fortnite Porting">
     <Grid RowDefinitions="35, *" Margin="{Binding $parent[Window].OffScreenMargin}">
         <ExperimentalAcrylicBorder Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False" IsVisible="{Binding !Theme.UseMica}">
@@ -204,7 +204,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             
-            <ui:ImageIcon Grid.Column="0" Source="/Assets/LogoV3.png" Width="20" Height="20" RenderOptions.BitmapInterpolationMode="HighQuality"></ui:ImageIcon>
+            <ui:ImageIcon Grid.Column="0" Source="/Assets/LogoV3_Mutable.png" Width="20" Height="20" RenderOptions.BitmapInterpolationMode="HighQuality"></ui:ImageIcon>
 
             <TextBlock Grid.Column="2" Text="FortnitePorting" FontWeight="SemiBold" FontSize="16"
                        HorizontalAlignment="Left" VerticalAlignment="Center" />
