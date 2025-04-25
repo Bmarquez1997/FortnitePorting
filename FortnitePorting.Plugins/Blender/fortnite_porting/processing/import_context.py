@@ -1475,8 +1475,7 @@ class ImportContext:
                     
                     if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
                         for curve in curves:
-                            curve_name = get_curve_name(curve.get("Name"), is_anim_metahuman)
-                            if target_block := key_blocks.get(curve_name):
+                            if target_block := first(key_blocks, lambda block: block.name.lower() in curve.get("Name").lower()):
                                 for key in curve.get("Keys"):
                                     target_block.value = key.get("Value")
                                     target_block.keyframe_insert(data_path="value", frame=key.get("Time") * 30)
