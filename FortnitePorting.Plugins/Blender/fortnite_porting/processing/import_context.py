@@ -1472,9 +1472,7 @@ class ImportContext:
                     
                     if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
                         for curve in anim_data.curves:
-                            curve_name = curve.name.lower().replace("ctrl_expressions_", "")
-
-                            if target_block := first(key_blocks, lambda block: block.name.lower() == curve_name):
+                            if target_block := first(key_blocks, lambda block: block.name.lower() in curve.name.lower()):
                                 for key in curve.keys:
                                     target_block.value = key.value
                                     target_block.keyframe_insert(data_path="value", frame=key.frame)

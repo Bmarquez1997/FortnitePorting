@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Mutable;
+using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
@@ -159,7 +160,7 @@ public class MutableExport : BaseExport
         Objects.Add(exportMutable);
     }
     
-    private void ExportMutableImage(SKBitmap bitmap, UCustomizableObject customizableObject)
+    private void ExportMutableImage(CTexture bitmap, UCustomizableObject customizableObject)
     {
         if (bitmap == null) return;
         try
@@ -167,7 +168,7 @@ public class MutableExport : BaseExport
             var path = customizableObject.GetPathName().SubstringBeforeLast('.');
             
             var fixedPath = path.StartsWith("/") ? path[1..] : path;
-            var partName = Path.Combine(bitmap.ColorType.ToString(), bitmap.GetHashCode().ToString());
+            var partName = Path.Combine(bitmap.PixelFormat.ToString(), bitmap.GetHashCode().ToString());
             fixedPath = Path.Combine(fixedPath, "textures", partName);
             if (Exporter.Meta.CustomPath != null)
             {
@@ -179,7 +180,7 @@ public class MutableExport : BaseExport
             var finalPath = $"{directory}.png";
             Directory.CreateDirectory(Path.GetDirectoryName(finalPath));
             using var fileStream = File.OpenWrite($"{directory}.png");
-            bitmap?.Encode(SKEncodedImageFormat.Png, 100).SaveTo(fileStream);
+            fileStream.Write(bitmap?.Encode(ETextureFormat.Png, out _));
         }
         catch (Exception e)
         {

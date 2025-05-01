@@ -84,7 +84,7 @@ class UEModel:
             pos = ar.data.tell()
             if header_name == "VERTICES":
                 flattened = ar.read_float_vector(array_size * 3)
-                lod.vertices = (np.array(flattened) * self.options.scale_factor).reshape(array_size, 3)
+                lod.vertices = (np.array(flattened) * ar.metadata["scale"]).reshape(array_size, 3)
             elif header_name == "INDICES":
                 lod.indices = np.array(ar.read_int_vector(array_size), dtype=np.int32).reshape(array_size // 3, 3)
             elif header_name == "NORMALS":
