@@ -1350,9 +1350,7 @@ class ImportContext:
                     
                     def import_curve_mapping(curve_mapping):
                         for curve_mapping in curve_mapping:
-                            curve_name = curve_mapping.get("Name").lower().replace("ctrl_expressions_", "")
-                            
-                            if target_block := first(key_blocks, lambda block: block.name.lower() == curve_name):
+                            if target_block := first(key_blocks, lambda block: block.name.lower() in curve_mapping.get("Name").lower()):
                                 for frame in range(section_length_frames):
                                     value_stack = []
 
