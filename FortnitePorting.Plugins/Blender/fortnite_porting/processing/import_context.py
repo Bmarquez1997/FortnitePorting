@@ -1466,7 +1466,7 @@ class ImportContext:
                     is_skeleton_metahuman = any(skeleton.data.bones, lambda bone: bone.name == "FACIAL_C_FacialRoot")
                     
                     is_anim_legacy = any(anim_data.curves, lambda curve: curve.name in legacy_curve_names)
-                    is_anim_metahuman = any(anim_data.curves, lambda curve: curve.name == "is_3L")
+                    is_anim_metahuman = any(anim_data.curves, lambda curve: "is_3l" in curve.name.lower())
                     
                     if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
                         for curve in anim_data.curves:
