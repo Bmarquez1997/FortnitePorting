@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewModels="clr-namespace:FortnitePorting.ViewModels"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
-             xmlns:ext="clr-namespace:FortnitePorting.Shared.Extensions;assembly=FortnitePorting.Shared"
+             xmlns:ext="clr-namespace:FortnitePorting.Extensions;assembly=FortnitePorting"
              xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
              xmlns:versions="clr-namespace:CUE4Parse.UE4.Versions;assembly=CUE4Parse"
              xmlns:shared="clr-namespace:FortnitePorting.Shared;assembly=FortnitePorting.Shared"
@@ -16,6 +16,7 @@
              xmlns:ScottPlot="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
              xmlns:oxy="http://oxyplot.org/avalonia"
              xmlns:leaderboard="clr-namespace:FortnitePorting.Models.Leaderboard"
+             xmlns:services="clr-namespace:FortnitePorting.Services"
              d:DesignHeight="720" d:DesignWidth="1160"
              x:Class="FortnitePorting.Views.LeaderboardView"
              x:DataType="viewModels:LeaderboardViewModel">
@@ -50,15 +51,15 @@
                                                 <Ellipse Height="64" Width="64" 
                                                          StrokeThickness="5" Stroke="#00000000">
                                                     <Ellipse.Fill>
-                                                        <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding ProfilePicture, TargetNullValue='avares://FortnitePorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
+                                                        <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding UserInfo.AvatarUrl, TargetNullValue='avares://FortnitePorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
                                                     </Ellipse.Fill>
                                                 </Ellipse>
                                             </Grid>
                                             <Image Grid.Column="0" Source="{Binding MedalBitmap}" Width="36" Margin="38 38 0 0 "/>
                                             <TextBlock Grid.Column="2" Text="{Binding Ranking}" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                             <Grid Grid.Column="4" VerticalAlignment="Center" Margin="{ext:Space 1, 0, 0, 0}" RowDefinitions="* *">
-                                                <TextBlock Grid.Row="0" Text="{Binding GlobalName}" Classes="BodyStrongTextBlockStyle"/>
-                                                <TextBlock Grid.Row="1" Text="{Binding Username}" Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"/>
+                                                <TextBlock Grid.Row="0" Text="{Binding UserInfo.DisplayName}" Classes="BodyStrongTextBlockStyle"/>
+                                                <TextBlock Grid.Row="1" Text="{Binding UserInfo.UserName}" Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"/>
                                             </Grid>
                                             <TextBlock Grid.Column="6" Text="{Binding ExportCount, StringFormat=N0}" 
                                                        Classes="SubtitleTextBlockStyle" Margin="{ext:Space 0, 0, 1, 0}"
@@ -145,17 +146,17 @@
                                                 <Ellipse Height="64" Width="64" 
                                                          StrokeThickness="5" Stroke="#00000000">
                                                     <Ellipse.Fill>
-                                                        <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding ProfilePicture, TargetNullValue='avares://FortnitePorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
+                                                        <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding UserInfo.AvatarUrl, FallbackValue='https://fortniteporting.halfheart.dev/logo/default.png'}" Stretch="UniformToFill"/>
                                                     </Ellipse.Fill>
                                                 </Ellipse>
                                             </Grid>
                                             <Image Grid.Column="0" Source="{Binding MedalBitmap}" Width="36" Margin="38 38 0 0 "/>
                                             <TextBlock Grid.Column="2" Text="{Binding Ranking}" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                             <Grid Grid.Column="4" VerticalAlignment="Center" Margin="{ext:Space 1, 0, 0, 0}" RowDefinitions="* *">
-                                                <TextBlock Grid.Row="0" Text="{Binding GlobalName}" Classes="BodyStrongTextBlockStyle"/>
-                                                <TextBlock Grid.Row="1" Text="{Binding Username}" Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"/>
+                                                <TextBlock Grid.Row="0" Text="{Binding UserInfo.DisplayName, FallbackValue='Anonymous'}" Classes="BodyStrongTextBlockStyle"/>
+                                                <TextBlock Grid.Row="1" Text="{Binding UserInfo.UserName, FallbackValue='Not Signed In'}" Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"/>
                                             </Grid>
-                                            <TextBlock Grid.Column="6" Text="{Binding StreakCount, StringFormat='{}{0} Days'}" 
+                                            <TextBlock Grid.Column="6" Text="{Binding Streak, StringFormat='{}{0} Days'}" 
                                                        Classes="SubtitleTextBlockStyle" Margin="{ext:Space 0, 0, 1, 0}"
                                                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                         </Grid>
@@ -193,13 +194,12 @@
                     <Ellipse Height="104" Width="104" 
                              StrokeThickness="5" Stroke="#00000000">
                         <Ellipse.Fill>
-                            <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding OnlineRef.ProfilePictureURL, TargetNullValue='avares://FortnitePorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
+                            <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding SupaBase.UserInfo.AvatarUrl, TargetNullValue='avares://FortnitePorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
                         </Ellipse.Fill>
                     </Ellipse>
                 </Grid>
-                <Image Grid.Row="1" Source="{Binding MedalBitmap}" Width="48" Margin="64 64 0 0 "/>
-                <TextBlock Grid.Row="3" Text="{Binding OnlineRef.GlobalName, TargetNullValue='No User'}" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Center"/>
-                <TextBlock Grid.Row="4" Text="{Binding OnlineRef.UserName, TargetNullValue='Unauthenticated'}" Classes="BodyTextBlockStyle TextFillColorTertiaryBrush" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Row="3" Text="{Binding SupaBase.UserInfo.DisplayName, TargetNullValue='No User'}" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Row="4" Text="{Binding SupaBase.UserInfo.UserName, TargetNullValue='Not Signed In'}" Classes="BodyTextBlockStyle TextFillColorTertiaryBrush" HorizontalAlignment="Center"/>
                 <Separator Grid.Row="5" Margin="{ext:Space 1}"/>
                 
                 <Popup x:Name="ValuePopup" Grid.Row="6" Placement="Center">
@@ -266,7 +266,7 @@
                 <Separator Grid.Row="7" Margin="{ext:Space 1}"/>
                 
                 <TextBlock Grid.Row="8" Text="Current Streak" Classes="BodyStrongTextBlockStyle" HorizontalAlignment="Center"/>
-                <TextBlock Grid.Row="10" Text="{Binding StreaksResponse.CurrentStreak, StringFormat='{}{0} Days'}" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Row="10" Text="{Binding CurrentStreak, StringFormat='{}{0} Days'}" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Center"/>
             </Grid>
         </ui:FABorder>
     </Grid>

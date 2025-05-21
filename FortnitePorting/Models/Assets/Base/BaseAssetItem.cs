@@ -5,10 +5,11 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FortnitePorting.Application;
+using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets.Asset;
 using FortnitePorting.Models.Assets.Custom;
+using FortnitePorting.Models.Clipboard;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Models.Clipboard;
 using SkiaSharp;
 using SkiaExtensions = FortnitePorting.Extensions.SkiaExtensions;
 
@@ -16,17 +17,16 @@ namespace FortnitePorting.Models.Assets.Base;
 
 public abstract partial class BaseAssetItem : ObservableObject
 {
-    
     [ObservableProperty] private bool _isFavorite;
+
+    [ObservableProperty] private static float _displayWidth = 64;
+    [ObservableProperty] private static float _displayHeight = 80;
     
     public Guid Id { get; set; }
     public virtual BaseAssetItemCreationArgs CreationData { get; set; }
     
     public WriteableBitmap DisplayImage { get; set; }
     public WriteableBitmap IconDisplayImage { get; set; }
-    
-    public float DisplayWidth { get; set; } = 64;
-    public float DisplayHeight { get; set; } = 80;
 
     private SKColor InnerBackgroundColor { get; set; } = SKColor.Parse("#50C8FF");
     private SKColor OuterBackgroundColor { get; set; } = SKColor.Parse("#1B7BCF");
@@ -70,19 +70,19 @@ public abstract partial class BaseAssetItem : ObservableObject
     [RelayCommand]
     public virtual async Task CopyPath()
     {
-        AppWM.Message("Unsupported Asset", "Cannot copy the path of this type of asset.");
+        Info.Message("Unsupported Asset", "Cannot copy the path of this type of asset.");
     }
 
     [RelayCommand]
     public virtual async Task PreviewProperties()
     {
-        AppWM.Message("Unsupported Asset", "Cannot view the properties of this type of asset.");
+        Info.Message("Unsupported Asset", "Cannot view the properties of this type of asset.");
     }
     
     [RelayCommand]
     public virtual async Task SendToUser()
     {
-        AppWM.Message("Unsupported Asset", "Cannot send this type of asset to others.");
+        Info.Message("Unsupported Asset", "Cannot send this type of asset to others.");
     }
     
     [RelayCommand]
@@ -95,14 +95,20 @@ public abstract partial class BaseAssetItem : ObservableObject
     public virtual void Favorite()
     {
         var id = CreationData.ID;
-        if (AppSettings.Current.FavoriteAssets.Add(id))
+        if (AppSettings.Application.FavoriteAssets.Add(id))
         {
             IsFavorite = true;
         }
         else
         {
-            AppSettings.Current.FavoriteAssets.Remove(id);
+            AppSettings.Application.FavoriteAssets.Remove(id);
             IsFavorite = false;
         }
+    }
+
+    public static void SetScale(float scale)
+    {
+        _displayWidth = 64 * scale;
+        _displayHeight = 80 * scale;
     }
 }
