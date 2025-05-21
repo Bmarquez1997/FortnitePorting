@@ -1299,7 +1299,7 @@ class ImportContext:
         target_track = target_skeleton.animation_data.nla_tracks.new(prev=None)
         target_track.name = "Sections"
 
-        if active_mesh.data.shape_keys is not None:
+        if active_mesh is not None and active_mesh.data.shape_keys is not None:
             mesh_track = active_mesh.data.shape_keys.animation_data.nla_tracks.new(prev=None)
             mesh_track.name = "Sections"
 
@@ -1466,7 +1466,7 @@ class ImportContext:
                     is_skeleton_metahuman = any(skeleton.data.bones, lambda bone: bone.name == "FACIAL_C_FacialRoot")
                     
                     is_anim_legacy = any(anim_data.curves, lambda curve: curve.name in legacy_curve_names)
-                    is_anim_metahuman = any(anim_data.curves, lambda curve: "is_3l" in curve.name.lower())
+                    is_anim_metahuman = any(anim_data.curves, lambda curve: "ctrl_expressions_" in curve.name.lower())
                     
                     if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
                         for curve in anim_data.curves:
