@@ -191,6 +191,13 @@
                     <Button Grid.Column="4" Content="{material:MaterialIconExt Download}" Command="{Binding CurrentProfile.FetchMappings}"/>
                 </Grid>
             </ui:SettingsExpander>
+            
+            <ui:SettingsExpander Header="Post Exports" Description="Controls whether exports are sent for this profile.">
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding CurrentProfile.SendExports}"/>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+            
             <ui:SettingsExpander Header="On-Demand Texture Streaming" Description="Downloads high resolution cosmetic textures on-demand. Disable if you already have this package installed." IsEnabled="{Binding CurrentProfile.TextureStreamingEnabled}">
                 <ui:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding CurrentProfile.UseTextureStreaming}"/>

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using FortnitePorting.Exporting.Models;
 
 namespace FortnitePorting.Export.Models;
 

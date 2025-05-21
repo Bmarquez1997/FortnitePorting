@@ -163,7 +163,7 @@
                                IsVisible="{Binding !SelectedMap.SelectedMaps.Count}">
                     </TextBlock>
                     
-                    <Grid Grid.Row="4" RowDefinitions="* * *" IsVisible="{Binding ShowDebugInfo}">
+                    <Grid Grid.Row="4" RowDefinitions="* * *" IsVisible="{Binding AppSettings.Debug.ShowMapDebugInfo}">
                         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Offset X:" Classes="BodyTextBlockStyle" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{ext:Space 0, 0, 1, 0}"/>

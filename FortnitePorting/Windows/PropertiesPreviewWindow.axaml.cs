@@ -2,6 +2,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using AvaloniaEdit.Folding;
 using FortnitePorting.Application;
+using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
 using FortnitePorting.Models;
 using FortnitePorting.Services;
@@ -39,8 +40,8 @@ public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindo
     //TODO: How does this get applied?
     private void SetMarginColors(FoldingManager manager)
     {
-        var brush = new SolidColorBrush(AppSettings.Current.Theme.BackgroundColor);
-        var hover = new SolidColorBrush(AppSettings.Current.Theme.AccentColor);
+        var brush = new SolidColorBrush(AppSettings.Theme.BackgroundColor);
+        var hover = new SolidColorBrush(AppSettings.Theme.AccentColor);
         var margin = new FoldingMargin
         {
             FoldingManager = manager,

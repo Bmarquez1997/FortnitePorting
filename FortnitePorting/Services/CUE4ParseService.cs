@@ -17,6 +17,7 @@ using CUE4Parse.UE4.AssetRegistry.Objects;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Engine;
+using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.IO;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Pak;
@@ -33,6 +34,7 @@ using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Views;
+using FortnitePorting.Windows;
 using Serilog;
 using UE4Config.Parsing;
 using FGuid = CUE4Parse.UE4.Objects.Core.Misc.FGuid;
@@ -133,7 +135,7 @@ public partial class CUE4ParseService : ObservableObject, IService
         await LoadMappings();
         
 #if DEBUG
-        MaterialPreviewWindow.Preview(await Provider.LoadPackageObjectAsync<UMaterial>("Engine/Content/EngineMaterials/WorldGridMaterial"));
+        //MaterialPreviewWindow.Preview(await Provider.LoadPackageObjectAsync<UMaterial>("Engine/Content/EngineMaterials/WorldGridMaterial"));
 #endif
         
         await LoadAssetRegistries();

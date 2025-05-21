@@ -14,9 +14,11 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Export.Models;
+using FortnitePorting.Exporting.Models;
+using FortnitePorting.Exporting.Types;
 using FortnitePorting.Models.Assets;
+using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Models.Fortnite;
 using Serilog;
 using SkiaSharp;
 
@@ -90,7 +92,7 @@ public class MutableExport : BaseExport
 
         if (customizableObject == null) return;
         
-        var mutableExporter = new MutableExporter(customizableObject, metaData.Settings.CreateExportOptions(), CUE4ParseVM.Provider, filterSkeletonName);
+        var mutableExporter = new MutableExporter(customizableObject, metaData.Settings.CreateExportOptions(), UEParse.Provider, filterSkeletonName);
        
        foreach (var mutableObject in mutableExporter.Objects)
        {
@@ -199,7 +201,7 @@ public class MutableExport : BaseExport
                 return TryExportVehicleMaterial(assetCodename, materialSlot);
             case EExportType.VehicleWheel:
                 if (materialSlot.StartsWith("MI_") 
-                && CUE4ParseVM.Provider.TryLoadPackageObject($"/VehicleCosmetics/Wheels/{materialSlot.Replace("MI_Wheel_", "")}/Materials/{materialSlot}", out UMaterialInterface materialInterface))
+                && UEParse.Provider.TryLoadPackageObject($"/VehicleCosmetics/Wheels/{materialSlot.Replace("MI_Wheel_", "")}/Materials/{materialSlot}", out UMaterialInterface materialInterface))
                     return Exporter.Material(materialInterface, 0);
                 else
                     return TryExportMaterialDynamic(customizableObject, assetCodename, materialSlot);
@@ -221,37 +223,37 @@ public class MutableExport : BaseExport
             materialPath = "/VehicleCosmetics/SharedMaterials/MI_Glass_DarkTint";
         
         // TODO: proper COPrivate.Materials search
-        if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out UMaterialInterface materialInterface))
+        if (UEParse.Provider.TryLoadPackageObject(materialPath, out UMaterialInterface materialInterface))
             return Exporter.Material(materialInterface, 0);
 
         if (materialSlot.Equals("Lenses"))
         {
             materialPath = "/VehicleCosmetics/SharedMaterials/MI_Glass_Opaque";
-            if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out materialInterface))
+            if (UEParse.Provider.TryLoadPackageObject(materialPath, out materialInterface))
                 return Exporter.Material(materialInterface, 0);
         }
 
         if (materialSlot.Equals("Plastic"))
         {
             materialPath = $"/VehicleCosmetics/Bodies/{assetCodename}/Materials/MIC_{assetCodename}_Plastic_Base";
-            if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out materialInterface))
+            if (UEParse.Provider.TryLoadPackageObject(materialPath, out materialInterface))
                 return Exporter.Material(materialInterface, 0);
             
             materialPath = $"/VehicleCosmetics/Bodies/{assetCodename}/Materials/MI_{assetCodename}_Plastic_Base";
-            if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out materialInterface))
+            if (UEParse.Provider.TryLoadPackageObject(materialPath, out materialInterface))
                 return Exporter.Material(materialInterface, 0);
             
             materialPath = $"/VehicleCosmetics/Bodies/{assetCodename}/Materials/MI_{assetCodename}_Trim";
-            if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out materialInterface))
+            if (UEParse.Provider.TryLoadPackageObject(materialPath, out materialInterface))
                 return Exporter.Material(materialInterface, 0);
             
             materialPath = "/VehicleCosmetics/Content/Materials/MAT_Vehicle_Plastic_Base";
-            if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out materialInterface))
+            if (UEParse.Provider.TryLoadPackageObject(materialPath, out materialInterface))
                 return Exporter.Material(materialInterface, 0);
         }
         
         materialPath = $"/VehicleCosmetics/Bodies/{assetCodename}/Materials/MIC_{assetCodename}_{materialSlot}";
-        if (CUE4ParseVM.Provider.TryLoadPackageObject(materialPath, out materialInterface))
+        if (UEParse.Provider.TryLoadPackageObject(materialPath, out materialInterface))
             return Exporter.Material(materialInterface, 0);
         
         return null;

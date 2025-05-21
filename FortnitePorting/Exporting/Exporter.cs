@@ -16,6 +16,7 @@ using CUE4Parse.UE4.Objects.Engine.Animation;
 using CUE4Parse.Utils;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
+using FortnitePorting.Export.Types;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Exporting.Types;
 using FortnitePorting.Extensions;

@@ -1,27 +1,17 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
 using FortnitePorting.Models.API.Responses;
-using FortnitePorting.Models.Supabase;
 using FortnitePorting.Models.Supabase.Tables;
 using FortnitePorting.Models.Supabase.User;
-using FortnitePorting.Shared.Extensions;
 using Mapster;
-using Microsoft.VisualBasic.Logging;
 using Newtonsoft.Json;
-using OpenTK.Graphics.OpenGL;
 using Supabase;
 using Supabase.Gotrue;
 using Supabase.Realtime.PostgresChanges;
-using Tomlyn;
 using Client = Supabase.Client;
 using Log = Serilog.Log;
 
@@ -136,10 +126,13 @@ public partial class SupabaseService : ObservableObject, IService
 
     public async Task PostExports(IEnumerable<string> objectPaths)
     {
-        await Client.From<Export>().Insert(new Export
+        if (AppSettings.Installation.CurrentProfile.SendExports)
         {
-            ExportPaths = objectPaths
-        });
+            await Client.From<Models.Supabase.Tables.Export>().Insert(new Models.Supabase.Tables.Export
+            {
+                ExportPaths = objectPaths
+            });
+        }
     }
 
     private async Task OnLoggedIn()
