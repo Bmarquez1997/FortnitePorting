@@ -190,24 +190,25 @@ public partial class ExportContext
                 File.WriteAllBytes(path, exporter.PoseAsset.FileData);
                 break;
             }
+            case UTexture2DArray textureArray:
+            {
+                var textures = textureArray.DecodeTextureArray();
+                if (textures == null) break;
+                
+                for (var layerIndex = 0; layerIndex < textures.Length; layerIndex++)
+                {
+                    var textureBitmap = textures[layerIndex];
+                    var texturePath = path.Replace(".png", $"_{layerIndex}.png");
+                    ExportBitmap(textureBitmap, texturePath);
+                }
+                
+                break;
+            }
             case UTexture texture:
             {
-                if (texture is UTexture2DArray && texture.GetFirstMip() is { } mip)
-                {
-                    for (var layerIndex = 0; layerIndex < mip.SizeZ; layerIndex++)
-                    {
-                        var textureBitmap = texture.Decode(mip, zLayer: layerIndex);
-                        var texturePath = path.Replace(".png", $"_{layerIndex}.png");
-                        ExportBitmap(textureBitmap, texturePath);
-                    }
-                }
-                else
-                {
-                    var textureBitmap = texture.Decode();
-                    if (texture is UTextureCube) textureBitmap = textureBitmap?.ToPanorama();
-                    
-                    ExportBitmap(textureBitmap, path);
-                }
+                var textureBitmap = texture.Decode();
+                if (texture is UTextureCube) textureBitmap = textureBitmap?.ToPanorama();
+                ExportBitmap(textureBitmap, path);
 
                 break;
             }
