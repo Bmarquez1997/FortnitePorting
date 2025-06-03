@@ -3,12 +3,14 @@ using System.Linq;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
+using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
+using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.Utils;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Shared.Extensions;
@@ -90,12 +92,103 @@ public partial class ExportContext
         return exportPart;
     }
     
-    public ExportMesh? Mesh(USplineMeshComponent? mesh)
+    public ExportMesh? Skeleton(USkeleton? skeleton)
     {
-        return Mesh<ExportMesh>(mesh);
+        if (skeleton is null) return null;
+
+        var exportMesh = new ExportMesh
+        {
+            Name = skeleton.Name,
+            Path = Export(skeleton)
+        };
+
+        return exportMesh;
     }
     
-    public T? Mesh<T>(USplineMeshComponent? mesh) where T : ExportMesh, new()
+    
+    public ExportMesh? MeshComponent(UObject genericComponent)
+    {
+        return genericComponent switch
+        {
+            UInstancedStaticMeshComponent instancedStaticMeshComponent => MeshComponent(instancedStaticMeshComponent),
+            USplineMeshComponent splineMeshComponent => MeshComponent(splineMeshComponent),
+            UStaticMeshComponent staticMeshComponent => MeshComponent(staticMeshComponent),
+            USkeletalMeshComponent skeletalMeshComponent => MeshComponent(skeletalMeshComponent),
+            _ => null
+        };
+    }
+    
+    public ExportMesh? MeshComponent(USkeletalMeshComponent meshComponent)
+    {
+        var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
+        if (mesh is null) return null;
+
+        var exportMesh = Mesh(mesh);
+        if (exportMesh is null) return null;
+        
+        SetMeshComponentTransforms(exportMesh, meshComponent);
+        
+        var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
+        for (var idx = 0; idx < overrideMaterials.Length; idx++)
+        {
+            var material = overrideMaterials[idx];
+            if (material is null) continue;
+
+            exportMesh.OverrideMaterials.AddIfNotNull(Material(material, idx));
+        }
+
+        return exportMesh;
+    }
+    
+    public ExportMesh? MeshComponent(UStaticMeshComponent meshComponent)
+    {
+        var mesh = meshComponent.GetStaticMesh().Load<UStaticMesh>();
+        if (mesh is null) return null;
+
+        var exportMesh = meshComponent is USplineMeshComponent splineComp ? MeshComponent(splineComp) : Mesh(mesh);
+        if (exportMesh is null) return null;
+        
+        SetMeshComponentTransforms(exportMesh, meshComponent);
+        
+        var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
+        for (var idx = 0; idx < overrideMaterials.Length; idx++)
+        {
+            var material = overrideMaterials[idx];
+            if (material is null) continue;
+            
+            exportMesh.OverrideMaterials.AddIfNotNull(Material(material, idx));
+        }
+
+        if (meshComponent.LODData?.FirstOrDefault()?.OverrideVertexColors is { } overrideVertexColors)
+        {
+            exportMesh.OverrideVertexColors = overrideVertexColors.Data;
+        }
+
+        return exportMesh;
+    }
+
+    public ExportMesh? MeshComponent(UInstancedStaticMeshComponent instanceComponent)
+    {
+        var mesh = instanceComponent.GetOrDefault<UStaticMesh?>("StaticMesh");
+        var exportMesh = Mesh(mesh);
+        if (exportMesh is null) return null;
+        
+        SetMeshComponentTransforms(exportMesh, instanceComponent);
+                
+        foreach (var instance in instanceComponent.PerInstanceSMData ?? [])
+        {
+            exportMesh.Instances.Add(new ExportTransform(instance.TransformData));
+        }
+
+        return exportMesh;
+    }
+    
+    public ExportMesh? MeshComponent(USplineMeshComponent? mesh)
+    {
+        return MeshComponent<ExportMesh>(mesh);
+    }
+    
+    public T? MeshComponent<T>(USplineMeshComponent? mesh) where T : ExportMesh, new()
     {
         if (mesh is null) return null;
         if (!mesh.TryConvert(out var convertedMesh)) return null;
@@ -121,87 +214,21 @@ public partial class ExportContext
         return exportPart;
     }
     
-    public ExportMesh? Skeleton(USkeleton? skeleton)
+    public void SetMeshComponentTransforms(ExportMesh exportMesh, USceneComponent meshComponent)
     {
-        if (skeleton is null) return null;
-
-        var exportMesh = new ExportMesh
+        if (!exportMesh.IsEmpty)
+            // if (false)
         {
-            Name = skeleton.Name,
-            Path = Export(skeleton)
-        };
-
-        return exportMesh;
-    }
-    
-    
-    public ExportMesh? MeshComponent(UObject genericComponent)
-    {
-        return genericComponent switch
-        {
-            UInstancedStaticMeshComponent instancedStaticMeshComponent => MeshComponent(instancedStaticMeshComponent),
-            UStaticMeshComponent staticMeshComponent => MeshComponent(staticMeshComponent),
-            USkeletalMeshComponent skeletalMeshComponent => MeshComponent(skeletalMeshComponent),
-            _ => null
-        };
-    }
-    
-    public ExportMesh? MeshComponent(USkeletalMeshComponent meshComponent)
-    {
-        var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
-        if (mesh is null) return null;
-
-        var exportMesh = Mesh(mesh);
-        if (exportMesh is null) return null;
-        
-        var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
-        for (var idx = 0; idx < overrideMaterials.Length; idx++)
-        {
-            var material = overrideMaterials[idx];
-            if (material is null) continue;
-
-            exportMesh.OverrideMaterials.AddIfNotNull(Material(material, idx));
+            var meshComponentAbsTransform = meshComponent.GetAbsoluteTransform();
+            exportMesh.Location = meshComponentAbsTransform.Translation;
+            exportMesh.Rotation = meshComponentAbsTransform.Rotator();
+            exportMesh.Scale = meshComponentAbsTransform.Scale3D;
         }
-
-        return exportMesh;
-    }
-    
-    public ExportMesh? MeshComponent(UStaticMeshComponent meshComponent)
-    {
-        var mesh = meshComponent.GetStaticMesh().Load<UStaticMesh>();
-        if (mesh is null) return null;
-
-        var exportMesh = meshComponent is USplineMeshComponent splineComp ? Mesh(splineComp) : Mesh(mesh);
-        if (exportMesh is null) return null;
-        
-        var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
-        for (var idx = 0; idx < overrideMaterials.Length; idx++)
+        else
         {
-            var material = overrideMaterials[idx];
-            if (material is null) continue;
-            
-            exportMesh.OverrideMaterials.AddIfNotNull(Material(material, idx));
+            exportMesh.Location = meshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
+            exportMesh.Rotation = meshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
+            exportMesh.Scale = meshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
         }
-
-        if (meshComponent.LODData?.FirstOrDefault()?.OverrideVertexColors is { } overrideVertexColors)
-        {
-            exportMesh.OverrideVertexColors = overrideVertexColors.Data;
-        }
-
-        return exportMesh;
-    }
-
-    public ExportMesh? MeshComponent(UInstancedStaticMeshComponent instanceComponent)
-    {
-        var mesh = instanceComponent.GetOrDefault<UStaticMesh?>("StaticMesh");
-        var exportMesh = Mesh(mesh);
-        if (exportMesh is null) return null;
-                
-        foreach (var instance in instanceComponent.PerInstanceSMData ?? [])
-        {
-            exportMesh.Instances.Add(new ExportTransform(instance.TransformData));
-        }
-
-        return exportMesh;
     }
 }

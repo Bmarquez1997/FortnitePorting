@@ -30,6 +30,7 @@ default_mappings = MappingCollection(
         SlotMapping("PM_Diffuse", "Diffuse"),
         SlotMapping("___Diffuse", "Diffuse"),
         SlotMapping("BaseColorTexture", "Diffuse"),
+        SlotMapping("BaseColor Map", "Diffuse"),
 
         SlotMapping("Background Diffuse", alpha_slot="Background Diffuse Alpha"),
         SlotMapping("BG Diffuse Texture", "Background Diffuse", alpha_slot="Background Diffuse Alpha"),
@@ -65,6 +66,7 @@ default_mappings = MappingCollection(
         SlotMapping("PM_Normals", "Normals"),
         SlotMapping("_Normal", "Normals"),
         SlotMapping("NormalTexture", "Normals"),
+        SlotMapping("Normal Map", "Normals"),
         
         SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
         SlotMapping("AnisotropigTangentWeight", "AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
@@ -941,5 +943,34 @@ vehicle_wheel_mappings = MappingCollection(
         SlotMapping("UseRimEmissive"),
         SlotMapping("UseTireEmissive"),
         SlotMapping("Tire_EmissiveUseCustomColor"),
+    ]
+)
+
+dbd_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Diffuse", "Base Color"),
+        SlotMapping("BaseColor Map", "Base Color"),
+        SlotMapping("Main_BaseColor", "Base Color"),
+
+        SlotMapping("AORoughnessMetallic", "ORM Mask"),
+        SlotMapping("HRM\ORM Map", "ORM Mask"),
+        SlotMapping("Main_ORM", "ORM Mask"),
+        
+        SlotMapping("Normal Map", "Normal Map"),
+        SlotMapping("NormalMap Texture", "Normal Map"),
+        SlotMapping("Main_Normal", "Normal Map"),
+        
+        SlotMapping("Opacity Mask Texture", "Alpha"),
+    ],
+    vectors=[
+        SlotMapping("TrimColor"),
+        SlotMapping("Trim_EmissiveColor")
+    ],
+    scalars=[
+        SlotMapping("Trim_EmissiveBrightness")
+    ],
+    switches=[
+        SlotMapping("ApplyTrim"),
+        SlotMapping("ApplyTrimEmissive")
     ]
 )
