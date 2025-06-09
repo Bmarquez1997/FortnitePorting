@@ -77,6 +77,7 @@ default_mappings = MappingCollection(
         SlotMapping("PM_Emissive", "Emission"),
         SlotMapping("Visor_Emissive", "Emission"),
         SlotMapping("EmissiveDistanceField"),
+        SlotMapping("DF Texture", "EmissiveDistanceField"),
         SlotMapping("Visor_EmissiveDistanceField", "EmissiveDistanceField"),
         SlotMapping("Visor_EmissiveDistanceFieldStyle2", "EmissiveDistanceField"),
 
@@ -171,6 +172,7 @@ default_mappings = MappingCollection(
         SlotMapping("Emissive Color", "Emission Multiplier"),
         SlotMapping("EmissiveColor", "Emission Multiplier"),
         SlotMapping("Emissive", "Emission Multiplier"),
+        SlotMapping("TN_Emissive Color", "Emission Multiplier"),
 
         SlotMapping("ThinFilm_Channel"),
         SlotMapping("ThinFilmMaskChannel", "ThinFilm_Channel"),
