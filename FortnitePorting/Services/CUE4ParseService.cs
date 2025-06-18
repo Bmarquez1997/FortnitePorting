@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Textures.BC;
+using CUE4Parse_Conversion.UEFormat.Structs;
 using CUE4Parse.Compression;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.MappingsProvider;
@@ -19,7 +21,10 @@ using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.IO;
+using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
+using CUE4Parse.UE4.Objects.GameplayTags;
+using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.UE4.Pak;
 using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
@@ -32,6 +37,7 @@ using FortnitePorting.Extensions;
 using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
+using FortnitePorting.Rendering;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Views;
 using FortnitePorting.Windows;
@@ -57,6 +63,7 @@ public partial class CUE4ParseService : ObservableObject, IService
     public readonly Dictionary<int, FVector> BeanstalkAtlasTextureUVs = [];
     public readonly List<UAnimMontage> MaleLobbyMontages = [];
     public readonly List<UAnimMontage> FemaleLobbyMontages = [];
+    public readonly Dictionary<string, string> SetNames = [];
 
     private OnlineResponse _onlineStatus;
     
@@ -100,7 +107,7 @@ public partial class CUE4ParseService : ObservableObject, IService
 		ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting"));
         ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting.Shared"));
 
-        Provider.LoadExtraDirectories = AppSettings.Installation.CurrentProfile.LoadCreativeMaps;
+        Provider.LoadExtraDirectories = AppSettings.Installation.CurrentProfile.LoadCreativeMaps && SupaBase.Permissions.CanExportUEFN;
         
         _onlineStatus = await Api.FortnitePorting.Online() ?? new OnlineResponse();
         
@@ -142,7 +149,7 @@ public partial class CUE4ParseService : ObservableObject, IService
 
         UpdateStatus("Loading Application Assets");
         await LoadApplicationAssets();
-
+        
         UpdateStatus(string.Empty);
 
         FinishedLoading = true;
@@ -222,7 +229,7 @@ public partial class CUE4ParseService : ObservableObject, IService
 
                 var options = new ManifestParseOptions
                 {
-                    ChunkBaseUrl = "http://epicgames-download1.akamaized.net/Builds/Fortnite/CloudDir/",
+                    ChunkBaseUrl = "http://download.epicgames.com/Builds/Fortnite/CloudDir/",
                     ChunkCacheDirectory = CacheFolder.FullName,
                     ManifestCacheDirectory = CacheFolder.FullName,
                     Decompressor = ManifestZlibStreamDecompressor.Decompress,
@@ -522,6 +529,16 @@ public partial class CUE4ParseService : ObservableObject, IService
                     
                     BeanstalkAtlasTextureUVs[index] = property.Tag.GetValue<FVector>();
                 }
+            }
+        }
+
+        if (await Provider.SafeLoadPackageObjectAsync(
+                "FortniteGame/Content/Athena/Items/Cosmetics/Metadata/CosmeticSets") is UDataTable cosmeticSetsTable)
+        {
+            foreach (var (tagName, data) in cosmeticSetsTable.RowMap)
+            {
+                if (data.GetOrDefault<FText?>("DisplayName") is not { } displayName) continue;
+                SetNames[tagName.Text] = displayName.Text;
             }
         }
         

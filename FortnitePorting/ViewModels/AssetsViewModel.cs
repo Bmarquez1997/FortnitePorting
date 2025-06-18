@@ -68,11 +68,18 @@ public partial class AssetsViewModel() : ViewModelBase
                 });
             }
         });
+        
+        await AssetLoader.Load(EExportType.Outfit);
     }
 
     public override async Task OnViewOpened()
     {
-        await AssetLoader.Load(EExportType.Outfit);
+    }
+
+    [RelayCommand]
+    public async Task SetExportLocation(EExportLocation location)
+    {
+        ExportLocation = location;
     }
 
     [RelayCommand]

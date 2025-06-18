@@ -59,8 +59,8 @@ public static class Exporter
                 if (await Api.FortnitePortingServer.PingAsync(serverType) is false)
                 {
                     var serverName = serverType.GetDescription();
-                    Info.Message($"{serverName} Server", $"The {serverName} Plugin for Fortnite Porting is not currently installed, running, or is busy.", 
-                        severity: InfoBarSeverity.Error, false,
+                    Info.Message($"{serverName} Server", $"The {serverName} Plugin for Fortnite Porting is not currently installed, enabled, or running.", 
+                        severity: InfoBarSeverity.Error, closeTime: 3.0f,
                         useButton: true, buttonTitle: "Install Plugin", buttonCommand: () =>
                         {
                             Navigation.App.Open<PluginView>();
@@ -193,7 +193,7 @@ public static class Exporter
     private static BaseExport CreateExport(string name, UObject asset, EExportType exportType, BaseStyleData[] styles, ExportDataMeta metaData)
     {
         var path = asset.GetPathName();
-        Info.Message($"Exporting {name}", $"Exporting: {asset.Name}", id: path, autoClose: false);
+        Info.Message($"Exporter", asset.Name, id: path, autoClose: false);
 
         ExportProgressUpdate updateDelegate = (name, current, total) =>
         {

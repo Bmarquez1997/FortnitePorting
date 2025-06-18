@@ -206,7 +206,14 @@ public partial class ExportContext
             case UTexture texture:
             {
                 var textureBitmap = texture.Decode();
-                if (texture is UTextureCube) textureBitmap = textureBitmap?.ToPanorama();
+                if (texture is UTextureCube)
+                {
+                    textureBitmap = textureBitmap?.ToPanorama();
+                    
+                    using var fileStream = File.OpenWrite(Path.ChangeExtension(path, "hdr")); 
+                    fileStream.Write(textureBitmap!.ToHdrBitmap());
+                    break;
+                }
                 ExportBitmap(textureBitmap, path);
 
                 break;
@@ -285,7 +292,7 @@ public partial class ExportContext
         var format = Meta.Settings.ImageFormat switch
         {
             EImageFormat.PNG => ETextureFormat.Png,
-            EImageFormat.TGA => ETextureFormat.Tga
+            EImageFormat.TGA => ETextureFormat.Tga,
         };
         
         fileStream.Write(bitmap?.Encode(format, out _));

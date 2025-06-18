@@ -35,9 +35,4 @@ public partial class AppWindow : WindowBase<AppWindowModel>
     {
         await WindowModel.CheckForUpdate();
     }
-
-    private void OnPointerPressedUpperBar(object? sender, PointerPressedEventArgs e)
-    {
-        BeginMoveDrag(e);
-    }
 }

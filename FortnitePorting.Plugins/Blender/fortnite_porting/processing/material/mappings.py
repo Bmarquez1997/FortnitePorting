@@ -72,6 +72,7 @@ default_mappings = MappingCollection(
         SlotMapping("AnisotropigTangentWeight", "AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
 
         SlotMapping("Emissive", "Emission"),
+        SlotMapping("EmissiveColor", "Emission"),
         SlotMapping("EmissiveTexture", "Emission"),
         SlotMapping("L1_Emissive", "Emission", coords="UV2"),
         SlotMapping("PM_Emissive", "Emission"),
@@ -162,6 +163,7 @@ default_mappings = MappingCollection(
         
     ],
     vectors=[
+        SlotMapping("TintColor", "Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
         
         SlotMapping("Skin Boost Color And Exponent", "Skin Color", alpha_slot="Skin Boost"),
