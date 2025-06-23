@@ -130,12 +130,19 @@ public partial class MapViewModel : ViewModelBase
             "/BlastBerryMapUI/MiniMap/MMap_DasBerry_Mask",
             0.0235f, -20, 210, 153, 12800, true
         ),
+        // new(
+        //     "ForbiddenBlastBerry",
+        //     "/f4032749-42c4-7fe9-7fa2-c78076f34f54/DashBerry",
+        //     "/BlastBerryMapUI/MiniMap/Discovered_ForbiddenBlastBerry",
+        //     "/BlastBerryMapUI/MiniMap/T_ForbiddenBlastBerry_Minimap_Mask",
+        //     0.0235f, -20, 210, 153, 12800, true
+        // ),
         new(
-            "DashBerry",
-            "/f4032749-42c4-7fe9-7fa2-c78076f34f54/DashBerry",
-            "/BlastBerryMapUI/MiniMap/Discovered_DashBerry",
-            "/BlastBerryMapUI/MiniMap/MMap_DasBerry_Mask",
-            0.0235f, -20, 210, 153, 12800, true
+            "TimberStake",
+            "/TimberStakeMapContent/Maps/POI/FoodFight/TS_FoodFight_TestGYM_01",
+            "/BlastBerryMapUI/MiniMap/Discovered_TimberStake",
+            "/BlastBerryMapUI/MiniMap/MMap_TimberStake_Mask",
+            0.0175f, 540, -310, 115, 12800, true
         ),
         
         // ballistic
