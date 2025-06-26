@@ -10,17 +10,16 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:objects="clr-namespace:CUE4Parse.UE4.Objects.UObject;assembly=CUE4Parse"
         xmlns:controls="clr-namespace:FortnitePorting.Controls"
-        xmlns:material="clr-namespace:FortnitePorting.Models.Nodes.Material"
         xmlns:nodes="clr-namespace:FortnitePorting.Models.Nodes"
-        xmlns:fortnitePorting="clr-namespace:FortnitePorting"
-        x:Class="FortnitePorting.Windows.MaterialPreviewWindow"
-        x:DataType="windowModels:MaterialPreviewWindowModel"
+        xmlns:soundCue="clr-namespace:FortnitePorting.Models.Nodes.SoundCue"
+        x:Class="FortnitePorting.Windows.SoundCuePreviewWindow"
+        x:DataType="windowModels:SoundCuePreviewWindowModel"
         Width="1280" Height="720" RequestedThemeVariant="Dark" FontFamily="Segoe UI" 
         TransparencyLevelHint="{Binding Settings.Theme.TransparencyHints}" Background="#DB1C1C26"
         ExtendClientAreaToDecorationsHint="True" ExtendClientAreaChromeHints="NoChrome"
         WindowStartupLocation="CenterScreen" ClosingBehavior="OwnerAndChildWindows" ExtendClientAreaTitleBarHeightHint="35"
-        Icon="/Assets/LogoV3_Mutable.ico"
-        Title="Material Viewer">
+        Icon="/Assets/LogoRebrand.ico"
+        Title="Sound Cue Viewer">
     <Window.Resources>
         <GeometryDrawing x:Key="SmallGridGeometry"
                          Geometry="M0,0 L0,1 0.03,1 0.03,0.03 1,0.03 1,0 Z"
@@ -58,7 +57,7 @@
                               Width="20" Height="20" 
                               RenderOptions.BitmapInterpolationMode="HighQuality" RenderOptions.EdgeMode="Antialias"/>
 
-                <TextBlock Grid.Column="2" Text="Material Viewer" FontWeight="SemiBold" FontSize="16"
+                <TextBlock Grid.Column="2" Text="Sound Cue Viewer" FontWeight="SemiBold" FontSize="16"
                            HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
             
@@ -83,7 +82,7 @@
                         TabItems="{Binding Trees}" TabWidthMode="Compact"
                         SelectedItem="{Binding SelectedTree, Mode=TwoWay}">
                 <ui:TabView.TabItemTemplate>
-                    <DataTemplate x:DataType="material:MaterialNodeTree">
+                    <DataTemplate x:DataType="soundCue:SoundCueNodeTree">
                         <TextBlock Text="{Binding TreeName}"/>
                     </DataTemplate>
                 </ui:TabView.TabItemTemplate>
@@ -144,13 +143,13 @@
                                             <ContentControl.DataTemplates>
                                                 <DataTemplate DataType="objects:FPackageIndex">
                                                     <Button Content="{avalonia:MaterialIconExt Folder}" ToolTip.Tip="Navigate To"
-                                                            Command="{Binding $parent[windows:MaterialPreviewWindow].WindowModel.NavigateTo}"
+                                                            Command="{Binding $parent[windows:SoundCuePreviewWindow].WindowModel.NavigateTo}"
                                                             CommandParameter="{Binding}"/>
                                                 </DataTemplate>
                                                 
                                                 <DataTemplate DataType="objects:FSoftObjectPath">
                                                     <Button Content="{avalonia:MaterialIconExt Folder}" ToolTip.Tip="Navigate To"
-                                                            Command="{Binding $parent[windows:MaterialPreviewWindow].WindowModel.NavigateToPath}"
+                                                            Command="{Binding $parent[windows:SoundCuePreviewWindow].WindowModel.NavigateToPath}"
                                                             CommandParameter="{Binding}"/>
                                                 </DataTemplate>
                                                 
@@ -222,8 +221,8 @@
                                              ItemsSource="{Binding NodeCache.Items}"
                                              Connections="{Binding Connections}"
                                              SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
-                                             CanSelectMultipleItems="False" Background="Transparent"
-                                             ViewportZoom="1" MaxViewportZoom="3"
+                                             CanSelectMultipleItems="False"
+                                             Background="Transparent" ViewportZoom="1" MaxViewportZoom="3"
                                              KeyDown="OnEditorKeyDown">
                             <nodify:NodifyEditor.ItemTemplate>
                                 <DataTemplate>
@@ -248,7 +247,7 @@
                                                </nodify:GroupingNode>
                                            </DataTemplate>
                                            
-                                           <DataTemplate DataType="material:MaterialNode">
+                                           <DataTemplate DataType="nodes:Node">
                                                <nodify:Node Header="{Binding DisplayName}" 
                                                             Input="{Binding Inputs}"
                                                             Output="{Binding Outputs}"

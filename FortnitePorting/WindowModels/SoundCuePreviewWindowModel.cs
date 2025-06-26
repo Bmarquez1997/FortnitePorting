@@ -13,8 +13,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Material;
-using CUE4Parse.UE4.Assets.Exports.Material.Editor;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
@@ -26,9 +24,8 @@ using FortnitePorting.Application;
 using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.Leaderboard;
-using FortnitePorting.Models.Nodes.Material;
+using FortnitePorting.Models.Nodes.SoundCue;
 using FortnitePorting.Models.Unreal;
-using FortnitePorting.Models.Unreal.Material;
 using FortnitePorting.Rendering;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
@@ -44,15 +41,14 @@ using Orientation = Avalonia.Layout.Orientation;
 namespace FortnitePorting.WindowModels;
 
 [Transient]
-public partial class MaterialPreviewWindowModel(SettingsService settings) : WindowModelBase
+public partial class SoundCuePreviewWindowModel(SettingsService settings) : WindowModelBase
 {
     [ObservableProperty] private SettingsService _settings = settings;
     
-    [ObservableProperty] private ObservableCollection<MaterialNodeTree> _trees = [];
-    [ObservableProperty] private MaterialNodeTree? _selectedTree;
+    [ObservableProperty] private ObservableCollection<SoundCueNodeTree> _trees = [];
+    [ObservableProperty] private SoundCueNodeTree? _selectedTree;
     
     [ObservableProperty] private uint _gridSpacing = 25;
-    
     
     [ObservableProperty] private Brush _backgroundBrush = new LinearGradientBrush
     {
@@ -73,22 +69,22 @@ public partial class MaterialPreviewWindowModel(SettingsService settings) : Wind
 
         await FilesVM.PreviewAsset(asset);
     }
-    
+
     [RelayCommand]
-    public async Task NavigateToPath(FSoftObjectPath path)
+    public async Task NavigateTo(FPackageIndex index)
     {
-        var asset = await path.LoadOrDefaultAsync<UObject>();
+        var asset = await index.LoadOrDefaultAsync<UObject>();
         if (asset is null) return;
 
         FilesVM.FileViewJumpTo(UEParse.Provider.FixPath(asset.GetPathName().SubstringBefore(".")));
         Navigation.App.Open<FilesView>();
         AppWM.Window.BringToTop();
     }
-
+    
     [RelayCommand]
-    public async Task NavigateTo(FPackageIndex index)
+    public async Task NavigateToPath(FSoftObjectPath path)
     {
-        var asset = await index.LoadOrDefaultAsync<UObject>();
+        var asset = await path.LoadOrDefaultAsync<UObject>();
         if (asset is null) return;
 
         FilesVM.FileViewJumpTo(UEParse.Provider.FixPath(asset.GetPathName().SubstringBefore(".")));
@@ -104,23 +100,23 @@ public partial class MaterialPreviewWindowModel(SettingsService settings) : Wind
         }
         else
         {
-            var data = new MaterialNodeTree();
+            var data = new SoundCueNodeTree();
             data.Load(obj);
             Trees.Add(data);
             SelectedTree = data;
         }
     }
     
-    public void Load(MaterialNodeTree nodeTree)
+    public void Load(SoundCueNodeTree soundCueData)
     {
-        if (Trees.FirstOrDefault(tree => tree.TreeName.Equals(nodeTree.TreeName)) is { } existingTree)
+        if (Trees.FirstOrDefault(data => data.TreeName.Equals(soundCueData.TreeName)) is { } existingData)
         {
-            SelectedTree = existingTree;
+            SelectedTree = existingData;
         }
         else
         {
-            Trees.Add(nodeTree);
-            SelectedTree = nodeTree;
+            Trees.Add(soundCueData);
+            SelectedTree = soundCueData;
         }
     }
 }

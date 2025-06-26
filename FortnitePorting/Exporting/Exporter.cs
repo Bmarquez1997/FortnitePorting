@@ -52,7 +52,7 @@ public static class Exporter
             if (serverType is EExportServerType.None)
             {
                 var exports = exportFunction.Invoke();
-                foreach (var export in exports) export.WaitForExports();
+                foreach (var export in exports) await export.WaitForExports();
             }
             else
             {
@@ -70,7 +70,7 @@ public static class Exporter
                 }
 
                 var exports = exportFunction().ToArray();
-                foreach (var export in exports) export.WaitForExports();
+                foreach (var export in exports) await export.WaitForExports();
             
                 var exportData = new ExportData
                 {
@@ -168,6 +168,7 @@ public static class Exporter
                 if (loader.ClassNames.Contains(asset.ExportType))
                 {
                     exportType = loader.Type;
+                    break;
                 }
             }
         }
@@ -221,7 +222,6 @@ public static class Exporter
         Info.CloseMessage(id: path);
         metaData.UpdateProgress -= updateDelegate;
 
-        GC.Collect();
         return export;
     }
 }

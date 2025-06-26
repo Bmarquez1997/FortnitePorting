@@ -1,46 +1,22 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
-using Avalonia.Data.Converters;
 using Avalonia.Input;
-using Avalonia.Markup.Xaml;
-using Avalonia.Media;
-using Avalonia.Platform;
-using Avalonia.Threading;
-using CUE4Parse_Conversion.Materials;
 using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Material;
-using CUE4Parse.UE4.Assets.Exports.StaticMesh;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using CUE4Parse.UE4.Objects.Core.Math;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.Nodes;
-using FortnitePorting.Models.Nodes.Material;
-using FortnitePorting.Models.Unreal.Material;
-using FortnitePorting.Services;
-using FortnitePorting.Shared.Extensions;
-using FortnitePorting.ViewModels;
+using FortnitePorting.Models.Nodes.SoundCue;
 using FortnitePorting.WindowModels;
-using Nodify;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using Serilog;
 
 namespace FortnitePorting.Windows;
 
-public partial class MaterialPreviewWindow : WindowBase<MaterialPreviewWindowModel>
+public partial class SoundCuePreviewWindow : WindowBase<SoundCuePreviewWindowModel>
 {
-    public static MaterialPreviewWindow? Instance;
+    public static SoundCuePreviewWindow? Instance;
     
-    public MaterialPreviewWindow()
+    public SoundCuePreviewWindow()
     {
         InitializeComponent();
         DataContext = WindowModel;
@@ -51,7 +27,7 @@ public partial class MaterialPreviewWindow : WindowBase<MaterialPreviewWindowMod
     {
         if (Instance is null)
         {
-            Instance = new MaterialPreviewWindow();
+            Instance = new SoundCuePreviewWindow();
             Instance.Show();
             Instance.BringToTop();
         }
@@ -77,31 +53,8 @@ public partial class MaterialPreviewWindow : WindowBase<MaterialPreviewWindowMod
     {
         if (e.ClickCount != 2) return;
         if (sender is not Control control) return;
-        if (control.DataContext is not MaterialNode node) return;
-
-        if (node.Package is not null && !node.Package.IsNull)
-        {
-            var package = node.Package.Load();
-            switch (package)
-            {
-                case UMaterial material:
-                {
-                    Preview(material);
-                    break;
-                }
-                case UMaterialFunction materialFunction:
-                {
-                    Preview(materialFunction);
-                    break;
-                }
-            }
-        }
-
-        if (node.Subgraph is not null)
-        {
-            WindowModel.Load(node.Subgraph as MaterialNodeTree);
-        }
-
+        if (control.DataContext is not Node node) return;
+        
         if (node.LinkedNode is not null)
         {
             Editor.ViewportZoom = 1;
@@ -112,7 +65,7 @@ public partial class MaterialPreviewWindow : WindowBase<MaterialPreviewWindowMod
 
     private void OnTabClosed(TabView sender, TabViewTabCloseRequestedEventArgs args)
     {
-        if (args.Item is not MaterialNodeTree tree) return;
+        if (args.Item is not SoundCueNodeTree tree) return;
 
         WindowModel.Trees.Remove(tree);
 
@@ -149,7 +102,7 @@ public partial class MaterialPreviewWindow : WindowBase<MaterialPreviewWindowMod
         if (sender is not ListBox listBox) return;
         if (listBox.SelectedItem is not BaseNode selectedNode) return;
 
-        WindowModel.SelectedTree.SelectedNode = selectedNode;
+        WindowModel.SelectedTree!.SelectedNode = selectedNode;
         Editor.ViewportLocation = new Point(selectedNode.Location.X - Editor.ViewportSize.Width / 2, selectedNode.Location.Y - Editor.ViewportSize.Height / 2);
     }
 }
