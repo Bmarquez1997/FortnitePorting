@@ -242,7 +242,7 @@ public partial class MapViewModel : ViewModelBase
     {
         if (SelectedMap is null) return;
         
-        DiscordService.Update($"Browsing Map: \"{SelectedMap.Info.Name}\"", "Map");
+        Discord.Update($"Browsing Map: \"{SelectedMap.Info.Name}\"", "Map");
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -255,7 +255,7 @@ public partial class MapViewModel : ViewModelBase
             {
                 GridsControl?.InvalidateVisual();
                 
-                DiscordService.Update($"Browsing Map: \"{SelectedMap.Info.Name}\"", "Map");
+                Discord.Update($"Browsing Map: \"{SelectedMap.Info.Name}\"", "Map");
                 break;
             }
         }
