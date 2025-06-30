@@ -122,7 +122,13 @@ public partial class BlenderPluginViewModel : ViewModelBase
                 continue;
             }
 
-            if (currentVersion == installation.ExtensionVersion)
+            var forceSync = false;
+            
+#if DEBUG
+            forceSync = true;
+#endif
+            
+            if (currentVersion == installation.ExtensionVersion && !forceSync)
             {
                 if (verbose)
                 {
