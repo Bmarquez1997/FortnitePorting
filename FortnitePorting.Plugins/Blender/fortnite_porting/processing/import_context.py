@@ -1139,6 +1139,28 @@ class ImportContext:
 
                     if diffuse_node := get_node(composite_node, "Diffuse"):
                         nodes.active = diffuse_node
+                        
+                if "M_Detail_Texturing_Parent_2025" in base_material_path:
+                    detail_node = nodes.new(type="ShaderNodeGroup")
+                    detail_node.node_tree = bpy.data.node_groups.get("FPv3 Detail")
+                    detail_node.location = -600, 0
+                    setup_params(detail_mappings, detail_node, False)
+
+                    pre_detail_node = nodes.new(type="ShaderNodeGroup")
+                    pre_detail_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Detail")
+                    pre_detail_node.location = -1150, -350
+                    setup_params(detail_mappings, pre_detail_node, False)
+                    
+                    connect_texture_uvs(detail_node, "Detail Diffuse", pre_detail_node.outputs[0])
+                    connect_texture_uvs(detail_node, "Detail Normal", pre_detail_node.outputs[0])
+                    connect_texture_uvs(detail_node, "Detail SRM", pre_detail_node.outputs[0])
+
+                    move_texture_node(detail_node, "Diffuse")
+                    move_texture_node(detail_node, "Normals")
+                    move_texture_node(detail_node, "SpecularMasks")
+
+                    if diffuse_node := get_node(detail_node, "Diffuse"):
+                        nodes.active = diffuse_node
 
             case "FPv3 Glass":
                 mask_slot = shader_node.inputs["Mask"]
