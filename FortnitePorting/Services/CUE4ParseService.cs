@@ -111,6 +111,9 @@ public partial class CUE4ParseService : ObservableObject, IService
         
         _onlineStatus = await Api.FortnitePorting.Online() ?? new OnlineResponse();
         
+        // TODO: Control with a per-installation setting?
+        Provider.ReadNaniteData = true;
+        
         await CheckBlackHole();
         await CleanupCache();
 

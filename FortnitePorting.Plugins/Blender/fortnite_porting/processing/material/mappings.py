@@ -414,6 +414,7 @@ foliage_mappings = MappingCollection(
     textures=[
         SlotMapping("Diffuse"),
         SlotMapping("Normals"),
+        SlotMapping("NormalMap", "Normals"),
         SlotMapping("MaskTexture"),
     ],
     scalars=[
