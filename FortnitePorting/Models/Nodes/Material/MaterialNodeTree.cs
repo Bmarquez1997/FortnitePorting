@@ -255,6 +255,11 @@ public class MaterialNodeTree : NodeTree
 
             void CollectSubgraphNodes(BaseNode current)
             {
+                if (current == null)
+                {
+                    Log.Warning("Null BaseNode");
+                    return;
+                }
                 subgraphNodes.Add(current);
                 
                 var childConnections = Connections

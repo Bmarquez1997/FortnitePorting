@@ -139,10 +139,10 @@ public partial class MapViewModel : ViewModelBase
         // ),
         new(
             "TimberStake",
-            "/TimberStakeMapContent/Maps/POI/FoodFight/TS_FoodFight_TestGYM_01",
+            "/4c3853ea-4fd0-364f-c3f9-dabd19e43a23/TimberStake",
             "/BlastBerryMapUI/MiniMap/Discovered_TimberStake",
             "/BlastBerryMapUI/MiniMap/MMap_TimberStake_Mask",
-            0.0175f, 540, -310, 115, 12800, true
+            0.027f, 40, 15, 175, 12800, false, false
         ),
         
         // ballistic
