@@ -144,6 +144,12 @@ public partial class ExportContext
                 {
                     File.WriteAllBytes(path, mesh.FileData);
                 }
+
+                foreach (var dna in exporter.DNAAssets)
+                {
+                    dna.TryWriteToDir(new DirectoryInfo(Meta.CustomPath ?? Meta.AssetsRoot), out var label, out var savedFilePath);
+                    Log.Information($"{label} : {savedFilePath}");
+                }
                 break;
             }
             case UStaticMesh staticMesh:
