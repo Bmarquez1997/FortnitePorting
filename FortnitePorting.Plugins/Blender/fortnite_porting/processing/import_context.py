@@ -1425,7 +1425,7 @@ class ImportContext:
                     
                     def import_curve_mapping(curve_mapping):
                         for curve_mapping in curve_mapping:
-                            if target_block := first(key_blocks, lambda block: block.name.lower() in curve_mapping.get("Name").lower()):
+                            if target_block := best(key_blocks, lambda block: block.name.lower(), curve_mapping.get("Name").lower()):
                                 for frame in range(section_length_frames):
                                     value_stack = []
 
@@ -1463,8 +1463,7 @@ class ImportContext:
 
                                             case EOpElementType.NAME:
                                                 sub_curve_name = str(element_value)
-                                                target_curve = first(anim_data.curves, lambda curve: curve.name.lower().replace("ctrl_expressions_", "") == sub_curve_name.lower())
-                                                if target_curve:
+                                                if target_curve := best(anim_data.curves, lambda curve: curve.name.lower(), sub_curve_name.lower()):
                                                     target_value = interpolate_keyframes(target_curve.keys, frame, fps=anim_data.metadata.frames_per_second)
                                                     value_stack.append(target_value)
                                                 else:
@@ -1545,7 +1544,7 @@ class ImportContext:
                     
                     if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
                         for curve in anim_data.curves:
-                            if target_block := first(key_blocks, lambda block: block.name.lower() in curve.name.lower()):
+                            if target_block := best(key_blocks, lambda block: block.name.lower(), curve.name.lower()):
                                 for key in curve.keys:
                                     target_block.value = key.value
                                     target_block.keyframe_insert(data_path="value", frame=key.frame)
