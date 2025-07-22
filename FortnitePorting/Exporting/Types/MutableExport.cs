@@ -182,7 +182,7 @@ public class MutableExport : BaseExport
             var finalPath = $"{directory}.png";
             Directory.CreateDirectory(Path.GetDirectoryName(finalPath));
             using var fileStream = File.OpenWrite($"{directory}.png");
-            fileStream.Write(bitmap?.Encode(ETextureFormat.Png, out _));
+            fileStream.Write(bitmap?.Encode(ETextureFormat.Png, false, out _));
         }
         catch (Exception e)
         {
