@@ -23,7 +23,7 @@ https://raw.githubusercontent.com/Bmarquez1997/FortnitePorting/refs/heads/v3-mut
 To build FortnitePorting from source, first clone the repository and all of its submodules.
 
 ```
-git clone -b v3 https://github.com/h4lfheart/FortnitePorting --recursive
+git clone https://github.com/h4lfheart/FortnitePorting --recursive
 ```
 
 Then open the project directory in a terminal window and publish
