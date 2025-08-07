@@ -86,7 +86,7 @@ public partial class CUE4ParseService : ObservableObject, IService
         "FortniteGame/Content/Animation/Game/MainPlayer/Menu/BR/Female_Commando_Idle_03_Montage"
     ];
 
-    private const EGame LATEST_GAME_VERSION = EGame.GAME_UE5_6;
+    private const EGame LATEST_GAME_VERSION = EGame.GAME_UE5_LATEST;
     
     public static readonly DirectoryInfo CacheFolder = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".cache"));
 

@@ -15,7 +15,6 @@ using CUE4Parse.Utils;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models.Fortnite;
-using FortnitePorting.Models.Unreal;
 using FortnitePorting.Shared.Extensions;
 using Serilog;
 
@@ -34,7 +33,7 @@ public partial class ExportContext
         foreach (var streamingLevelLazy in world.StreamingLevels)
         {
             if (streamingLevelLazy.Load() is not ULevelStreaming levelStreaming) continue;
-            if (levelStreaming.WorldAsset.Load() is not UWorld worldAsset) continue;
+            if (levelStreaming.WorldAsset?.Load() is not UWorld worldAsset) continue;
             if (worldAsset.PersistentLevel.Load() is not ULevel streamingLevel) continue;
             
             actors.AddRangeIfNotNull(Level(streamingLevel));
