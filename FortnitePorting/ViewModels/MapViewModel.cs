@@ -41,7 +41,7 @@ public partial class MapViewModel : ViewModelBase
 
     private static MapInfo[] MapInfos =
     [
-        // battle royale
+        // Battle Royale
         new(
             "Asteria",
             "FortniteGame/Content/Athena/Asteria/Maps/Asteria_Terrain",
@@ -78,7 +78,7 @@ public partial class MapViewModel : ViewModelBase
             0.0146f, -100, -25, 96, 12800, true, false
         ),
         
-        // og
+        // OG
         new(
             "Figment_S01",
             "FortniteGame/Plugins/GameFeatures/Figment/Figment_S01_Map/Content/Athena_Terrain_S01",
@@ -106,6 +106,13 @@ public partial class MapViewModel : ViewModelBase
             "FortniteGame/Plugins/GameFeatures/Figment/Figment_S04_MapUI/Content/MiniMapAthena_S04",
             "FortniteGame/Plugins/GameFeatures/Figment/Figment_S04_MapUI/Content/MiniMapAthena_S04_Mask",
             0.017f, 380, 470, 110, 12800, true
+        ),
+        new(
+            "Figment_S05",
+            "FortniteGame/Plugins/GameFeatures/Figment/Figment_S05_Map/Content/Athena_Terrain_S05",
+            "FortniteGame/Plugins/GameFeatures/Figment/Figment_S05_MapUI/Content/MiniMapAthena_S05Temp",
+            "FortniteGame/Plugins/GameFeatures/Figment/Figment_S05_MapUI/Content/MiniMapAthena_S05_MaskTemp",
+            0.017f, 330, 450, 110, 12800, true
         ),
         
         // reload
