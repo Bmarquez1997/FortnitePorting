@@ -274,6 +274,7 @@ toon_mappings = MappingCollection(
         SlotMapping("DistanceField_InkLines"),
         SlotMapping("DFL_Map", "DistanceField_InkLines"),
         SlotMapping("InkLineColor_Texture"),
+        SlotMapping("DFL_Color_Map", "InkLineColor_Texture"),
         SlotMapping("SSC_Texture"),
         SlotMapping("STM_Map", "SSC_Texture"),
         SlotMapping("STT_Map"),
