@@ -9,6 +9,7 @@ using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Component;
+using CUE4Parse.UE4.Assets.Exports.Component.Landscape;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Meshes;
@@ -18,7 +19,6 @@ using CUE4Parse.Utils;
 using DynamicData;
 using FortnitePorting.Models.Unreal.Landscape;
 using Newtonsoft.Json;
-using ULandscapeComponent = FortnitePorting.Models.Unreal.Landscape.ULandscapeComponent;
 
 namespace FortnitePorting.Models.CUE4Parse;
 
@@ -53,7 +53,7 @@ public class LandscapeProcessor
                 componentSize = component.ComponentSizeQuads;
             }
             
-            component.GetExtent(ref minX, ref minY, ref maxX, ref maxY);
+            component.GetComponentExtent(ref minX, ref minY, ref maxX, ref maxY);
         }
         
         

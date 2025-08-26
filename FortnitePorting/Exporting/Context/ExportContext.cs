@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Animations;
+using CUE4Parse_Conversion.Landscape;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Meshes.UEFormat;
 using CUE4Parse_Conversion.PoseAsset;
