@@ -1383,17 +1383,16 @@ class ImportContext:
             for section in sections:
                 path = section.get("Path")
 
-                section_length_frames = time_to_frame(section.get("Length"))
-                total_frames += section_length_frames
-
-                # TODO: Allow for import without file (just face animation)?
                 action, anim_data = self.import_anim(path, skeleton)
                 clear_children_bone_transforms(skeleton, action, "faceAttach")
+
+                section_length_frames = time_to_frame(section.get("Length"), anim_data.metadata.frames_per_second)
+                total_frames += section_length_frames
 
                 section_name = section.get("Name")
                 time_offset = section.get("Time")
                 loop_count = 999 if self.options.get("LoopAnimation") and section.get("Loop") else 1
-                frame = time_to_frame(time_offset)
+                frame = time_to_frame(time_offset, anim_data.metadata.frames_per_second)
 
                 if len(track.strips) > 0 and frame < track.strips[-1].frame_end:
                     frame = int(track.strips[-1].frame_end)

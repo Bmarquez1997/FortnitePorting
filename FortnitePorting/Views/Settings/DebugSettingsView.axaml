@@ -57,6 +57,12 @@
                     <ToggleSwitch IsChecked="{Binding ShowAllFilesInFilesTab}"/>
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
+            
+            <ui:SettingsExpander Header="Write Exports to JSON File" Description="Writes the JSON formatted export message to a .json file in the Assets folder.">
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding WriteExportToJSONFile}"/>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

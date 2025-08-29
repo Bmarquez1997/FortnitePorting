@@ -21,4 +21,5 @@ public partial class DebugSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _showMapDebugInfo = false;
     [ObservableProperty] private bool _isConsoleVisible = false;
     [ObservableProperty] private bool _showAllFilesInFilesTab = false;
+    [ObservableProperty][JsonIgnore] private bool _writeExportToJSONFile = false;
 }

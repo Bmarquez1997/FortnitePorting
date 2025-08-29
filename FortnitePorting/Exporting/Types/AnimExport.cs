@@ -184,6 +184,7 @@ public class AnimExport : BaseExport
     private List<ExportCurveMapping> CurveMappings(UCurveExpressionsDataAsset curveExpressions)
     {
         var mappings = new List<ExportCurveMapping>();
+        if (curveExpressions?.ExpressionData?.ExpressionMap == null) return mappings;
 
         foreach (var (curveName, expr) in curveExpressions.ExpressionData.ExpressionMap)
         {

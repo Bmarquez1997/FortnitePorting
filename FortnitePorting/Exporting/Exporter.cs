@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CUE4Parse.UE4.Assets.Exports;
@@ -79,6 +80,14 @@ public static class Exporter
                 };
             
                 var data = JsonConvert.SerializeObject(exportData);
+
+                if (AppSettings.Debug.WriteExportToJSONFile)
+                {
+                    var jsonPath = Path.Combine(metaData.AssetsRoot, "ExportJSON", $"Export_{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.json");
+                    Directory.CreateDirectory(jsonPath.SubstringBeforeLast("/"));
+                    await File.WriteAllTextAsync(jsonPath, data);
+                }
+                
                 await Api.FortnitePortingServer.SendAsync(data, serverType);
             }
         });
