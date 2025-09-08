@@ -103,6 +103,8 @@ class ImportContext:
             master_skeleton = merge_armatures(self.imported_meshes)
             master_mesh = get_armature_mesh(master_skeleton)
 
+            self.update_preskinned_bounds(master_mesh)
+
             for material, elements in self.partial_vertex_crunch_materials.items():
                 vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Vertex Crunch", type="NODES")
                 vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Vertex Crunch")
@@ -113,6 +115,8 @@ class ImportContext:
         if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
             master_skeleton = merge_armatures(self.imported_meshes)
             master_mesh = get_armature_mesh(master_skeleton)
+
+            self.update_preskinned_bounds(master_mesh)
             
             for material, elements in self.partial_vertex_crunch_materials.items():
                 vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Vertex Crunch", type="NODES")
@@ -240,6 +244,18 @@ class ImportContext:
                     color = color_data[vertex_index]
                     vertex_color.data[loop_index].color = color[0] / 255, color[1] / 255, color[2] / 255, color[3] / 255
 
+        if imported_object.type == 'ARMATURE':
+            imported_mesh.data = imported_mesh.data.copy()
+
+            preskinned_pos = imported_mesh.data.attributes.new( domain="POINT", type="FLOAT_VECTOR",  name="PS_LOCAL_POSITION")
+            preskinned_normal = imported_mesh.data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_NORMAL")
+
+            for vert in imported_mesh.data.vertices:
+                preskinned_pos.data[vert.index].vector = vert.co
+                preskinned_normal.data[vert.index].vector = vert.normal
+
+            self.update_preskinned_bounds(imported_mesh, True)
+
         imported_object.parent = parent
         imported_object.rotation_euler = make_euler(mesh.get("Rotation"))
         imported_object.location = make_vector(mesh.get("Location"), unreal_coords_correction=True) * self.scale
@@ -353,6 +369,28 @@ class ImportContext:
                 instance_object.scale = make_vector(instance_transform.get("Scale"))
             
         return imported_object
+
+
+    def update_preskinned_bounds(self, imported_mesh, new_attribute=False):
+        corners = imported_mesh.bound_box
+        x_coords, y_coords, z_coords = zip(*corners)
+        bbox_min = (min(x_coords), min(y_coords), min(z_coords))
+        bbox_max = (max(x_coords), max(y_coords), max(z_coords))
+
+        def map_bounds(point):
+            x_mapped = (point[0] - bbox_min[0]) / (bbox_max[0] - bbox_min[0])
+            y_mapped = (point[1] - bbox_min[1]) / (bbox_max[1] - bbox_min[1])
+            z_mapped = (point[2] - bbox_min[2]) / (bbox_max[2] - bbox_min[2])
+            return (x_mapped, y_mapped, z_mapped)
+
+        if new_attribute:
+            preskinned_bounds = imported_mesh.data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_BOUNDS")
+        else:
+            preskinned_bounds = imported_mesh.data.attributes.get("PS_LOCAL_BOUNDS")
+
+        for vert in imported_mesh.data.vertices:
+            preskinned_bounds.data[vert.index].vector = map_bounds(vert.co)
+            
     
     def import_light_data(self, lights, parent=None):
         if not lights:
