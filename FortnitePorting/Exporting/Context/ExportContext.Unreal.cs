@@ -7,13 +7,14 @@ using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Component.Lights;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
+using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Objects;
-using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Extensions;
+using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Shared.Extensions;
 using Serilog;
@@ -231,12 +232,16 @@ public partial class ExportContext
         if (Meta.WorldFlags.HasFlag(EWorldFlags.Landscape) && actor is ALandscapeProxy landscapeProxy)// && landscapeProxy.ExportType != "Landscape")
         {
             var transform = landscapeProxy.GetAbsoluteTransformFromRootComponent();
+            var landscapeProcessor = new LandscapeProcessor(landscapeProxy);
+            var material = landscapeProxy.LandscapeMaterial?.Load<UMaterialInterface>() 
+                           ?? landscapeProcessor.Components.FirstOrDefault(comp => comp?.OverrideMaterial != null, null)?.OverrideMaterial;
             
             var exportMesh = new ExportMesh();
             exportMesh.Name = landscapeProxy.Name;
             exportMesh.Path = Export(landscapeProxy, embeddedAsset: true, synchronousExport: true);
             exportMesh.Location = transform.Translation;
             exportMesh.Scale = transform.Scale3D;
+            if (material != null) exportMesh.Materials.AddIfNotNull(Material(material, 0));
             meshes.Add(exportMesh);
         }
 

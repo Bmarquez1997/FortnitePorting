@@ -65,7 +65,8 @@ public class LandscapeProcessor
         var vertexCount = Components.Length * vertexCountPerComponent;
         var triangleCount = Components.Length * (int) Math.Pow(componentSize, 2) * 2;
 
-        var material = LandscapeProxy.LandscapeMaterial?.Load();
+        var material = LandscapeProxy.LandscapeMaterial?.Load() 
+                       ?? Components.FirstOrDefault(comp => comp?.OverrideMaterial != null, null)?.OverrideMaterial;
 
         var lod = new CStaticMeshLod();
         lod.AllocateVerts(vertexCount);
