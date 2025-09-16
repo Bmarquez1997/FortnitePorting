@@ -46,8 +46,8 @@ public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindo
     //TODO: How does this get applied?
     private void SetMarginColors(FoldingManager manager)
     {
-        var brush = new SolidColorBrush(AppSettings.Theme.BackgroundColor);
-        var hover = new SolidColorBrush(AppSettings.Theme.AccentColor);
+        var brush = new SolidColorBrush(AppSettings.Theme.WindowBackgroundColor);
+        var hover = new SolidColorBrush(AppSettings.Theme.StyleAccentColor);
         var margin = new FoldingMargin
         {
             FoldingManager = manager,
