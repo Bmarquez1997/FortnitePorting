@@ -53,6 +53,7 @@ default_mappings = MappingCollection(
         SlotMapping("PM_SpecularMasks", "SpecularMasks"),
         SlotMapping("__PBR Masks", "SpecularMasks"),
         SlotMapping("MetallicRoughnessTexture", "SpecularMasks"),
+        SlotMapping("Bake Packed Maps", "SpecularMasks"),
 
         SlotMapping("Normals"),
         SlotMapping("N", "Normals"),
@@ -67,6 +68,7 @@ default_mappings = MappingCollection(
         SlotMapping("_Normal", "Normals"),
         SlotMapping("NormalTexture", "Normals"),
         SlotMapping("Normal Map", "Normals"),
+        SlotMapping("Baked Normal", "Normals"),
         
         SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
         SlotMapping("AnisotropigTangentWeight", "AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
@@ -89,6 +91,7 @@ default_mappings = MappingCollection(
         SlotMapping("SkinFX Mask", "SkinFX_Mask"),
         SlotMapping("TechArtMask", "SkinFX_Mask"),
         SlotMapping("FxMask", "SkinFX_Mask"),
+        SlotMapping("FX_Mask", "SkinFX_Mask"),
         
         SlotMapping("Thin Film Texture"),
 
