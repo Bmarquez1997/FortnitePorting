@@ -121,7 +121,7 @@ public partial class InstallationProfile : ObservableValidator
         
         MappingsFile = mappingsFilePath;
         UseMappingsFile = true;
-        File.SetCreationTime(mappingsFilePath, targetMappings.Uploaded);
+        File.SetCreationTime(mappingsFilePath, targetMappings.GetCreationTime());
         
         Info.Message("Fetch Mappings", $"Successfully fetched mappings for v{FetchMappingsVersion}", InfoBarSeverity.Success);
     }

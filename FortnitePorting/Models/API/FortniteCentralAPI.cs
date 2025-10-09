@@ -7,7 +7,8 @@ namespace FortnitePorting.Models.API;
 
 public class FortniteCentralAPI(RestClient client) : APIBase(client)
 {
-    protected override string BaseURL => "https://fortnitecentral.genxgames.gg/api";
+    // protected override string BaseURL => "https://fortnitecentral.genxgames.gg/api";
+    protected override string BaseURL => "https://export-service.dillyapis.com";
     
     public async Task<AesResponse?> Aes() => await ExecuteAsync<AesResponse?>("v1/aes");
     public async Task<AesResponse?> Aes(string version) => await ExecuteAsync<AesResponse?>("v1/aes", parameters: [

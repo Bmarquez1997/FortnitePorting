@@ -420,7 +420,7 @@ public partial class CUE4ParseService : ObservableObject, IService
             var createdFile = await Api.DownloadFileAsync(foundMappings.URL, mappingsFilePath);
             if (createdFile is null) return null;
             
-            File.SetCreationTime(mappingsFilePath, foundMappings.Uploaded);
+            File.SetCreationTime(mappingsFilePath, foundMappings.GetCreationTime());
 
             return mappingsFilePath;
         }
