@@ -158,6 +158,13 @@ public partial class MapViewModel : ViewModelBase
             "/BlastBerryMapUI/MiniMap/MMap_TimberStake_Mask",
             0.027f, 40, 15, 175, 12800, false, false
         ),
+        new(
+            "SourSpawn",
+            "/8b8c126e-4f3a-816e-1d5c-7983eecfa42a/SourSpawn",
+            "/BlastBerryMapUI/MiniMap/Discovered_SourSpawn",
+            "/BlastBerryMapUI/MiniMap/MMap_SourSpawn_Mask",
+            0.027f, 40, 15, 175, 12800, false, false
+        ),
         
         // ballistic
         new(
@@ -187,6 +194,7 @@ public partial class MapViewModel : ViewModelBase
         "PunchBerry_Terrain",
         "DashBerry",
         "TimberStake",
+        "SourSpawn",
         "FeralCorgi_2Bombsite_Map"
     ];
 
