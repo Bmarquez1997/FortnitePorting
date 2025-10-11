@@ -335,9 +335,9 @@ public partial class CUE4ParseService : ObservableObject, IService
             case EFortniteVersion.LatestInstalled:
             case EFortniteVersion.LatestOnDemand:
             {
-                var aes = _onlineStatus.Backup.Keys 
-                    ? await Api.FortnitePorting.Aes() 
-                    : await Api.FortniteCentral.Aes();
+                var aes =  await Api.UnrealDB.Aes()
+                        ?? await Api.FortniteCentral.Aes()
+                        ?? (_onlineStatus.Backup.Keys ? await Api.FortnitePorting.Aes() : null);
                 
                 if (aes is null)
                 {
@@ -405,30 +405,27 @@ public partial class CUE4ParseService : ObservableObject, IService
     
     private async Task<string?> GetEndpointMappings()
     {
-        async Task<string?> GetMappings(Func<Task<MappingsResponse[]?>> mappingsFunc)
+        async Task<string?> GetMappings(Func<Task<MappingsResponse?>> mappingsFunc)
         {
             var mappings = await mappingsFunc();
-            if (mappings is null) return null;
-            if (mappings.Length <= 0) return null;
+            
+            if (mappings?.Mappings.GetMappingsURL() is null) return null;
 
-            var foundMappings = mappings.FirstOrDefault();
-            if (foundMappings is null) return null;
-
-            var mappingsFilePath = Path.Combine(App.DataFolder.FullName, foundMappings.Filename);
+            var mappingsFilePath = Path.Combine(App.DataFolder.FullName, mappings.Version + ".usmap");
             if (File.Exists(mappingsFilePath)) return mappingsFilePath;
 
-            var createdFile = await Api.DownloadFileAsync(foundMappings.URL, mappingsFilePath);
+            var createdFile = await Api.DownloadFileAsync(mappings.Mappings.GetMappingsURL(), mappingsFilePath);
             if (createdFile is null) return null;
             
-            File.SetCreationTime(mappingsFilePath, foundMappings.GetCreationTime());
+            File.SetCreationTime(mappingsFilePath, mappings.GetCreationTime());
 
             return mappingsFilePath;
         }
-        
-        
-        return  _onlineStatus.Backup.Mappings
-        ? await GetMappings(Api.FortnitePorting.Mappings)
-        : await GetMappings(Api.FortniteCentral.Mappings);
+
+
+        return await GetMappings(Api.UnrealDB.Mappings)
+               ?? await GetMappings(Api.FortniteCentral.Mappings);
+        // ?? (_onlineStatus.Backup.Mappings ? await GetMappings(Api.FortnitePorting.Mappings : null);
     }
 
 

@@ -15,6 +15,7 @@ public class APIService : IService
     public readonly FortnitePortingAPI FortnitePorting;
     public readonly FortnitePortingServerAPI FortnitePortingServer;
     public readonly FortniteCentralAPI FortniteCentral;
+    public readonly UnrealDBAPI UnrealDB;
     public readonly EpicGamesAPI EpicGames;
     
     public APIService()
@@ -27,6 +28,7 @@ public class APIService : IService
         
         FortnitePorting = new FortnitePortingAPI(_client);
         FortniteCentral = new FortniteCentralAPI(_client);
+        UnrealDB = new UnrealDBAPI(_client);
         FortnitePortingServer = new FortnitePortingServerAPI(_client);
         EpicGames = new EpicGamesAPI(_client);
     }
