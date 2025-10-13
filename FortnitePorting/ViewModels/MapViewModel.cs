@@ -163,7 +163,7 @@ public partial class MapViewModel : ViewModelBase
             "/8b8c126e-4f3a-816e-1d5c-7983eecfa42a/SourSpawn",
             "/BlastBerryMapUI/MiniMap/Discovered_SourSpawn",
             "/BlastBerryMapUI/MiniMap/MMap_SourSpawn_Mask",
-            0.027f, 40, 15, 175, 12800, false, false
+            0.023f, 75, 25, 149, 12800, false, false
         ),
         
         // ballistic
