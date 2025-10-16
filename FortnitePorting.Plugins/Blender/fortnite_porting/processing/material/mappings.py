@@ -191,7 +191,7 @@ default_mappings = MappingCollection(
 
         SlotMapping("FlipbookTint"),
         
-        SlotMapping("CloatcoatMaskChannel", "Clear Coat Channel")
+        SlotMapping("CloatcoatMaskChannel", "Clear Coat Channel"),
         SlotMapping("ClearCoatMaskChannel", "Clear Coat Channel")
     ],
     switches=[
