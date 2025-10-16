@@ -91,6 +91,12 @@ public partial class ExportContext
             var assetName = $"{asset.Name}-{splineComponent.GetMeshId().AsSpan(0, 6)}";
             returnValue = $"{asset.Owner.Name}/{assetName}.{assetName}";
         }
+
+        if (asset is UDNAAsset dnaAsset)
+        {
+            var dnaName = dnaAsset.DnaFileName.SubstringAfterLast("/").SubstringAfterLast("\\").SubstringBeforeLast(".");
+            returnValue = returnRealPath ? dnaName : $"{dnaAsset.Owner.Name.SubstringBeforeLast('/')}/{dnaName}.{dnaName}";
+        }
         
         var shouldExport = asset switch
         {
@@ -319,7 +325,8 @@ public partial class ExportContext
         string path;
         if (obj is UDNAAsset dnaAsset)
         {
-            path = excludeGamePath ? dnaAsset.DnaFileName : $"{obj.Owner.Name.SubstringBeforeLast('/')}/{dnaAsset.DnaFileName}";
+            var dnaName = dnaAsset.DnaFileName.SubstringAfterLast("/").SubstringAfterLast("\\");
+            path = excludeGamePath ? dnaName : $"{obj.Owner.Name.SubstringBeforeLast('/')}/{dnaName}";
         }
         else if (excludeGamePath || obj.Owner is null)
         {
