@@ -130,8 +130,9 @@ public partial class ExportContext
             {
                 foreach (var instanceComponentLazy in instanceComponents)
                 {
-                    var instanceComponent = instanceComponentLazy.Load<UInstancedStaticMeshComponent>();
-                    if (instanceComponent is null) continue;
+                    if (!instanceComponentLazy.TryLoad<UInstancedStaticMeshComponent>(out var instanceComponent))
+                        continue;
+                        
                     if (instanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
                     
                     var exportMesh = MeshComponent(instanceComponent);

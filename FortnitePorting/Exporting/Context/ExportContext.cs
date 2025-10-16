@@ -5,16 +5,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Animations;
+using CUE4Parse_Conversion.DNA;
 using CUE4Parse_Conversion.Landscape;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Meshes.UEFormat;
 using CUE4Parse_Conversion.PoseAsset;
+using CUE4Parse_Conversion.PoseAsset.UEFormat;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
+using CUE4Parse.UE4.Assets.Exports.Rig;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -62,7 +65,7 @@ public partial class ExportContext
                 EAnimFormat.UEFormat => "ueanim",
                 EAnimFormat.ActorX => "psa"
             },
-            UPoseAsset => "uepose",
+            UPoseAsset or UDNAAsset => "uepose",
             UTexture => Meta.Settings.ImageFormat switch
             {
                 EImageFormat.PNG => "png",
@@ -148,8 +151,7 @@ public partial class ExportContext
 
                 foreach (var dna in exporter.DNAAssets)
                 {
-                    dna.TryWriteToDir(new DirectoryInfo(Meta.CustomPath ?? Meta.AssetsRoot), out var label, out var savedFilePath);
-                    Log.Information($"{label} : {savedFilePath}");
+                    Export(dna.GetDNAAsset());
                 }
                 break;
             }
@@ -193,6 +195,14 @@ public partial class ExportContext
             {
                 var exporter = new PoseAssetExporter(poseAsset, FileExportOptions);
                 File.WriteAllBytes(path, exporter.PoseAsset.FileData);
+                break;
+            }
+            case UDNAAsset dnaAsset:
+            {
+                var exporter = new DNAExporter(dnaAsset, FileExportOptions);
+                if (exporter.TryConvertToPoseAsset(out var poseAsset))
+                    File.WriteAllBytes(path, poseAsset.FileData);
+                
                 break;
             }
             case UTexture2DArray textureArray:
@@ -307,7 +317,11 @@ public partial class ExportContext
     public string GetExportPath(UObject obj, string ext, bool embeddedAsset = false, bool excludeGamePath = false)
     {
         string path;
-        if (excludeGamePath || obj.Owner is null)
+        if (obj is UDNAAsset dnaAsset)
+        {
+            path = excludeGamePath ? dnaAsset.DnaFileName : $"{obj.Owner.Name.SubstringBeforeLast('/')}/{dnaAsset.DnaFileName}";
+        }
+        else if (excludeGamePath || obj.Owner is null)
         {
             path = obj.Name;
         }
@@ -323,9 +337,7 @@ public partial class ExportContext
         Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
 
         if (obj is USplineMeshComponent splineComponent)
-        {
             directory += string.Concat("-", splineComponent.GetMeshId().AsSpan(0, 6));
-        }
         
         var finalPath = $"{directory}.{ext.ToLower()}";
         return finalPath;
