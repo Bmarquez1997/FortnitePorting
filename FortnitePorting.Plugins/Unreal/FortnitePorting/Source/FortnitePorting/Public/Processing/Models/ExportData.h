@@ -1,5 +1,5 @@
 #pragma once
-#include "Settings.h"
+#include "FPImportSettings.h"
 #include "Types/BaseExport.h"
 #include "ExportData.generated.h"
 

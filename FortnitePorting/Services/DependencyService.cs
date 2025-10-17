@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using Avalonia.Platform;
@@ -56,27 +57,29 @@ public class DependencyService : IService
         }
     }
 
-    public void EnsureBlenderExtensions()
+    private void EnsureBlenderExtensions()
     {
         var assets = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/Blender"), null);
-        foreach (var asset in assets)
-        {
-            var assetStream = AssetLoader.Open(asset);
-            var targetFile = new FileInfo(Path.Combine(App.PluginsFolder.FullName, asset.AbsolutePath[1..]));
-            if (targetFile is { Exists: true, Length: > 0 } && targetFile.GetHash() == assetStream.GetHash()) continue;
-            targetFile.Directory?.Create();
-            
-            File.WriteAllBytes(targetFile.FullName, assetStream.ReadToEnd());
-        }
+        WriteAssets(assets, App.PluginsFolder.FullName);
+        var assetsUeformat = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/UEFormat/Blender/io_scene_ueformat"), null);
+        // WriteAssets(assetsUeformat, App.PluginsFolder.FullName, 10); //TODO: keep ueformat separate
+        WriteAssets(assetsUeformat, Path.Combine(App.PluginsFolder.FullName, "Blender", "fortnite_porting", "ueformat"), 36);
     }
     
-    public void EnsureUnrealPlugins()
+    private void EnsureUnrealPlugins()
     {
         var assets = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/Unreal"), null);
+        WriteAssets(assets, App.PluginsFolder.FullName);
+        var assetsUeformat = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/UEFormat/Unreal/UEFormat"), null);
+        WriteAssets(assetsUeformat, App.PluginsFolder.FullName, 10);
+    }
+
+    private void WriteAssets(IEnumerable<Uri> assets, string rootFolder, int pathStartIndex = 1)
+    {
         foreach (var asset in assets)
         {
             var assetStream = AssetLoader.Open(asset);
-            var targetFile = new FileInfo(Path.Combine(App.PluginsFolder.FullName, asset.AbsolutePath[1..]));
+            var targetFile = new FileInfo(Path.Combine(rootFolder, asset.AbsolutePath[pathStartIndex..]));
             if (targetFile is { Exists: true, Length: > 0 } && targetFile.GetHash() == assetStream.GetHash()) continue;
             targetFile.Directory?.Create();
             

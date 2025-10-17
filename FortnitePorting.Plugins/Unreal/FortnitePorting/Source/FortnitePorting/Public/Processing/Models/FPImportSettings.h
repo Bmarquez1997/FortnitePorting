@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Settings.generated.h"
+#include "FPImportSettings.generated.h"
 
 UENUM()
 enum EImageFormat

@@ -104,7 +104,7 @@ public partial class CUE4ParseService : ObservableObject, IService
             _ => new HybridFileProvider(AppSettings.Installation.CurrentProfile.ArchiveDirectory, [], new VersionContainer(AppSettings.Installation.CurrentProfile.UnrealVersion)),
         };
         
-		ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting"));
+        ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting"));
         ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting.Shared"));
 
         Provider.LoadExtraDirectories = AppSettings.Installation.CurrentProfile.LoadCreativeMaps && SupaBase.Permissions.CanExportUEFN;
