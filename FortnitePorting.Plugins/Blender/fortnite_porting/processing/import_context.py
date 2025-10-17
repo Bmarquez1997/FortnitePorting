@@ -924,6 +924,17 @@ class ImportContext:
             self.full_vertex_crunch_materials.append(material)
             return
 
+        if get_param(switches, "Use Vertex Colors for Mask"):
+            elements = {}
+            for scalar in scalars:
+                name = scalar.get("Name")
+                if "Hide Element" not in name:
+                    continue
+
+                elements[name] = scalar.get("Value")
+            
+            self.partial_vertex_crunch_materials[material] = elements
+
         match shader_node.node_tree.name:
             case "FPv3 Material":
                 # PRE FX START
@@ -1004,17 +1015,6 @@ class ImportContext:
 
                 if get_param(textures, "SRM"):
                     set_param("SwizzleRoughnessToGreen", 1)
-
-                if get_param(switches, "Use Vertex Colors for Mask"):
-                    elements = {}
-                    for scalar in scalars:
-                        name = scalar.get("Name")
-                        if "Hide Element" not in name:
-                            continue
-
-                        elements[name] = scalar.get("Value")
-                    
-                    self.partial_vertex_crunch_materials[material] = elements
 
                 emission_slot = shader_node.inputs["Emission"]
                 if (crop_bounds := get_param_multiple(vectors, emissive_crop_vector_names)) and get_param_multiple(switches, emissive_crop_switch_names) and len(emission_slot.links) > 0:
