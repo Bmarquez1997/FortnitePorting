@@ -1,6 +1,15 @@
 [submodule "Dependencies/CUE4Parse"]
 	path = Dependencies/CUE4Parse
 	url = https://github.com/Bmarquez1997/CUE4Parse
+	branch = half-mutable
 [submodule "Dependencies/FluentAvalonia.BreadcrumbBar"]
 	path = Dependencies/FluentAvalonia.BreadcrumbBar
 	url = https://github.com/h4lfheart/FluentAvalonia.BreadcrumbBar
+[submodule "FortnitePorting.Plugins/UEFormat/Blender"]
+	path = FortnitePorting.Plugins/UEFormat/Blender
+	url = https://github.com/Bmarquez1997/UEFormat
+	branch = blender
+[submodule "FortnitePorting.Plugins/UEFormat/Unreal"]
+	path = FortnitePorting.Plugins/UEFormat/Unreal
+	url = https://github.com/Bmarquez1997/UEFormat
+	branch = unreal

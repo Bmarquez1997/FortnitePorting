@@ -13,6 +13,7 @@
     <ItemGroup>
         <AvaloniaResource Include="Blender\**" />
         <AvaloniaResource Include="Unreal\**" />
+        <AvaloniaResource Include="UEFormat\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,7 +23,7 @@
     <ItemGroup>
       <Compile Remove="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
       <Content Include="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
-      <Compile Remove="Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
-      <Content Include="Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
+      <Compile Remove="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
+      <Content Include="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
     </ItemGroup>
 </Project>
