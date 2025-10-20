@@ -817,13 +817,32 @@ class ImportContext:
             for switch in switches:
                 switch_param(switch, mappings, target_node, add_unused_params)
         
-        def move_texture_node(target_node, slot_name):
-            if texture_node := get_node(shader_node, slot_name):
+        def move_texture_node(target_node, slot_name, source_node=None):
+            source = shader_node if source_node is None else source_node
+            if texture_node := get_node(source, slot_name):
                 x, y = get_socket_pos(target_node, target_node.inputs.find(slot_name))
                 texture_node.location = x - 300, y
                 links.new(texture_node.outputs[0], target_node.inputs[slot_name])
-                links.new(target_node.outputs[slot_name], shader_node.inputs[slot_name])
+                
+            links.new(target_node.outputs[slot_name], source.inputs[slot_name])
 
+        def connect_or_add_default_texture(target_node, target_slot, texture_name, sRGB=True, pre_node_link=None):
+            texture_node = get_node(target_node, target_slot)
+            if texture_node is None:
+                texture_node = nodes.new(type="ShaderNodeTexImage")
+                texture_node.image = bpy.data.images.get(texture_name)
+                texture_node.image.alpha_mode = 'CHANNEL_PACKED'
+                texture_node.image.colorspace_settings.name = "sRGB" if sRGB else "Non-Color"
+                texture_node.interpolation = "Smart"
+                texture_node.hide = True
+    
+                x, y = get_socket_pos(target_node, target_node.inputs.find(target_slot))
+                texture_node.location = x - 300, y
+                links.new(texture_node.outputs[0], target_node.inputs[target_slot])
+                
+            if pre_node_link is not None:
+                links.new(pre_node_link, texture_node.inputs[0])
+        
         def connect_texture_uvs(target_node, slot_name, uv_output):
             if texture_node := get_node(target_node, slot_name):
                 links.new(uv_output, texture_node.inputs[0])
@@ -945,37 +964,13 @@ class ImportContext:
 
                 thin_film_node = get_node(shader_node, "Thin Film Texture")
                 if get_param_multiple(switches, ["Use Thin Film", "UseThinFilm"]) or "M_ReconExpert_FNCS_Parent" in base_material_path:
-                    if thin_film_node is None:
-                        thin_film_node = nodes.new(type="ShaderNodeTexImage")
-                        thin_film_node.image = bpy.data.images.get("T_ThinFilm_Spectrum_COLOR")
-                        thin_film_node.image.alpha_mode = 'CHANNEL_PACKED'
-                        thin_film_node.image.colorspace_settings.name = "sRGB"
-                        thin_film_node.interpolation = "Smart"
-                        thin_film_node.hide = True
-                        
-                        x, y = get_socket_pos(shader_node, shader_node.inputs.find("Thin Film Texture"))
-                        thin_film_node.location = x - 300, y
-                        links.new(thin_film_node.outputs[0], shader_node.inputs["Thin Film Texture"])
-                        
-                    links.new(pre_fx_node.outputs["Thin Film UV"], thin_film_node.inputs[0])
+                    connect_or_add_default_texture(shader_node, "Thin Film Texture", "T_ThinFilm_Spectrum_COLOR", True, pre_fx_node.outputs["Thin Film UV"])
                 elif thin_film_node is not None:
                     nodes.remove(thin_film_node)
 
                 cloth_fuzz_node = get_node(shader_node, "ClothFuzz Texture")
                 if get_param_multiple(switches, ["Use Cloth Fuzz", "UseClothFuzz"]):
-                    if cloth_fuzz_node is None:
-                        cloth_fuzz_node = nodes.new(type="ShaderNodeTexImage")
-                        cloth_fuzz_node.image = bpy.data.images.get("T_Fuzz_MASK")
-                        cloth_fuzz_node.image.alpha_mode = 'CHANNEL_PACKED'
-                        cloth_fuzz_node.image.colorspace_settings.name = "sRGB"
-                        cloth_fuzz_node.interpolation = "Smart"
-                        cloth_fuzz_node.hide = True
-
-                        x, y = get_socket_pos(shader_node, shader_node.inputs.find("ClothFuzz Texture"))
-                        cloth_fuzz_node.location = x - 300, y
-                        links.new(cloth_fuzz_node.outputs[0], shader_node.inputs["ClothFuzz Texture"])
-
-                    links.new(pre_fx_node.outputs["Cloth UV"], cloth_fuzz_node.inputs[0])
+                    connect_or_add_default_texture(shader_node, "ClothFuzz Texture", "T_Fuzz_MASK", True, pre_fx_node.outputs["Cloth UV"])
                 elif cloth_fuzz_node is not None:
                     nodes.remove(cloth_fuzz_node)
 
@@ -1201,6 +1196,73 @@ class ImportContext:
 
                     if diffuse_node := get_node(detail_node, "Diffuse"):
                         nodes.active = diffuse_node
+                
+                if get_param(switches, "UseSequins"):
+                    sequin_node = nodes.new(type="ShaderNodeGroup")
+                    sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Sequin")
+                    sequin_node.location = -600, 0
+                    setup_params(sequin_mappings, sequin_node, False)
+                    if get_param(textures, "SRM"):
+                        set_param("SwizzleRoughnessToGreen", 1, sequin_node)
+
+                    pre_sequin_node = nodes.new(type="ShaderNodeGroup")
+                    pre_sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Sequin")
+                    pre_sequin_node.location = -1150, -350
+                    setup_params(sequin_mappings, pre_sequin_node, False)
+                    
+                    if "M_DimeBlanket_Parent" not in base_material_path:
+                        connect_or_add_default_texture(sequin_node, "SequinOffset", "T_SequinTile.png", False, pre_sequin_node.outputs[0])
+                        connect_or_add_default_texture(sequin_node, "SequinRoughness", "T_SequinTile_roughness.png", False, pre_sequin_node.outputs[0])
+                        connect_or_add_default_texture(sequin_node, "SequinNormal", "T_SequinTile_N.png", False, pre_sequin_node.outputs[0])
+                        
+                        if get_param(switches, "MFSequin_UseThinFilmOnSequins"):
+                            connect_or_add_default_texture(sequin_node, "SequinThinFilmColor", "T_ThinFilm_Spectrum_COLOR", True, pre_sequin_node.outputs[1])
+                    
+                    move_texture_node(sequin_node, "Diffuse")
+                    move_texture_node(sequin_node, "Normals")
+                    move_texture_node(sequin_node, "SpecularMasks")
+                    move_texture_node(sequin_node, "Emission")
+                    move_texture_node(sequin_node, "SkinFX_Mask")
+
+                    if diffuse_node := get_node(sequin_node, "Diffuse"):
+                        nodes.active = diffuse_node
+                    
+                    if "M_Sequin_Parent_StrideMice" in base_material_path:
+                        connect_or_add_default_texture(sequin_node, "StripeMask", "T_SequinTile_StripesMask.png", False, pre_sequin_node.outputs[0])
+                        set_param("UseStripes", 1, sequin_node)
+                    
+                    if "M_DimeBlanket_Parent" in base_material_path:
+                        setup_params(sequin_secondary_mappings, sequin_node, False)
+                        setup_params(sequin_secondary_mappings, pre_sequin_node, False)
+                        connect_or_add_default_texture(sequin_node, "SequinOffset", "T_SequinTile.png", False, pre_sequin_node.outputs[0])
+                        connect_or_add_default_texture(sequin_node, "SequinRoughness", "T_SequinTile_roughness.png", False, pre_sequin_node.outputs[0])
+                        connect_or_add_default_texture(sequin_node, "SequinNormal", "T_SequinTile_N.png", False, pre_sequin_node.outputs[0])
+                        connect_or_add_default_texture(sequin_node, "SequinThinFilmColor", "T_ThinFilm_Spectrum_COLOR", True, pre_sequin_node.outputs[1])
+                        
+                        trim_sequin_node = nodes.new(type="ShaderNodeGroup")
+                        trim_sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Sequin")
+                        trim_sequin_node.location = -1650, 0
+                        setup_params(sequin_mappings, trim_sequin_node, False)
+                        setup_params(sequin_trim_mappings, trim_sequin_node, False)
+                        if get_param(textures, "SRM"):
+                            set_param("SwizzleRoughnessToGreen", 1, sequin_node)
+    
+                        pre_trim_sequin_node = nodes.new(type="ShaderNodeGroup")
+                        pre_trim_sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Sequin")
+                        pre_trim_sequin_node.location = -2200, -350
+                        setup_params(sequin_mappings, pre_trim_sequin_node, False)
+                        setup_params(sequin_trim_mappings, pre_trim_sequin_node, False)
+                        
+                        connect_or_add_default_texture(trim_sequin_node, "SequinOffset", "T_SequinTile.png", False, pre_trim_sequin_node.outputs[0])
+                        connect_or_add_default_texture(trim_sequin_node, "SequinRoughness", "T_SequinTile_roughness.png", False, pre_trim_sequin_node.outputs[0])
+                        connect_or_add_default_texture(trim_sequin_node, "SequinNormal", "T_SequinTile_N.png", False, pre_trim_sequin_node.outputs[0])
+                        connect_or_add_default_texture(trim_sequin_node, "SequinThinFilmColor", "T_ThinFilm_Spectrum_COLOR", True, pre_trim_sequin_node.outputs[1])
+                    
+                        move_texture_node(trim_sequin_node, "Diffuse", sequin_node)
+                        move_texture_node(trim_sequin_node, "Normals", sequin_node)
+                        move_texture_node(trim_sequin_node, "SpecularMasks", sequin_node)
+                        move_texture_node(trim_sequin_node, "Emission", sequin_node)
+                        move_texture_node(trim_sequin_node, "SkinFX_Mask", sequin_node)
 
             case "FPv3 Glass":
                 mask_slot = shader_node.inputs["Mask"]
@@ -1262,20 +1324,8 @@ class ImportContext:
                 pre_vehicle_body_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Vehicle Body")
                 pre_vehicle_body_node.location = -600, -500
                 setup_params(socket_mappings, pre_vehicle_body_node, False)
-                
-                bottom_normal_base_node = get_node(shader_node, "BottomNormalBase")
-                if bottom_normal_base_node is None:
-                    bottom_normal_base_node = nodes.new(type="ShaderNodeTexImage")
-                    bottom_normal_base_node.image = bpy.data.images.get("T_Wrap_metallicFlakes_Small")
-                    bottom_normal_base_node.image.alpha_mode = 'CHANNEL_PACKED'
-                    bottom_normal_base_node.image.colorspace_settings.name = "Non-Color"
-                    bottom_normal_base_node.interpolation = "Smart"
-                    bottom_normal_base_node.hide = True
-                    x, y = get_socket_pos(shader_node, shader_node.inputs.find("BottomNormalBase"))
-                    bottom_normal_base_node.location = x - 300, y
-                    links.new(bottom_normal_base_node.outputs[0], shader_node.inputs["BottomNormalBase"])
 
-                links.new(pre_vehicle_body_node.outputs["UV_BottomNormal"], bottom_normal_base_node.inputs[0])
+                connect_or_add_default_texture(shader_node, "BottomNormalBase", "T_Wrap_metallicFlakes_Small", False, pre_vehicle_body_node.outputs["UV_BottomNormal"])
                 
                 if skin_base_color_node := get_node(shader_node, "SkinBaseColor"):
                     links.new(pre_vehicle_body_node.outputs["UV"], skin_base_color_node.inputs[0])
