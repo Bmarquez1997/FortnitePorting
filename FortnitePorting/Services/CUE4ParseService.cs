@@ -425,7 +425,7 @@ public partial class CUE4ParseService : ObservableObject, IService
 
         return await GetMappings(Api.UnrealDB.Mappings)
                ?? await GetMappings(Api.FortniteCentral.Mappings);
-        // ?? (_onlineStatus.Backup.Mappings ? await GetMappings(Api.FortnitePorting.Mappings : null);
+        // ?? (_onlineStatus.Backup.Mappings ? await GetMappings(Api.FortnitePorting.Mappings) : null);
     }
 
 

@@ -77,7 +77,7 @@ public partial class ExportContext
                                 if (!userData.TryLoad<UDNAAsset>(out var dna)) continue;
                                 
                                 meta.PoseAsset = Export(dna);
-                                foundDNA = true;
+                                foundDNA = meta.PoseAsset != null; //TODO: how do we know this succeeded? Or should we just assume it did?
                                 break;
                             }
                             // Fallback in case DNA exporting fails

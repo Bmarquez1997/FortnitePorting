@@ -206,9 +206,12 @@ public partial class ExportContext
             case UDNAAsset dnaAsset:
             {
                 var exporter = new DNAExporter(dnaAsset, FileExportOptions);
-                if (exporter.TryConvertToPoseAsset(out var poseAsset))
-                    File.WriteAllBytes(path, poseAsset.FileData);
-                
+                if (!exporter.TryConvertToPoseAsset(out var poseAsset))
+                {
+                    Log.Error("Failed to convert DNA asset {0}", dnaAsset.DnaFileName);
+                    return;
+                }
+                File.WriteAllBytes(path, poseAsset.FileData);
                 break;
             }
             case UTexture2DArray textureArray:
