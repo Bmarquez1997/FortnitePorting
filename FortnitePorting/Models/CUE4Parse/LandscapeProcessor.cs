@@ -10,6 +10,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Component.Landscape;
+using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Meshes;
@@ -27,6 +28,8 @@ public class LandscapeProcessor
     public ALandscapeProxy LandscapeProxy;
 
     public ULandscapeComponent[] Components;
+
+    public UMaterialInterface[] Materials;
     
     public LandscapeProcessor(ALandscapeProxy landscapeProxy)
     {
@@ -35,6 +38,14 @@ public class LandscapeProcessor
             .Select(component => component.Load<ULandscapeComponent>())
             .Where(component => component is not null).ToArray()!;
         
+        Materials = new UMaterialInterface[Components.Length];
+
+        var landscapeMaterial = LandscapeProxy.LandscapeMaterial.Load<UMaterialInterface>();
+        for (var i = 0; i < Components.Length; i++)
+        {
+            var componentMat = Components[i].OverrideMaterial ?? landscapeMaterial;
+            Materials[i] = componentMat;
+        }
     }
 
     public CStaticMesh Process()
@@ -63,15 +74,13 @@ public class LandscapeProcessor
 
         var vertexCountPerComponent = (int) Math.Pow(componentSize + 1, 2);
         var vertexCount = Components.Length * vertexCountPerComponent;
-        var triangleCount = Components.Length * (int) Math.Pow(componentSize, 2) * 2;
-
-        var material = LandscapeProxy.LandscapeMaterial?.Load() 
-                       ?? Components.FirstOrDefault(comp => comp?.OverrideMaterial != null, null)?.OverrideMaterial;
+        var triangleCountPerComponent = (int) Math.Pow(componentSize, 2) * 2;
+        
+        var sections = new CMeshSection[Components.Length];
 
         var lod = new CStaticMeshLod();
         lod.AllocateVerts(vertexCount);
         lod.NumTexCoords = 2;
-        lod.Sections = new Lazy<CMeshSection[]>(() => [new CMeshSection(0, 0, triangleCount, material?.Name ?? string.Empty, material is not null ? new ResolvedLoadedObject(material) : null)]);
         
         var selectedComponentIndex = 0;
         var extraVertexColors = new Dictionary<string, CVertexColor>();
@@ -110,9 +119,16 @@ public class LandscapeProcessor
                 }
                 
             }
-
+            
+            var componentMat = Materials[selectedComponentIndex];
+            var startIndicesIndex = selectedComponentIndex * triangleCountPerComponent * 3;
+            sections[selectedComponentIndex] = new CMeshSection(selectedComponentIndex, startIndicesIndex, 
+                                                                triangleCountPerComponent, componentMat?.Name ?? string.Empty, 
+                                                                componentMat is not null ? new ResolvedLoadedObject(componentMat) : null);
             selectedComponentIndex++;
         }
+
+        lod.Sections = new Lazy<CMeshSection[]>(() => sections);
 
         var indices = new List<uint>();
         for (var componentIndex = 0; componentIndex < Components.Length; componentIndex++)

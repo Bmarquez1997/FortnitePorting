@@ -234,15 +234,20 @@ public partial class ExportContext
         {
             var transform = landscapeProxy.GetAbsoluteTransformFromRootComponent();
             var landscapeProcessor = new LandscapeProcessor(landscapeProxy);
-            var material = landscapeProxy.LandscapeMaterial?.Load<UMaterialInterface>() 
-                           ?? landscapeProcessor.Components.FirstOrDefault(comp => comp?.OverrideMaterial != null, null)?.OverrideMaterial;
+
+            var exportMesh = new ExportMesh
+            {
+                Name = landscapeProxy.Name,
+                Path = Export(landscapeProxy, embeddedAsset: true, synchronousExport: true),
+                Location = transform.Translation,
+                Scale = transform.Scale3D
+            };
             
-            var exportMesh = new ExportMesh();
-            exportMesh.Name = landscapeProxy.Name;
-            exportMesh.Path = Export(landscapeProxy, embeddedAsset: true, synchronousExport: true);
-            exportMesh.Location = transform.Translation;
-            exportMesh.Scale = transform.Scale3D;
-            if (material != null) exportMesh.Materials.AddIfNotNull(Material(material, 0));
+            for (var i = 0; i < landscapeProcessor.Components.Length; i++)
+            {
+                exportMesh.Materials.AddIfNotNull(Material(landscapeProcessor.Materials[i], i));
+            }
+
             meshes.Add(exportMesh);
         }
 

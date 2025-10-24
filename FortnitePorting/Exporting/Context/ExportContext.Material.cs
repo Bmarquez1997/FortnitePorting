@@ -22,7 +22,7 @@ public partial class ExportContext
     
     public ExportMaterial? Material(UMaterialInterface material, int index)
     {
-        if (!Meta.Settings.ExportMaterials) return null;
+        if (!Meta.Settings.ExportMaterials || material == null) return null;
 
         var hash = material.GetPathName().GetHashCode();
         if (MaterialCache.FirstOrDefault(mat => mat.Hash == hash) is { } existing) return existing with { Slot = index};
