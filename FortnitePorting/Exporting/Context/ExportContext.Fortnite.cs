@@ -129,7 +129,19 @@ public partial class ExportContext
                 }
             }
         }
-        
+
+        if (part.TryGetValue(out UAnimBlueprintGeneratedClass animBlueprintPet, "AnimClass"))
+        {
+            if (animBlueprintPet.ClassDefaultObject != null
+                && animBlueprintPet.ClassDefaultObject.TryLoad(out var animBlueprintPetData)
+                && animBlueprintPetData.TryGetValue(out FStructFallback poseAssetNode, "AnimGraphNode_PoseBlendNode"))
+            {
+                var metaPet = new ExportHeadMeta();
+                metaPet.PoseAsset = Export(poseAssetNode.Get<UPoseAsset>("PoseAsset"));
+                exportPart.Meta = metaPet;
+            }
+        }
+
         return exportPart;
     }
     

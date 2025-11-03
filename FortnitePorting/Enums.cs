@@ -107,6 +107,9 @@ public enum EExportType
 
     [Description("Emotes"), Export(EPrimitiveExportType.Animation)]
     Emote,
+    
+    [Description("Sidekicks"), Export(EPrimitiveExportType.Mesh)]
+    SideKick,
 
     [Description("Kicks"), Export(EPrimitiveExportType.Mutable)]
     Kicks,

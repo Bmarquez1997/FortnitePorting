@@ -439,8 +439,7 @@ public partial class CUE4ParseService : ObservableObject, IService
         
         foreach (var (path, file) in assetRegistries)
         {
-            if (!path.EndsWith(".bin")) continue;
-            if (path.Contains("Plugin", StringComparison.OrdinalIgnoreCase) || path.Contains("Editor", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!path.EndsWith(".bin") || path.Contains("Editor", StringComparison.OrdinalIgnoreCase)) continue;
 
             UpdateStatus($"Loading {file.Name}");
             var assetArchive = await file.SafeCreateReaderAsync();
