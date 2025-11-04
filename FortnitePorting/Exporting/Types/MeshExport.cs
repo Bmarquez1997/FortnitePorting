@@ -33,6 +33,7 @@ public class MeshExport : BaseExport
     public readonly List<ExportMesh> OverrideMeshes = [];
     public readonly List<ExportOverrideMaterial> OverrideMaterials = [];
     public readonly List<ExportOverrideParameters> OverrideParameters = [];
+    public readonly List<ExportOverrideMorphTargets> OverrideMorphTargets = [];
     public ExportLightCollection Lights = new();
     public AnimExport? Animation;
     
@@ -547,13 +548,14 @@ public class MeshExport : BaseExport
         var styleDatas = styles.Select(data => data.StyleData).ToArray();
         foreach (var style in styleDatas)
         {
-            var tags = style.Get<FStructFallback>("MetaTags");
+            var tags = style.GetOrDefault<FStructFallback?>("MetaTags");
+            if (tags == null) continue;
 
-            var tagsToApply = tags.Get<FGameplayTagContainer>("MetaTagsToApply");
-            metaTagsToApply.AddRange(tagsToApply.GameplayTags);
+            if (tags.TryGetValue<FGameplayTagContainer>(out var tagsToApply, "MetaTagsToApply"))
+                metaTagsToApply.AddRange(tagsToApply.GameplayTags);
 
-            var tagsToRemove = tags.Get<FGameplayTagContainer>("MetaTagsToRemove");
-            metaTagsToRemove.AddRange(tagsToRemove.GameplayTags);
+            if (tags.TryGetValue<FGameplayTagContainer>(out var tagsToRemove, "MetaTagsToRemove"))
+                metaTagsToRemove.AddRange(tagsToRemove.GameplayTags);
         }
 
         var metaTags = new FGameplayTagContainer(metaTagsToApply.Where(tag => !metaTagsToRemove.Contains(tag)).ToArray());
@@ -574,6 +576,11 @@ public class MeshExport : BaseExport
         }
 
         foreach (var style in styleDatas) ExportStyleData(style);
+
+        var colorStyles = styles.Where(style => style is AssetColorStyleData)
+                                                 .Select(style => (AssetColorStyleData)style)
+                                                 .ToArray();
+        foreach (var colorStyle in colorStyles) OverrideParameters.AddRangeIfNotNull(Exporter.OverrideColors(colorStyle));
     }
 
     private void ExportStyleData(FStructFallback style)
@@ -593,5 +600,8 @@ public class MeshExport : BaseExport
             var overrideMesh = mesh.GetOrDefault<USkeletalMesh>("OverrideMesh");
             OverrideMeshes.AddIfNotNull(Exporter.Mesh(overrideMesh));
         }
+
+        var variantMorphTargets = style.GetOrDefault("MorphTargets", Array.Empty<FStructFallback>());
+        foreach (var morphTarget in variantMorphTargets) OverrideMorphTargets.AddIfNotNull(Exporter.OverrideMorphTargets(morphTarget));
     }
 }

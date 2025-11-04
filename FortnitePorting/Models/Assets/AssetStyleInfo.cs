@@ -11,6 +11,8 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
+using CUE4Parse.UE4.Objects.Core.Math;
+using CUE4Parse.UE4.Objects.UObject;
 using FortnitePorting.Extensions;
 using FortnitePorting.Shared.Extensions;
 using SkiaSharp;
@@ -80,6 +82,29 @@ public partial class AssetStyleInfo : ObservableObject
         SelectedStyleIndex = 0;
     }
     
+    public AssetStyleInfo(string channelName, UObject colorVariant)
+    {
+        ChannelName = channelName;
+
+        if (!colorVariant.TryGetValue(out FStructFallback inlineVar, "InlineVariant")
+            || !inlineVar.TryGetValue(out FStructFallback richColorVar, "RichColorVar")
+            || !richColorVar.TryGetValue(out FSoftObjectPath swatchPath, "ColorSwatchForChoices")
+            || !swatchPath.TryLoad(out UObject colorSwatch)
+            || !colorSwatch.TryGetValue(out FStructFallback[] colorPairs, "ColorPairs"))
+            return;
+        
+        foreach (var color in colorPairs)
+        {
+            var colorValue = color.GetOrDefault<FLinearColor>("ColorValue");
+            var colorName = color.GetOrDefault("ColorName", new FName(colorValue.Hex));
+            var displayIcon = CreateColorDisplayImage(colorValue);
+            
+            StyleDatas.Add(new AssetColorStyleData(colorName.PlainText, richColorVar, colorValue, displayIcon.ToWriteableBitmap()));
+        }
+
+        SelectedStyleIndex = 0;
+    }
+    
     public SKBitmap CreateDisplayImage(SKBitmap iconBitmap, EFortRarity rarity = EFortRarity.Uncommon)
     {
         var bitmap = new SKBitmap(64, 64, iconBitmap.ColorType, SKAlphaType.Opaque);
@@ -90,6 +115,19 @@ public partial class AssetStyleInfo : ObservableObject
             var backgroundPaint = new SKPaint { Shader = SkiaExtensions.RadialGradient(bitmap.Height, colors.Color1, colors.Color3) };
             canvas.DrawRect(backgroundRect, backgroundPaint);
             canvas.DrawBitmap(iconBitmap, backgroundRect);
+        }
+
+        return bitmap;
+    }
+    
+    public SKBitmap CreateColorDisplayImage(FLinearColor color)
+    {
+        var bitmap = new SKBitmap(64, 64, SKColorType.Rgba8888, SKAlphaType.Opaque);
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            var backgroundRect = new SKRect(0, 0, bitmap.Width, bitmap.Height);
+            var backgroundPaint = new SKPaint { Shader = SKShader.CreateColor(SKColor.Parse(color.Hex)) };
+            canvas.DrawRect(backgroundRect, backgroundPaint);
         }
 
         return bitmap;

@@ -32,6 +32,7 @@ class ImportContext:
         self.meshes = []
         self.override_materials = []
         self.override_parameters = []
+        self.override_morph_targets = []
         self.imported_meshes = []
         self.full_vertex_crunch_materials = []
         self.partial_vertex_crunch_materials = {}
@@ -77,6 +78,7 @@ class ImportContext:
         
         self.override_materials = data.get("OverrideMaterials")
         self.override_parameters = data.get("OverrideParameters")
+        self.override_morph_targets = data.get("OverrideMorphTargets")
         
         self.collection = create_or_get_collection(self.name) if self.options.get("ImportIntoCollection") else bpy.context.scene.collection
 
@@ -102,6 +104,19 @@ class ImportContext:
                 vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Full Vertex Crunch", type="NODES")
                 vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Full Vertex Crunch")
                 set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+
+            for material, elements in self.partial_vertex_crunch_materials.items():
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Vertex Crunch")
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                for name, value in elements.items():
+                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
+
+            shape_keys = master_mesh.data.shape_keys
+            if (len(self.override_morph_targets) > 0) and shape_keys is not None:
+                for morph_target in self.override_morph_targets:
+                    if key := best(shape_keys.key_blocks, lambda block: block.name.lower(), morph_target.get("Name").lower()):
+                        key.value = morph_target.get("Value")
 
         if self.type in [EExportType.VEHICLE_BODY] and self.options.get("MergeArmatures"):
             master_skeleton = merge_armatures(self.imported_meshes)
@@ -1638,7 +1653,10 @@ class ImportContext:
                     is_anim_legacy = any(anim_data.curves, lambda curve: curve.name in legacy_curve_names)
                     is_anim_metahuman = any(anim_data.curves, lambda curve: curve.name == "is_3L")
                     
-                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
+                    # Handling for non-skin animations (like Sidekicks)
+                    is_unknown_combo = (not is_skeleton_legacy and not is_skeleton_metahuman) or (not is_anim_legacy  and not is_anim_metahuman)
+                    
+                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman) or is_unknown_combo:
                         for curve in anim_data.curves:
                             if target_block := best(key_blocks, lambda block: block.name.lower(), curve.name.lower()):
                                 for key in curve.keys:

@@ -10,7 +10,9 @@ using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
+using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
+using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Shared.Extensions;
@@ -212,6 +214,15 @@ public partial class ExportContext
         }
 
         return exportPart;
+    }
+    
+    public ExportOverrideMorphTargets? OverrideMorphTargets(FStructFallback overrideData)
+    {
+        if (overrideData.TryGetValue<FName>(out var name, "Name") &&
+            overrideData.TryGetValue<float>(out var value, "Value"))
+            return new ExportOverrideMorphTargets(name.PlainText, value);
+
+        return null;
     }
     
     public void SetMeshComponentTransforms(ExportMesh exportMesh, USceneComponent meshComponent)

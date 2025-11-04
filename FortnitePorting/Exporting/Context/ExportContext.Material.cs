@@ -11,6 +11,7 @@ using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Extensions;
+using FortnitePorting.Models.Assets;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Shared.Extensions;
 
@@ -78,6 +79,27 @@ public partial class ExportContext
         exportParams.MaterialNameToAlter = materialToAlter.AssetPathName.Text.SubstringAfterLast(".");
         exportParams.Hash = exportParams.GetHashCode();
         return exportParams;
+    }
+    
+    public List<ExportOverrideParameters>? OverrideColors(AssetColorStyleData colorStyle)
+    {
+        var materialsToAlter = colorStyle.StyleData.Get<FSoftObjectPath[]>("MaterialsToAlter");
+        if (materialsToAlter.Any(mat => mat.AssetPathName.IsNone)) return null; 
+        
+        var paramName = colorStyle.StyleData.GetOrDefault("ColorParamName", new FName(colorStyle.OverrideColor.Hex));
+        var overrideColor = new VectorParameter(paramName.Text, colorStyle.OverrideColor);
+
+        List<ExportOverrideParameters> returnParams = [];
+        foreach (var materialToAlter in materialsToAlter)
+        {
+            var exportParams = new ExportOverrideParameters();
+            exportParams.Vectors.Add(overrideColor);
+            exportParams.MaterialNameToAlter = materialToAlter.AssetPathName.Text.SubstringAfterLast(".");
+            exportParams.Hash = exportParams.GetHashCode();
+            returnParams.Add(exportParams);
+        }
+
+        return returnParams;
     }
     
     public void AccumulateParameters<T>(UMaterialInterface? materialInterface, ref T parameterCollection) where T : ParameterCollection

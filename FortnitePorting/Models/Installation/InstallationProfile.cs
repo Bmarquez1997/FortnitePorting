@@ -31,7 +31,7 @@ public partial class InstallationProfile : ObservableValidator
     [ArchiveDirectory(canValidateProperty: nameof(ArchiveDirectoryEnabled))]
     [ObservableProperty] private string _archiveDirectory;
     
-    [ObservableProperty] private EGame _unrealVersion = EGame.GAME_UE5_LATEST;
+    [ObservableProperty] private EGame _unrealVersion = EGame.GAME_UE5_7;
     
     [NotifyDataErrorInfo]
     [EncryptionKey(canValidateProperty: nameof(EncryptionKeyEnabled))]

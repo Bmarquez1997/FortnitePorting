@@ -33,15 +33,25 @@ public partial class AssetInfo : Base.BaseAssetInfo
                 "FortCosmeticParticleVariant" => "ParticleOptions",
                 "FortCosmeticMeshVariant" => "MeshOptions",
                 "FortCosmeticGameplayTagVariant" => "GenericTagOptions",
+                "FortCosmeticRichColorVariant" => "InlineVariant",
+                "FortCosmeticMorphTargetVariant" => "MorphTargetOptions",
                 _ => null
             };
 
             if (optionsName is null) continue;
-
-            var options = style.Get<FStructFallback[]>(optionsName);
-            if (options.Length == 0) continue;
-
-            var styleInfo = new AssetStyleInfo(channel, options, Asset.IconDisplayImage);
+            
+            AssetStyleInfo styleInfo;
+            if ("FortCosmeticRichColorVariant".Equals(style.ExportType))
+            {
+                styleInfo = new AssetStyleInfo(channel, style);
+            }
+            else
+            {
+                var options = style.Get<FStructFallback[]>(optionsName);
+                if (options.Length == 0) continue;
+                styleInfo = new AssetStyleInfo(channel, options, Asset.IconDisplayImage);
+            }
+            
             if (styleInfo.StyleDatas.Count > 0) StyleInfos.Add(styleInfo);
         }
     }
