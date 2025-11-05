@@ -920,6 +920,10 @@ class ImportContext:
             replace_shader_node("FPv3 Hair")
             socket_mappings = hair_mappings
 
+        if "M_Companion_Fur_Parent_2025" in base_material_path or "FurParent" in base_material_path:
+            replace_shader_node("FPv3 Fur")
+            socket_mappings = fur_mappings
+
         if "MAT_Vehicle_Body_Base" in base_material_path:
             replace_shader_node("FPv3 Vehicle Body")
             socket_mappings = vehicle_body_mappings
@@ -1328,6 +1332,27 @@ class ImportContext:
             case "FPv3 Layer":
                 if diffuse_node := get_node(shader_node, "Diffuse"):
                     nodes.active = diffuse_node
+            
+            case "FPv3 Hair":
+                set_param("AO", self.options.get("AmbientOcclusion"))
+                if diffuse_node := get_node(shader_node, "Diffuse"):
+                    nodes.active = diffuse_node
+            
+            case "FPv3 Fur":
+                set_param("AO", self.options.get("AmbientOcclusion"))
+                if diffuse_node := get_node(shader_node, "Diffuse"):
+                    nodes.active = diffuse_node
+                    
+                if get_param(switches, "UseCustomColors"):
+                    sidekick_node = nodes.new(type="ShaderNodeGroup")
+                    sidekick_node.node_tree = bpy.data.node_groups.get("FPv3 Sidekick")
+                    sidekick_node.location = -600, 0
+                    setup_params(sidekick_mappings, sidekick_node, False)
+                    
+                    move_texture_node(sidekick_node, "Diffuse")
+
+                    if diffuse_node := get_node(sidekick_node, "Diffuse"):
+                        nodes.active = diffuse_node
 
             case "FPv3 Vehicle Interior":
                 set_param("AO", self.options.get("AmbientOcclusion"))

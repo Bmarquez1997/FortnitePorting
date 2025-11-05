@@ -67,20 +67,33 @@ public partial class ExportContext
             MaterialNameToSwap = overrideData.GetOrDefault<FSoftObjectPath>("MaterialToSwap").AssetPathName.Text.SubstringAfterLast(".")
         };
     }
-    
-    public ExportOverrideParameters? OverrideParameters(FStructFallback overrideData)
-    {
-        var materialToAlter = overrideData.Get<FSoftObjectPath>("MaterialToAlter");
-        if (materialToAlter.AssetPathName.IsNone) return null; 
 
-        var exportParams = new ExportOverrideParameters();
-        AccumulateParameters(overrideData, ref exportParams);
+    public List<ExportOverrideParameters>? OverrideParameters(FStructFallback overrideData)
+    {
+        var materialsToAlter = new List<FSoftObjectPath>();
+        if (overrideData.TryGetValue<FSoftObjectPath>(out var alterMat, "MaterialToAlter"))
+            materialsToAlter.AddIfNotNull(alterMat);
         
-        exportParams.MaterialNameToAlter = materialToAlter.AssetPathName.Text.SubstringAfterLast(".");
-        exportParams.Hash = exportParams.GetHashCode();
-        return exportParams;
+        if (overrideData.TryGetValue<FSoftObjectPath[]>(out var alterMats, "MaterialsToAlter"))
+            materialsToAlter.AddRangeIfNotNull(alterMats);
+
+        materialsToAlter.RemoveAll(mat => mat.AssetPathName.IsNone || "".Equals(mat.AssetPathName.Text));
+        if (materialsToAlter.Count == 0) return null;
+
+        List<ExportOverrideParameters> returnParams = [];
+        foreach (var materialToAlter in materialsToAlter)
+        {
+            var exportParams = new ExportOverrideParameters();
+            AccumulateParameters(overrideData, ref exportParams);
+            exportParams.MaterialNameToAlter = materialToAlter.AssetPathName.Text.SubstringAfterLast(".");
+            exportParams.Hash = exportParams.GetHashCode();
+            returnParams.Add(exportParams);
+        }
+
+        return returnParams;
     }
-    
+
+
     public List<ExportOverrideParameters>? OverrideColors(AssetColorStyleData colorStyle)
     {
         var materialsToAlter = colorStyle.StyleData.Get<FSoftObjectPath[]>("MaterialsToAlter");

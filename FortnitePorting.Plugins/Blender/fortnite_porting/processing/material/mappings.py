@@ -672,9 +672,6 @@ hair_mappings = MappingCollection(
     ],
     switches=[
         SlotMapping("UseAnisotropicShading"),
-        SlotMapping("Eye Use Sun Highlight"),
-        SlotMapping("Eye Use UV Highlight"),
-        SlotMapping("UseEyeColorTinting")
     ]
 )
 
@@ -844,6 +841,87 @@ sequin_secondary_mappings = MappingCollection(
         SlotMapping("SequinFalloffColor01_Secondary", "SequinFalloffColor01"),
         SlotMapping("SequinFalloffColor02_Secondary", "SequinFalloffColor02"),
     ],
+)
+
+fur_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Diffuse"),
+        SlotMapping("M"),
+        SlotMapping("Mask", "M"),
+        SlotMapping("Strand Map"),
+        SlotMapping("SpecularMasks"),
+        SlotMapping("SRM", "SpecularMasks"),
+        SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
+        SlotMapping("Normals"),
+        SlotMapping("Strands Normal"),
+        SlotMapping("Emissive"),
+        SlotMapping("Emission", "Emissive")
+    ],
+    vectors=[
+        SlotMapping("Fur_Color_Darkness"),
+        SlotMapping("Fur_Color_Brightness")
+    ],
+    scalars=[
+        SlotMapping("AmbientOcclusion_Black"),
+        SlotMapping("BaseColor_Fresnel_Brightness"),
+        SlotMapping("Basecolor_Fresnel_Exponent"),
+        SlotMapping("Fresnel_Brightness_Multiple"),
+
+        SlotMapping("Fur_Contrast"),
+        SlotMapping("Gmap_Intensity"),
+
+        SlotMapping("Specular_POWER"),
+        SlotMapping("Specular _POWER", "Specular_POWER"),
+        SlotMapping("Fur_Specular_Min"),
+        SlotMapping("Fur_Specular_Max"),
+        SlotMapping("Fur_Metallic"),
+        SlotMapping("Metallic_Min"),
+        SlotMapping("Metallic_Max"),
+        SlotMapping("Roughness_power"),
+        SlotMapping("Roughness_Min"),
+        SlotMapping("Roughness_Max"),
+        SlotMapping("Roughness_Noise_Tiling"),
+        SlotMapping("Roughness_Noise_Min"),
+
+        SlotMapping("Emissive_Fur_Brightness"),
+        SlotMapping("EmissiveBrightness"),
+
+        SlotMapping("AnisotropyMaxWeight"),
+        SlotMapping("Fur_Anisotropy_Min"),
+        SlotMapping("Fur_Anisotropy_Max"),
+        SlotMapping("Scraggle_Strength"),
+
+        SlotMapping("Mesh_Normal_Flatness"),
+        SlotMapping("Fur_Normal_Flatness"),
+    ],
+    switches=[
+        SlotMapping("UseAnisotropicShading"),
+        SlotMapping("SwizzleRoughnessToGreen")
+    ]
+)
+
+sidekick_mappings = MappingCollection(
+    textures=[
+        SlotMapping("TechArtMask"),
+        SlotMapping("Custom Color Mask"),
+        SlotMapping("Pattern Mask"),
+    ],
+    vectors=[
+        SlotMapping("PrimaryColor"),
+        SlotMapping("AccentColor_01"),
+        SlotMapping("AccentColor_02"),
+        SlotMapping("AccentColor_03"),
+        SlotMapping("PatternColor"),
+
+        SlotMapping("PrimaryColorMask_Channel"),
+        SlotMapping("AccentColor_01_Channel"),
+        SlotMapping("AccentColor_02_Channel"),
+        SlotMapping("AccentColor_03_Channel"),
+        SlotMapping("PatternMask_Channel"),
+    ],
+    scalars=[
+        SlotMapping("Pattern Strength"),
+    ]
 )
 
 minifig_body_mappings = MappingCollection(

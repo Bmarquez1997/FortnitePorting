@@ -117,28 +117,29 @@ public partial class ExportContext
                     var masterSkeletalMesh = masterSkeletalMeshes
                         .Select(index => index.LoadOrDefault<USkeletalMesh>())
                         .FirstOrDefault(mesh => mesh is not null);
-                    
-                    if (masterSkeletalMesh is null) break;
 
-                    var meta = new ExportMasterSkeletonMeta
+                    if (masterSkeletalMesh is not null)
                     {
-                        MasterSkeletalMesh = Mesh(masterSkeletalMesh)
-                    };
-                    exportPart.Meta = meta;
+                        var meta = new ExportMasterSkeletonMeta
+                        {
+                            MasterSkeletalMesh = Mesh(masterSkeletalMesh)
+                        };
+                        exportPart.Meta = meta;
+                        break;
+                    }
+
+                    if (additionalData.TryGetValue(out UAnimBlueprintGeneratedClass animBlueprintPet, "AnimClass")
+                        && animBlueprintPet.ClassDefaultObject != null
+                        && animBlueprintPet.ClassDefaultObject.TryLoad(out var animBlueprintPetData)
+                        && animBlueprintPetData.TryGetValue(out FStructFallback poseAssetNode, "AnimGraphNode_PoseBlendNode"))
+                    {
+                        var metaPet = new ExportHeadMeta();
+                        metaPet.PoseAsset = Export(poseAssetNode.Get<UPoseAsset>("PoseAsset"));
+                        exportPart.Meta = metaPet;
+                    }
+
                     break;
                 }
-            }
-        }
-
-        if (part.TryGetValue(out UAnimBlueprintGeneratedClass animBlueprintPet, "AnimClass"))
-        {
-            if (animBlueprintPet.ClassDefaultObject != null
-                && animBlueprintPet.ClassDefaultObject.TryLoad(out var animBlueprintPetData)
-                && animBlueprintPetData.TryGetValue(out FStructFallback poseAssetNode, "AnimGraphNode_PoseBlendNode"))
-            {
-                var metaPet = new ExportHeadMeta();
-                metaPet.PoseAsset = Export(poseAssetNode.Get<UPoseAsset>("PoseAsset"));
-                exportPart.Meta = metaPet;
             }
         }
 
