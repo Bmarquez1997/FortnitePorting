@@ -907,20 +907,42 @@ sidekick_mappings = MappingCollection(
         SlotMapping("Pattern Mask"),
     ],
     vectors=[
-        SlotMapping("PrimaryColor"),
-        SlotMapping("AccentColor_01"),
-        SlotMapping("AccentColor_02"),
-        SlotMapping("AccentColor_03"),
-        SlotMapping("PatternColor"),
+        SlotMapping("Base Color"),
+        SlotMapping("PrimaryColor", "Base Color"),
+        SlotMapping("Primary Color"),
+        SlotMapping("AccentColor_01", "Primary Color"),
+        SlotMapping("Secondary Color"),
+        SlotMapping("AccentColor_02", "Secondary Color"),
+        SlotMapping("Tertiary Color"),
+        SlotMapping("AccentColor_03", "Tertiary Color"),
+        SlotMapping("Pattern Color"),
+        SlotMapping("PatternColor", "Pattern Color"),
 
-        SlotMapping("PrimaryColorMask_Channel"),
-        SlotMapping("AccentColor_01_Channel"),
-        SlotMapping("AccentColor_02_Channel"),
-        SlotMapping("AccentColor_03_Channel"),
-        SlotMapping("PatternMask_Channel"),
+        SlotMapping("Base Blend Color"),
+        SlotMapping("Primary Blend Color"),
+        SlotMapping("Secondary Blend Color"),
+        SlotMapping("Tertiary Blend Color"),
+
+        SlotMapping("Tech Art Mask Channel"),
+        SlotMapping("PrimaryColorMask_Channel", "Tech Art Mask Channel"),
+        SlotMapping("PrimaryMaskChannel"),
+        SlotMapping("AccentColor_01_Channel", "PrimaryMaskChannel"),
+        SlotMapping("SecondaryMaskChannel"),
+        SlotMapping("AccentColor_02_Channel", "SecondaryMaskChannel"),
+        SlotMapping("TertiaryMaskChannel"),
+        SlotMapping("AccentColor_03_Channel", "TertiaryMaskChannel"),
+        SlotMapping("Pattern Mask Channel"),
+        SlotMapping("PatternMask_Channel", "Pattern Mask Channel"),
+        SlotMapping("BaseColorValueChannel"),
+        SlotMapping("BaseColorAdvancedBlendChannel"),
     ],
     scalars=[
+        SlotMapping("BaseColorValueBias"),
+        SlotMapping("BaseColorValuePow"),
         SlotMapping("Pattern Strength"),
+    ],
+    switches=[
+        SlotMapping("UseAdvancedColorBlend")
     ]
 )
 

@@ -13,6 +13,7 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
+using DynamicData;
 using FortnitePorting.Extensions;
 using FortnitePorting.Shared.Extensions;
 using SkiaSharp;
@@ -81,17 +82,25 @@ public partial class AssetStyleInfo : ObservableObject
 
         SelectedStyleIndex = 0;
     }
-    
-    public AssetStyleInfo(string channelName, UObject colorVariant)
+
+    public AssetStyleInfo(string channelName, UObject colorVariant, bool isParamSet = false)
     {
         ChannelName = channelName;
 
+        StyleDatas.AddRange(isParamSet ? ParseParamSetStyles(colorVariant) : ParseColorSwatchStyles(colorVariant));
+
+        SelectedStyleIndex = 0;
+    }
+    
+    private List<AssetColorStyleData> ParseColorSwatchStyles(UObject colorVariant)
+    {
+        List<AssetColorStyleData> colorStyles = [];
         if (!colorVariant.TryGetValue(out FStructFallback inlineVar, "InlineVariant")
             || !inlineVar.TryGetValue(out FStructFallback richColorVar, "RichColorVar")
             || !richColorVar.TryGetValue(out FSoftObjectPath swatchPath, "ColorSwatchForChoices")
             || !swatchPath.TryLoad(out UObject colorSwatch)
             || !colorSwatch.TryGetValue(out FStructFallback[] colorPairs, "ColorPairs"))
-            return;
+            return colorStyles;
         
         foreach (var color in colorPairs)
         {
@@ -99,10 +108,33 @@ public partial class AssetStyleInfo : ObservableObject
             var colorName = color.GetOrDefault("ColorName", new FName(colorValue.Hex));
             var displayIcon = CreateColorDisplayImage(colorValue);
             
-            StyleDatas.Add(new AssetColorStyleData(colorName.PlainText, richColorVar, colorValue, displayIcon.ToWriteableBitmap()));
+            colorStyles.Add(new AssetColorStyleData(colorName.PlainText, richColorVar, color, displayIcon.ToWriteableBitmap()));
         }
 
-        SelectedStyleIndex = 0;
+        return colorStyles;
+    }
+    
+    private List<AssetColorStyleData> ParseParamSetStyles(UObject colorVariant)
+    {
+        List<AssetColorStyleData> colorStyles = [];
+        if (!colorVariant.TryGetValue(out FStructFallback inlineVar, "InlineVariant")
+            || !inlineVar.TryGetValue(out UObject paramSet, "MaterialParameterSetChoices")
+            || !paramSet.TryGetValue(out FStructFallback[] choices, "Choices"))
+            return colorStyles;
+        
+        foreach (var color in choices)
+        {
+            if (!color.TryGetValue(out FInstancedStruct uiStruct, "UITileDisplayData")
+                || !uiStruct.NonConstStruct.TryGetValue(out FLinearColor colorValue, "Color"))
+                continue;
+            
+            var colorName = color.GetOrDefault("DisplayName", new FText(colorValue.Hex));
+            var displayIcon = CreateColorDisplayImage(colorValue);
+            
+            colorStyles.Add(new AssetColorStyleData(colorName.Text, inlineVar, color, displayIcon.ToWriteableBitmap(), true));
+        }
+
+        return colorStyles;
     }
     
     public SKBitmap CreateDisplayImage(SKBitmap iconBitmap, EFortRarity rarity = EFortRarity.Uncommon)

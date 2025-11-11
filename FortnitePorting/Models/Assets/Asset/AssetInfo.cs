@@ -34,6 +34,7 @@ public partial class AssetInfo : Base.BaseAssetInfo
                 "FortCosmeticMeshVariant" => "MeshOptions",
                 "FortCosmeticGameplayTagVariant" => "GenericTagOptions",
                 "FortCosmeticRichColorVariant" => "InlineVariant",
+                "FortCosmeticMaterialParameterSetVariant" => "MaterialParameterSetChoices",
                 "FortCosmeticMorphTargetVariant" => "MorphTargetOptions",
                 _ => null
             };
@@ -41,9 +42,9 @@ public partial class AssetInfo : Base.BaseAssetInfo
             if (optionsName is null) continue;
             
             AssetStyleInfo styleInfo;
-            if ("FortCosmeticRichColorVariant".Equals(style.ExportType))
+            if ("FortCosmeticRichColorVariant".Equals(style.ExportType) || "FortCosmeticMaterialParameterSetVariant".Equals(style.ExportType))
             {
-                styleInfo = new AssetStyleInfo(channel, style);
+                styleInfo = new AssetStyleInfo(channel, style, "FortCosmeticMaterialParameterSetVariant".Equals(style.ExportType));
             }
             else
             {

@@ -263,7 +263,7 @@ class ImportContext:
                     color = color_data[vertex_index]
                     vertex_color.data[loop_index].color = color[0] / 255, color[1] / 255, color[2] / 255, color[3] / 255
 
-        if imported_object.type == 'ARMATURE':
+        if imported_mesh is not None:
             imported_mesh.data = imported_mesh.data.copy()
 
             preskinned_pos = imported_mesh.data.attributes.new( domain="POINT", type="FLOAT_VECTOR",  name="PS_LOCAL_POSITION")
@@ -1342,17 +1342,6 @@ class ImportContext:
                 set_param("AO", self.options.get("AmbientOcclusion"))
                 if diffuse_node := get_node(shader_node, "Diffuse"):
                     nodes.active = diffuse_node
-                    
-                if get_param(switches, "UseCustomColors"):
-                    sidekick_node = nodes.new(type="ShaderNodeGroup")
-                    sidekick_node.node_tree = bpy.data.node_groups.get("FPv3 Sidekick")
-                    sidekick_node.location = -600, 0
-                    setup_params(sidekick_mappings, sidekick_node, False)
-                    
-                    move_texture_node(sidekick_node, "Diffuse")
-
-                    if diffuse_node := get_node(sidekick_node, "Diffuse"):
-                        nodes.active = diffuse_node
 
             case "FPv3 Vehicle Interior":
                 set_param("AO", self.options.get("AmbientOcclusion"))
@@ -1438,6 +1427,17 @@ class ImportContext:
             case "FPv3 Lego Minifig":
                 if diffuse_node := get_node(shader_node, "Tex Deco D"):
                     nodes.active = diffuse_node
+
+        if get_param(switches, "UseCustomColors") or get_param(switches, "Use Color Customization"):
+            sidekick_node = nodes.new(type="ShaderNodeGroup")
+            sidekick_node.node_tree = bpy.data.node_groups.get("FPv3 Sidekick")
+            sidekick_node.location = -600, 0
+            setup_params(sidekick_mappings, sidekick_node, False)
+
+            move_texture_node(sidekick_node, "Diffuse")
+
+            if diffuse_node := get_node(sidekick_node, "Diffuse"):
+                nodes.active = diffuse_node
 
     def import_sound_data(self, data):
         for sound in data.get("Sounds"):

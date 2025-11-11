@@ -51,11 +51,13 @@ public partial class AssetStyleData : BaseStyleData
 
 public partial class AssetColorStyleData : AssetStyleData
 {
-    [ObservableProperty] private FLinearColor _overrideColor;
+    [ObservableProperty] private FStructFallback _colorData;
+    [ObservableProperty] private bool _isParamSet;
     
-    public AssetColorStyleData(string name, FStructFallback styleData, FLinearColor overrideColor, Bitmap previewImage) : base(name, styleData, previewImage)
+    public AssetColorStyleData(string name, FStructFallback styleData, FStructFallback colorData, Bitmap previewImage, bool isParamSet = false) : base(name, styleData, previewImage)
     {
-        OverrideColor = overrideColor;
+        ColorData = colorData;
+        IsParamSet = isParamSet;
     }
 }
 
