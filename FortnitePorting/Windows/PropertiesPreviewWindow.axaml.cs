@@ -1,20 +1,13 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
-using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using AvaloniaEdit.Folding;
-using Avalonia.VisualTree;
-using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Texture;
 using FluentAvalonia.UI.Controls;
-using FortnitePorting.Application;
 using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
 using FortnitePorting.Models;
-using FortnitePorting.Services;
-using FortnitePorting.Shared.Extensions;
-using FortnitePorting.ViewModels;
 using FortnitePorting.WindowModels;
 using PropertiesContainer = FortnitePorting.Models.Viewers.PropertiesContainer;
 
@@ -23,7 +16,11 @@ namespace FortnitePorting.Windows;
 public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindowModel>
 {
     public static PropertiesPreviewWindow? Instance;
-    
+
+    private FoldingManager? _foldingManager;
+    private JsonFoldingStrategy _foldingStrategy = new();
+    private FoldingMargin? _foldingMargin;
+
     public PropertiesPreviewWindow()
     {
         InitializeComponent();
@@ -35,20 +32,40 @@ public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindo
     {
         base.OnLoaded(e);
         Editor.TextArea.TextView.BackgroundRenderers.Add(new IndentGuideLinesRenderer(Editor));
+        EnsureFoldingManager();
         
-        var foldingManager = FoldingManager.Install(Editor.TextArea);
-        var foldingStrategy = new JsonFoldingStrategy();
-        foldingStrategy.UpdateFoldings(foldingManager, Editor.Document);
-        
-        SetMarginColors(foldingManager);
+        if (WindowModel is INotifyPropertyChanged inpc)
+        {
+            inpc.PropertyChanged += OnWindowModelPropertyChanged;
+        }
+    }
+    
+    private void EnsureFoldingManager()
+    {
+        if (_foldingManager is not null)
+        {
+            FoldingManager.Uninstall(_foldingManager);
+            _foldingManager = null;
+        }
+
+        _foldingManager = FoldingManager.Install(Editor.TextArea);
+        _foldingStrategy.UpdateFoldings(_foldingManager, Editor.Document);
+        ApplyMarginForManager(_foldingManager);
     }
 
-    //TODO: How does this get applied?
-    private void SetMarginColors(FoldingManager manager)
+    private void ApplyMarginForManager(FoldingManager manager)
     {
         var brush = new SolidColorBrush(AppSettings.Theme.WindowBackgroundColor);
         var hover = new SolidColorBrush(AppSettings.Theme.StyleAccentColor);
-        var margin = new FoldingMargin
+        
+        if (_foldingMargin is not null)
+        {
+            if (Editor.TextArea.LeftMargins.Contains(_foldingMargin))
+                Editor.TextArea.LeftMargins.Remove(_foldingMargin);
+            _foldingMargin = null;
+        }
+
+        _foldingMargin = new FoldingMargin
         {
             FoldingManager = manager,
             FoldingMarkerBrush = brush,
@@ -56,6 +73,8 @@ public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindo
             SelectedFoldingMarkerBrush = hover,
             SelectedFoldingMarkerBackgroundBrush = hover
         };
+        
+        Editor.TextArea.LeftMargins.Add(_foldingMargin);
     }
 
     public static void Preview(string name, string json)
@@ -86,6 +105,17 @@ public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindo
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
+        
+        if (_foldingManager is not null)
+        {
+            FoldingManager.Uninstall(_foldingManager);
+            _foldingManager = null;
+        }
+
+        if (WindowModel is INotifyPropertyChanged inpc)
+        {
+            inpc.PropertyChanged -= OnWindowModelPropertyChanged;
+        }
 
         Instance = null;
     }
@@ -99,6 +129,14 @@ public partial class PropertiesPreviewWindow : WindowBase<PropertiesPreviewWindo
         if (WindowModel.Assets.Count == 0)
         {
             Close();
+        }
+    }
+
+    private void OnWindowModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(WindowModel.SelectedAsset))
+        {
+            EnsureFoldingManager();
         }
     }
 }
