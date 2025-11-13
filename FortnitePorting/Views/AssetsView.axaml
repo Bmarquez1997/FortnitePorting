@@ -303,6 +303,7 @@
                                                             
                                                             <ListBox Grid.Row="2" SelectionMode="{Binding SelectionMode}"
                                                                      SelectedItems="{Binding SelectedItems}"
+                                                                     SelectedIndex="{Binding SelectedStyleIndex, Mode=TwoWay}" 
                                                                      ItemsSource="{Binding StyleDatas}" HorizontalAlignment="Center"
                                                                      IsVisible="{Binding MultiSelect}">
                                                                 <ListBox.ItemsPanel>
