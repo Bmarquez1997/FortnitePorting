@@ -280,8 +280,8 @@ def clear_children_bone_transforms(skeleton, anim, bone_name):
             dispose_curves = [fcurve for fcurve in anim.fcurves if fcurve.data_path in dispose_paths]
             for fcurve in dispose_curves:
                 anim.fcurves.remove(fcurve)
-        else:
-            channelbag = anim_utils.action_ensure_channelbag_for_slot(anim, anim.slots[f"Slot_{skeleton.name}"])
+        elif len(anim.slots) > 0:
+            channelbag = anim_utils.action_ensure_channelbag_for_slot(anim, anim.slots[0])
             dispose_curves = [fcurve for fcurve in channelbag.fcurves if fcurve.data_path in dispose_paths]
             for fcurve in dispose_curves:
                 channelbag.fcurves.remove(fcurve)
