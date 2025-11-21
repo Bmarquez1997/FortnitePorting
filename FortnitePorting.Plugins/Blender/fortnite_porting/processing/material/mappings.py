@@ -101,6 +101,7 @@ default_mappings = MappingCollection(
         
         SlotMapping("Flipbook", "Flipbook Color", alpha_slot="Flipbook Alpha"),
         SlotMapping("MouthFlipbook", "Flipbook Color", alpha_slot="Flipbook Alpha"),
+        SlotMapping("FB_MouthFlipbookTexture", "Flipbook Color", alpha_slot="Flipbook Alpha"),
     ],
     scalars=[
         SlotMapping("RoughnessMin", "Roughness Min"),
@@ -155,8 +156,12 @@ default_mappings = MappingCollection(
         SlotMapping("Roughness Map Now affects Clearcoat roughness", "Use Roughness Map"),
         
         SlotMapping("SubImages"),
+        SlotMapping("FB_MouthRowCount", "SubImages"),
+        SlotMapping("FB_MouthColumnCount", "SubImages"),
         SlotMapping("Flipbook X"),
+        SlotMapping("FB_MouthUVOffsetX", "Flipbook X"),
         SlotMapping("Flipbook Y"),
+        SlotMapping("FB_MouthUVOffsetY", "Flipbook Y"),
         SlotMapping("Flipbook Scale"),
         SlotMapping("Use Second UV Channel", "Use Second UV"),
         
@@ -207,7 +212,9 @@ default_mappings = MappingCollection(
         SlotMapping("Use Ice"),
         SlotMapping("Use Clear Coat"),
         SlotMapping("UseClearCoat", "Use Clear Coat"),
-        SlotMapping("Use Sub UV texture", "Use Flipbook")
+        SlotMapping("Use Sub UV texture", "Use Flipbook"),
+        SlotMapping("FB_UseMouth", "Use Flipbook"),
+        SlotMapping("FB_MouthUseUV2", "Use Second UV")
     ],
     component_masks=[
         SlotMapping("ThinFilm_Channel"),
