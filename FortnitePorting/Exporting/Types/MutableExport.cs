@@ -100,8 +100,9 @@ public class MutableExport : BaseExport
            ProcessMutableObject(customizableObject, collectionName, mutableObject.Value, assetCodename);
        }
 
+       var index = 0;
        foreach (var image in mutableExporter.Images)
-           ExportMutableImage(image, customizableObject);
+           ExportMutableImage(image, customizableObject, index++);
     }
 
     public MutableExport(string name, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
@@ -162,7 +163,7 @@ public class MutableExport : BaseExport
         Objects.Add(exportMutable);
     }
     
-    private void ExportMutableImage(CTexture bitmap, UCustomizableObject customizableObject)
+    private void ExportMutableImage(CTexture bitmap, UCustomizableObject customizableObject, int index)
     {
         if (bitmap == null) return;
         try
@@ -170,7 +171,8 @@ public class MutableExport : BaseExport
             var path = customizableObject.GetPathName().SubstringBeforeLast('.');
             
             var fixedPath = path.StartsWith("/") ? path[1..] : path;
-            var partName = Path.Combine(bitmap.PixelFormat.ToString(), bitmap.GetHashCode().ToString());
+            // var partName = Path.Combine(bitmap.PixelFormat.ToString(), bitmap.GetHashCode().ToString());
+            var partName = $"{index++:D4}_{bitmap.PixelFormat.ToString()}";
             fixedPath = Path.Combine(fixedPath, "textures", partName);
             if (Exporter.Meta.CustomPath != null)
             {
