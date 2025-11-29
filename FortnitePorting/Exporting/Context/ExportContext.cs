@@ -197,6 +197,27 @@ public partial class ExportContext
                 }
                 break;
             }
+            case UDNAAsset dnaAsset:
+            {
+                var exporter = new DNAExporter(dnaAsset, FileExportOptions);
+                if (!exporter.TryConvertToPoseAsset(out var poseAsset))
+                {
+                    Log.Error("Failed to convert DNA asset {0}", dnaAsset.DnaFileName);
+                    return;
+                }
+                File.WriteAllBytes(path, poseAsset.FileData);
+                
+                break;
+            }
+            case UAnimStreamable animStreamable:
+            {
+                var exporter = new AnimExporter(animStreamable, FileExportOptions);
+                foreach (var sequence in exporter.AnimSequences)
+                {
+                    File.WriteAllBytes(path, sequence.FileData);
+                }
+                break;
+            }
             case UPoseAsset poseAsset:
             {
                 var exporter = new PoseAssetExporter(poseAsset, FileExportOptions);

@@ -77,11 +77,11 @@ public partial class ExportContext
                                 if (!userData.TryLoad<UDNAAsset>(out var dna)) continue;
                                 
                                 meta.PoseAsset = Export(dna);
-                                foundDNA = meta.PoseAsset != null; //TODO: how do we know this succeeded? Or should we just assume it did?
+                                foundDNA = meta.PoseAsset is not null; //TODO: how do we know this succeeded? Or should we just assume it did?
                                 break;
                             }
                             // Fallback in case DNA exporting fails
-                            if (!foundDNA && UEParse.Provider.TryLoadPackageObject("/BRCosmetics/Characters/Player/Male/Medium/Heads/M_MED_Jonesy3L_Head/Meshes/3L/3L_lod2_Facial_Poses_PoseAsset", out UPoseAsset poseAsset))
+                            if (!foundDNA && UEParse.Provider.TryLoadPackageObject("/BRCosmetics/Characters/Player/Male/Medium/Heads/M_MED_Jonesy3L_Head/Meshes/3L/3L_lod2_Facial_Poses_PoseAsset", out UPoseAsset poseAsset)) 
                                 meta.PoseAsset = Export(poseAsset);
                         }
                     }

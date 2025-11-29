@@ -12,21 +12,19 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.GameplayTags;
 using CUE4Parse.UE4.Objects.UObject;
-using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
 using FortnitePorting.Exporting.Custom;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets.Base;
 using FortnitePorting.Models.Assets.Custom;
 using FortnitePorting.Models.Assets.Loading;
-using FortnitePorting.Shared.Extensions;
 using SkiaSharp;
 
 namespace FortnitePorting.Services;
 
 public partial class AssetLoaderService : ObservableObject, IService
 {
-    [ObservableProperty] private AssetLoader _activeLoader;
+    [ObservableProperty] private AssetLoader? _activeLoader;
     [ObservableProperty] private ReadOnlyObservableCollection<BaseAssetItem> _activeCollection;
     
     public List<AssetLoaderCategory> Categories { get; set; } =
@@ -54,7 +52,7 @@ public partial class AssetLoaderService : ObservableObject, IService
                 new AssetLoader(EExportType.Backpack)
                 {
                     ClassNames = ["AthenaBackpackItemDefinition"],
-                    HideNames = ["_STWHeroNoDefaultBackpack", "_TEST", "Dev_", "_NPC", "_TBD"]
+                    HideNames = ["_STWHeroNoDefaultBackpack", "_TEST", "Dev_", "_NPC", "_TBD", "ChaosCloth"]
                 },
                 new AssetLoader(EExportType.Pickaxe)
                 {
@@ -63,8 +61,8 @@ public partial class AssetLoaderService : ObservableObject, IService
                     IconHandler = asset =>
                     {
                         var previewImage = AssetLoader.GetIcon(asset);
-                        if (previewImage is null && asset.TryGetValue(out UObject hero, "WeaponDefinition"))
-                            previewImage = AssetLoader.GetIcon(hero);
+                        if ((previewImage is null || previewImage.Name.Contains("Placeholder", StringComparison.OrdinalIgnoreCase)) && asset.TryGetValue(out UObject weapon, "WeaponDefinition"))
+                            previewImage = AssetLoader.GetIcon(weapon);
 
                         return previewImage;
                     }
@@ -105,12 +103,10 @@ public partial class AssetLoaderService : ObservableObject, IService
                     ClassNames = ["AthenaDanceItemDefinition"],
                     HideNames = ["_CT", "_NPC"]
                 },
-
-
                 new AssetLoader(EExportType.SideKick)
                 {
                     ClassNames = ["CosmeticCompanionItemDefinition"],
-                    HideNames = ["Companion_SitPlant_PerfTest", "Companion_TestCompanion2_Mutable"]
+                    HideNames = ["Companion_SitPlant_PerfTest", "Companion_TestCompanion2_Mutable", "Companion_Placeholder"]
                 },
                 new AssetLoader(EExportType.Kicks)
                 {

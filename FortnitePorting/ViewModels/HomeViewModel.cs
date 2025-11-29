@@ -1,26 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentAvalonia.UI.Controls;
-using FortnitePorting.Application;
-using FortnitePorting.Controls;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.API.Responses;
-using FortnitePorting.Models.Supabase.Tables;
-
-
 using FortnitePorting.Services;
-using FortnitePorting.Shared;
-using FortnitePorting.ViewModels.Settings;
-using Serilog;
-using Supabase.Postgrest;
+using FortnitePorting.Shared.Extensions;
 
 namespace FortnitePorting.ViewModels;
 
@@ -42,8 +30,8 @@ public partial class HomeViewModel() : ViewModelBase
     {
         TaskService.Run(async () =>
         {
-            News = [..await Api.FortnitePorting.News()];
-            FeaturedArt = [..await Api.FortnitePorting.FeaturedArt()];
+            News = [..(await Api.FortnitePorting.News()).Take(3)];
+            FeaturedArt = [..(await Api.FortnitePorting.FeaturedArt()).Random(3)];
             
             await UEParse.Initialize();
             await FilesVM.Initialize();
@@ -70,6 +58,16 @@ public partial class HomeViewModel() : ViewModelBase
                 await dialog.ShowAsync();
             });
         }
+    }
+
+    public void OpenNews(NewsResponse news)
+    {
+        Info.Dialog($"{news.Title}: {news.SubTitle}", news.Description);
+    }
+
+    public void OpenFeaturedArt(FeaturedArtResponse featured)
+    {
+        App.Launch(featured.Social);
     }
     
     public void LaunchDiscord()

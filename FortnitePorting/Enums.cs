@@ -2,7 +2,6 @@ using System;
 using System.ComponentModel;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models;
-using FortnitePorting.Shared.Extensions;
 
 namespace FortnitePorting;
 
@@ -61,7 +60,7 @@ public enum EAssetCategory
     [Description("Fall Guys")]
     FallGuys,
     
-    [Description("Miscellaneous")]
+    [Description("Misc")]
     Misc
 }
 

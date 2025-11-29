@@ -968,7 +968,7 @@ class ImportContext:
         if (material_name in vertex_crunch_names) or get_param(scalars, "HT_CrunchVerts") == 1 or any(toon_outline_names, lambda x: x in material_name):
             self.full_vertex_crunch_materials.append(material)
             return
-
+        
         if get_param(switches, "Use Vertex Colors for Mask"):
             elements = {}
             for scalar in scalars:

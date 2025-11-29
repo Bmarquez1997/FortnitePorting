@@ -605,7 +605,7 @@ eye_mappings = MappingCollection(
     scalars=[
         SlotMapping("Eye Roughness Min"),
         SlotMapping("Eye Metallic Mult"),
-        
+
         SlotMapping("Emissive Mult"),
         SlotMapping("Eye Texture AspectRatio"),
         SlotMapping("Eye Cornea Radius (UV)"),

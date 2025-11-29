@@ -43,12 +43,12 @@ public class AnimExport : BaseExport
                         {
                             Skeleton = Exporter.Skeleton(skeleton);
                         }
-
+                        
                         Sections.AddIfNotNull(Exporter.AnimSequence(animSequence));
                         break;
                     }
                 }
-
+                        
                 break;
             }
             case EExportType.Emote:

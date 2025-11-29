@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>Application/app.manifest</ApplicationManifest>
@@ -18,9 +18,8 @@
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.2" />
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.2" />
         <PackageReference Include="Avalonia_Gif" Version="1.0.0" />
+        <PackageReference Include="AvaSourceGenerators" Version="0.2.0" />
         <PackageReference Include="ConcurrentHashSet" Version="1.3.0" />
-        <PackageReference Include="DesktopNotifications" Version="1.3.1" />
-        <PackageReference Include="DesktopNotifications.Avalonia" Version="1.3.1" />
         <PackageReference Include="DiscordRichPresence" Version="1.2.1.24" />
         <PackageReference Include="DynamicData" Version="8.4.1" />
         <PackageReference Include="EpicManifestParser" Version="2.4.1" />
@@ -62,10 +61,22 @@
     </ItemGroup>
     
     <ItemGroup>
-      <Compile Update="Windows\SoundCuePreviewWindow.axaml.cs">
-        <DependentUpon>SoundCuePreviewWindow.axaml</DependentUpon>
+      <Compile Update="Controls\Navigation\Sidebar\Sidebar.axaml.cs">
+        <DependentUpon>Sidebar.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+      <Compile Update="Controls\Navigation\Sidebar\SidebarItemButton.axaml.cs">
+        <DependentUpon>SidebarItemButton.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+      <Compile Update="Controls\Navigation\Sidebar\SidebarItemSeparator.axaml.cs">
+        <DependentUpon>SidebarItemSeparator.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
+      <Compile Update="Controls\Navigation\Sidebar\SidebarItemText.axaml.cs">
+        <DependentUpon>SidebarItemText.axaml</DependentUpon>
         <SubType>Code</SubType>
       </Compile>
     </ItemGroup>
-
+    
 </Project>

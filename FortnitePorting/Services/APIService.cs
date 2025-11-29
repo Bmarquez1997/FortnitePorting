@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using FortnitePorting.Application;
 using FortnitePorting.Models.API;
 using RestSharp;
 using RestSharp.Serializers.NewtonsoftJson;
+using Serilog;
 
 namespace FortnitePorting.Services;
 
@@ -49,9 +49,14 @@ public class APIService : IService
 
     public async Task<FileInfo> DownloadFileAsync(string url, string destination)
     {
+        Log.Information("Downloading {url} to {destination}", url, destination);
         var request = new RestRequest(url);
         var data = await _client.DownloadDataAsync(request);
-        if (data is null) return null;
+        if (data is null)
+        {
+            Log.Information("Failed to download {url} to {destination}", url, destination);
+            return null;
+        }
 
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         
@@ -61,6 +66,8 @@ public class APIService : IService
     
     public async Task<FileInfo> DownloadFileAsync(string url, string destination, Action<float> progressAction)
     {
+        Log.Information("Downloading {url} to {destination}", url, destination);
+        
         using var httpClientInstance = new HttpClient(_client.Options.ConfigureMessageHandler?.Invoke(new HttpClientHandler()) ?? new HttpClientHandler());
         var httpRequestMessage = new HttpRequestMessage
         {
@@ -69,7 +76,11 @@ public class APIService : IService
         };
 
         using var response = await httpClientInstance.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            Log.Information("Failed to download {url} to {destination}", url, destination);
+            return null;
+        }
 
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         
@@ -88,7 +99,6 @@ public class APIService : IService
 
             progressAction(totalBytesRead / totalByteCount);
         }
-
         
         return new FileInfo(destination);
     }
@@ -96,9 +106,16 @@ public class APIService : IService
     public async Task<FileInfo> DownloadFileAsync(string url, DirectoryInfo destination)
     {
         var outPath = Path.Combine(destination.FullName, Path.GetFileName(url));
+        Log.Information("Downloading {url} to {destination}", url, outPath);
+        
         var request = new RestRequest(url);
         var data = await _client.DownloadDataAsync(request);
-        if (data is not null) await File.WriteAllBytesAsync(outPath, data);
+        
+        if (data is not null) 
+            await File.WriteAllBytesAsync(outPath, data);
+        else 
+            Log.Information("Failed to download {url} to {destination}", url, destination);
+        
         return new FileInfo(outPath);
     }
     

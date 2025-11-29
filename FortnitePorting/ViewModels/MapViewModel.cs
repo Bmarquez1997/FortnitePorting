@@ -11,12 +11,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.UE4.IO;
 using CUE4Parse.Utils;
-using FortnitePorting.Application;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Models.Map;
 
 using FortnitePorting.Services;
+using FortnitePorting.Views;
 using Serilog;
 
 namespace FortnitePorting.ViewModels;
@@ -252,7 +252,7 @@ public partial class MapViewModel : ViewModelBase
             }
             catch (Exception e)
             {
-                Info.Dialog("Map Export", $"Failed to load {map.Info.Name} for export, skipping.");
+                Info.Message("Map Export", $"Failed to load {map.MapInfo.Name} for export, skipping.");
 #if DEBUG
                 Log.Error(e.ToString());
 #else
@@ -269,11 +269,25 @@ public partial class MapViewModel : ViewModelBase
         await SelectedMap.Load();
     }
     
+    [RelayCommand]
+    public async Task OpenSettings()
+    {
+        Navigation.App.Open<ExportSettingsView>();
+        Navigation.ExportSettings.Open(ExportLocation);
+    }
+    
+    
+    [RelayCommand]
+    public async Task SetExportLocation(EExportLocation location)
+    {
+        ExportLocation = location;
+    }
+    
     public override async Task OnViewOpened()
     {
         if (SelectedMap is null) return;
         
-        Discord.Update($"Browsing Map: \"{SelectedMap.Info.Name}\"", "Map");
+        Discord.Update($"Browsing Map: \"{SelectedMap.MapInfo.Name}\"", "Map");
     }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -286,7 +300,7 @@ public partial class MapViewModel : ViewModelBase
             {
                 GridsControl?.InvalidateVisual();
                 
-                Discord.Update($"Browsing Map: \"{SelectedMap.Info.Name}\"", "Map");
+                Discord.Update($"Browsing Map: \"{SelectedMap.MapInfo.Name}\"", "Map");
                 break;
             }
         }

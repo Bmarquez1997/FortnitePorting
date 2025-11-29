@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse.UE4.Versions;
@@ -60,7 +59,7 @@ public partial class InstallationProfile : ObservableValidator
     [JsonIgnore] public bool EncryptionKeyEnabled => IsCustom;
     [JsonIgnore] public bool MappingsFileEnabled => IsCustom;
     [JsonIgnore] public bool TextureStreamingEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
-    [JsonIgnore] public bool LoadCreativeMapsEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
+    [JsonIgnore] public bool LoadCreativeMapsEnabled => FortniteVersion is EFortniteVersion.LatestInstalled && SupaBase.Permissions.CanExportUEFN;
     
     public async Task BrowseArchivePath()
     {

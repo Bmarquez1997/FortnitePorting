@@ -1,4 +1,3 @@
-using System;
 using FortnitePorting.Models.Supabase.Tables;
 
 namespace FortnitePorting.Models.API.Responses;

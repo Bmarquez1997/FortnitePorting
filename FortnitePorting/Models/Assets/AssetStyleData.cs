@@ -8,7 +8,6 @@ using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models.Clipboard;
-using FortnitePorting.Shared.Extensions;
 
 namespace FortnitePorting.Models.Assets;
 

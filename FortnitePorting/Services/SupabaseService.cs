@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentAvalonia.UI.Controls;
@@ -8,12 +7,10 @@ using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.Supabase.Tables;
 using FortnitePorting.Models.Supabase.User;
 using Mapster;
-using Newtonsoft.Json;
 using Supabase;
 using Supabase.Gotrue;
 using Supabase.Realtime.PostgresChanges;
 using Client = Supabase.Client;
-using Log = Serilog.Log;
 
 namespace FortnitePorting.Services;
 
@@ -145,7 +142,6 @@ public partial class SupabaseService : ObservableObject, IService
             Permissions = response.Model<Permissions>().Adapt<UserPermissions>();
         });
             
-        await VotingVM.Initialize();
         await Chat.Initialize();
     }
     
