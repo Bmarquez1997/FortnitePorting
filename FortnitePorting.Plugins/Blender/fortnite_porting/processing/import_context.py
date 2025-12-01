@@ -920,7 +920,7 @@ class ImportContext:
             replace_shader_node("FPv3 Hair")
             socket_mappings = hair_mappings
 
-        if "M_Companion_Fur_Parent_2025" in base_material_path or "FurParent" in base_material_path:
+        if "M_Companion_Fur_Parent_2025" in base_material_path or "furparent" in base_material_path.lower():
             replace_shader_node("FPv3 Fur")
             socket_mappings = fur_mappings
 

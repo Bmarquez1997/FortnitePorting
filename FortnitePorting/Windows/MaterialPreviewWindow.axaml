@@ -16,7 +16,7 @@
         Width="1280" Height="720" RequestedThemeVariant="Dark" Background="#0e0e0e" TransparencyLevelHint="Mica"
         ExtendClientAreaToDecorationsHint="True" ExtendClientAreaChromeHints="NoChrome" FontFamily="{StaticResource SFTextRegular}"
         WindowStartupLocation="CenterScreen" ClosingBehavior="OwnerAndChildWindows" ExtendClientAreaTitleBarHeightHint="35"
-        Icon="/Assets/LogoV3_Mutable.ico"
+        Icon="/Assets/LogoRebrand_Chip.ico"
         Title="Material Viewer">
     <Window.Resources>
         <GeometryDrawing x:Key="SmallGridGeometry"
@@ -50,7 +50,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
             
-                <ui:ImageIcon Grid.Column="0" Source="/Assets/LogoRebrand.png" 
+                <ui:ImageIcon Grid.Column="0" Source="/Assets/LogoRebrand_Chip.png" 
                               HorizontalAlignment="Right"
                               Width="20" Height="20" 
                               RenderOptions.BitmapInterpolationMode="HighQuality" RenderOptions.EdgeMode="Antialias"/>

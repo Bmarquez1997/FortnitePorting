@@ -39,15 +39,15 @@
                 <controls:SettingsItem.Footer>
                     <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type meshes:ELodFormat}}"
                               SelectedItem="{Binding LodFormat, Converter={StaticResource EnumToRecord}}" />
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
-            <ui:SettingsExpander Header="Nanite Mesh Format" Description="Controls how Nanite geometry is handled (when available).">
-                <ui:SettingsExpander.Footer>
+            <controls:SettingsItem Title="Nanite Mesh Format" Description="Controls how Nanite geometry is handled (when available).">
+                <controls:SettingsItem.Footer>
                     <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type nanite:ENaniteMeshFormat}}"
                               SelectedItem="{Binding NaniteMeshFormat, Converter={StaticResource EnumToRecord}}" />
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
             <TextBlock Text="Animation" Classes="SubtitleTextBlockStyle" HorizontalAlignment="Center"/>
             

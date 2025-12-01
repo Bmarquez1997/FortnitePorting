@@ -38,20 +38,20 @@
             <controls:SettingsItem Title="Show Map Grid Information" Description="Displays tools to modify and debug map grids in the map tab.">
                 <controls:SettingsItem.Footer>
                     <ToggleSwitch IsChecked="{Binding ShowMapDebugInfo}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
-            <ui:SettingsExpander Header="Show All Files in Files Tab" Description="Displays all files (including bulk, optional, and verse) in the Files tab.">
-                <ui:SettingsExpander.Footer>
+            <controls:SettingsItem Title="Show All Files in Files Tab" Description="Displays all files (including bulk, optional, and verse) in the Files tab.">
+                <controls:SettingsItem.Footer>
                     <ToggleSwitch IsChecked="{Binding ShowAllFilesInFilesTab}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
-            <ui:SettingsExpander Header="Write Exports to JSON File" Description="Writes the JSON formatted export message to a .json file in the Assets folder.">
-                <ui:SettingsExpander.Footer>
+            <controls:SettingsItem Title="Write Exports to JSON File" Description="Writes the JSON formatted export message to a .json file in the Assets folder.">
+                <controls:SettingsItem.Footer>
                     <ToggleSwitch IsChecked="{Binding WriteExportToJSONFile}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

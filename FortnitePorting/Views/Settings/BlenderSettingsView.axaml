@@ -100,15 +100,15 @@
                     <ui:NumberBox Value="{Binding TargetLOD}" 
                                   Minimum="0"
                                   SpinButtonPlacementMode="Inline"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
-            <ui:SettingsExpander Header="Nanite Mesh Format" Description="Controls how Nanite geometry is handled (when available).">
-                <ui:SettingsExpander.Footer>
+            <controls:SettingsItem Title="Nanite Mesh Format" Description="Controls how Nanite geometry is handled (when available).">
+                <controls:SettingsItem.Footer>
                     <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type nanite:ENaniteMeshFormat}}"
                               SelectedItem="{Binding NaniteMeshFormat, Converter={StaticResource EnumToRecord}}" />
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
             <controls:SettingsItem Title="Polygon Type" Description="The type of polygon that imported meshes should use.">
                 <controls:SettingsItem.Footer>
@@ -242,14 +242,14 @@
             <controls:SettingsItem Title="Import Instanced Foliage" Description="Whether or not to import instanced foliage meshes.">
                 <controls:SettingsItem.Footer>
                     <ToggleSwitch IsChecked="{Binding ImportInstancedFoliage}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
-            <ui:SettingsExpander Header="Import Lights" Description="Whether or not to import lights.">
-                <ui:SettingsExpander.Footer>
+            <controls:SettingsItem Title="Import Lights" Description="Whether or not to import lights.">
+                <controls:SettingsItem.Footer>
                     <ToggleSwitch IsChecked="{Binding ImportLights}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
             
         </StackPanel>
     </ScrollViewer>

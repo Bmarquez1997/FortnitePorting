@@ -864,6 +864,7 @@ fur_mappings = MappingCollection(
         SlotMapping("M"),
         SlotMapping("Mask", "M"),
         SlotMapping("Strand Map"),
+        SlotMapping("Hair Mask Height", "Strand Map"),
         SlotMapping("SpecularMasks"),
         SlotMapping("SRM", "SpecularMasks"),
         SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
