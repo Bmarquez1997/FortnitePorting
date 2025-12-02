@@ -600,6 +600,7 @@ eye_mappings = MappingCollection(
         
         SlotMapping("EyeTintColor"),
         
+        SlotMapping("EyelashColor"),
         SlotMapping("EyelashVertexColorMaskChannel"),
     ],
     scalars=[
@@ -875,7 +876,9 @@ fur_mappings = MappingCollection(
     ],
     vectors=[
         SlotMapping("Fur_Color_Darkness"),
-        SlotMapping("Fur_Color_Brightness")
+        SlotMapping("Paint_Hair_Color_Darkness", "Fur_Color_Darkness"),
+        SlotMapping("Fur_Color_Brightness"),
+        SlotMapping("Paint_Hair_Color_Brightness", "Fur_Color_Brightness"),
     ],
     scalars=[
         SlotMapping("AmbientOcclusion_Black"),
@@ -884,31 +887,45 @@ fur_mappings = MappingCollection(
         SlotMapping("Fresnel_Brightness_Multiple"),
 
         SlotMapping("Fur_Contrast"),
+        SlotMapping("Paint_Hair_Contrast", "Fur_Contrast"),
         SlotMapping("Gmap_Intensity"),
 
         SlotMapping("Specular_POWER"),
         SlotMapping("Specular _POWER", "Specular_POWER"),
         SlotMapping("Fur_Specular_Min"),
+        SlotMapping("Hair_Specular_Min", "Fur_Specular_Min"),
         SlotMapping("Fur_Specular_Max"),
+        SlotMapping("Hair_Specular_Max", "Fur_Specular_Max"),
         SlotMapping("Fur_Metallic"),
         SlotMapping("Metallic_Min"),
+        SlotMapping("Hair_Metallic_Min", "Metallic_Min"),
         SlotMapping("Metallic_Max"),
+        SlotMapping("Hair_Metallic_Max", "Metallic_Max"),
         SlotMapping("Roughness_power"),
         SlotMapping("Roughness_Min"),
+        SlotMapping("Roughness Min", "Roughness_Min"),
         SlotMapping("Roughness_Max"),
+        SlotMapping("Roughness Max", "Roughness_Max"),
         SlotMapping("Roughness_Noise_Tiling"),
+        SlotMapping("Scraggle_NoiseZ_Tiling", "Roughness_Noise_Tiling"),
         SlotMapping("Roughness_Noise_Min"),
+        SlotMapping("Hair_Noise_Roughness_Min", "Roughness_Noise_Min"),
 
         SlotMapping("Emissive_Fur_Brightness"),
         SlotMapping("EmissiveBrightness"),
 
         SlotMapping("AnisotropyMaxWeight"),
         SlotMapping("Fur_Anisotropy_Min"),
+        SlotMapping("Hair_Anisotropy0_Min", "Fur_Anisotropy_Min"),
         SlotMapping("Fur_Anisotropy_Max"),
+        SlotMapping("Hair_Anisotropy0_Max", "Fur_Anisotropy_Max"),
         SlotMapping("Scraggle_Strength"),
+        SlotMapping("Scraggle", "Scraggle_Strength"),
 
         SlotMapping("Mesh_Normal_Flatness"),
+        SlotMapping("Hair_Mesh_Normal_Flatness", "Mesh_Normal_Flatness"),
         SlotMapping("Fur_Normal_Flatness"),
+        SlotMapping("Paint_Hair_Normal_Flatness", "Fur_Normal_Flatness"),
     ],
     switches=[
         SlotMapping("UseAnisotropicShading"),
