@@ -77,7 +77,7 @@ public partial class ExportContext
         var exportPart = new T
         {
             Name = mesh.Name,
-            Path = Export(mesh, embeddedAsset: mesh.Owner?.Name.SubstringAfterLast("/") != mesh.Name),
+            Path = Export(mesh, embeddedAsset: mesh.Owner?.Name.SubstringAfterLast("/") != mesh.Name, isNanite: convertedMesh.LODs[0].IsNanite),
             NumLods = convertedMesh.LODs.Count
         };
 
@@ -199,7 +199,7 @@ public partial class ExportContext
         var exportPart = new T
         {
             Name = mesh.Name,
-            Path = Export(mesh, embeddedAsset: true),
+            Path = Export(mesh, embeddedAsset: true, isNanite: convertedMesh.LODs[0].IsNanite),
             NumLods = convertedMesh.LODs.Count
         };
 
