@@ -56,7 +56,7 @@ public partial class FilesViewModel : ViewModelBase
     [ObservableProperty] private string _flatSearchFilter = string.Empty;
     [ObservableProperty] private string _fileSearchFilter = string.Empty;
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(SearchText))] private bool _useFlatView = false;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(SearchText))] private bool _useFlatView = true;
     [ObservableProperty] private bool _useRegex = false;
     [ObservableProperty] private bool _showLoadingSplash = true;
     
