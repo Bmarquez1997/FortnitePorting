@@ -163,6 +163,13 @@
                     <ToggleSwitch IsChecked="{Binding CurrentProfile.UseTextureStreaming}" />
                 </controls:SettingsItem.Footer>
             </controls:SettingsItem>
+            
+            <controls:SettingsItem Title="Load Nanite Data"
+                                   Description="Enable the loading and exporting of Nanite geometry.">
+                <controls:SettingsItem.Footer>
+                    <ToggleSwitch IsChecked="{Binding CurrentProfile.LoadNaniteData}" />
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
 
             <controls:SettingsItem Title="Load UEFN Maps"
                                    Description="Whether or not to load saved UEFN maps from Fortnite's AppData."
