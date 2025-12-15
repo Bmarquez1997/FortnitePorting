@@ -189,6 +189,13 @@ public partial class MapViewModel : ViewModelBase
             "/BlastBerryMapUI/MiniMap/MMap_SourSpawn_Mask",
             0.023f, 75, 25, 149, 12800, false, false
         ),
+        new( //TODO: needs clockwise 90 degree rotate
+            "PiperBoot",
+            "/745ecaa3-4408-978f-f912-5cb373b8a4a9/PiperBoot",
+            "/BlastBerryMapUI/MiniMap/Discovered_PiperBoot",
+            "/BlastBerryMapUI/MiniMap/MMap_PiperBoot_Mask",
+            0.023f, 150, 25, 149, 12800, false, false
+        ),
         
         // ballistic
         new(
@@ -217,6 +224,7 @@ public partial class MapViewModel : ViewModelBase
         "DashBerry",
         "TimberStake",
         "SourSpawn",
+        "PiperBoot",
         "FeralCorgi_2Bombsite_Map"
     ];
 
