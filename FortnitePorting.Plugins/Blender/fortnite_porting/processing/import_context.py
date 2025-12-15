@@ -438,8 +438,10 @@ class ImportContext:
         self.collection.objects.link(light)
         
         light.parent = parent
-        light.rotation_euler = make_euler(base_light.get("Rotation"))
-        light.rotation_euler.y = light.rotation_euler.y - radians(90) # Rotation is off by -90 for some reason
+        light.rotation_mode = "QUATERNION"
+        light_rotation = make_quat_from_euler(base_light.get("Rotation"))
+        light_rotation.rotate(Euler((0, 90, 0))) # Rotate Y to account for UE light default rotation
+        light.rotation_quaternion = light_rotation
         light.location = make_vector(base_light.get("Location"), unreal_coords_correction=True) * self.scale
         light.scale = make_vector(base_light.get("Scale"))
         
