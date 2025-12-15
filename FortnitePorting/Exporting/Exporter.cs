@@ -39,16 +39,18 @@ namespace FortnitePorting.Exporting;
 
 public static class Exporter
 {
+    
     public static async Task Export(Func<IEnumerable<BaseExport>> exportFunction, ExportDataMeta metaData)
     {
         if (metaData.ExportLocation is EExportLocation.CustomFolder && await App.BrowseFolderDialog() is { } path)
         {
             metaData.CustomPath = path;
         }
+
         
         await TaskService.RunAsync(async () =>
         {
-            var serverType = metaData.ExportLocation.ServerType();
+            var serverType = metaData.ExportLocation.ServerType;
             if (serverType is EExportServerType.None)
             {
                 var exports = exportFunction.Invoke();
@@ -56,7 +58,7 @@ public static class Exporter
             }
             else
             {
-                if (await Api.FortnitePortingServer.PingAsync(serverType) is false)
+                if (!await ExportClient.IsRunning(serverType))
                 {
                     var serverName = serverType.Description;
                     Info.Message($"{serverName} Server", $"The {serverName} Plugin for Fortnite Porting is not currently installed or running.", 
@@ -87,7 +89,7 @@ public static class Exporter
                     await File.WriteAllTextAsync(jsonPath, data);
                 }
                 
-                await Api.FortnitePortingServer.SendAsync(data, serverType);
+                await ExportClient.SendExportAsync(serverType, exportData);
             }
         });
     }

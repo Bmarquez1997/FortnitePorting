@@ -56,14 +56,12 @@ public partial class CUE4ParseService : ObservableObject, IService
     public readonly List<UAnimMontage> MaleLobbyMontages = [];
     public readonly List<UAnimMontage> FemaleLobbyMontages = [];
     public readonly Dictionary<string, string> SetNames = [];
-
-    private OnlineResponse _onlineStatus;
     
     private static readonly Regex FortniteArchiveRegex = new(@"^FortniteGame(/|\\)Content(/|\\)Paks(/|\\)(pakchunk(?:0|10.*|\w+)-WindowsClient|global)\.(pak|utoc)$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly List<DirectoryInfo> ExtraDirectories = 
     [
-        new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FortniteGame", "Saved", "PersistentDownloadDir", "GameCustom", "InstalledBundles"))
+        new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FortniteGame", "Saved", "PersistentDownloadDir", "GameCustom", "InstalledBundles"))
     ];
     
     private static readonly List<string> MaleLobbyMontagePaths = 
@@ -96,12 +94,14 @@ public partial class CUE4ParseService : ObservableObject, IService
             _ => new HybridFileProvider(AppSettings.Installation.CurrentProfile.ArchiveDirectory, [], new VersionContainer(AppSettings.Installation.CurrentProfile.UnrealVersion)),
         };
         
+        Log.Information("Installation Type: {Type}", AppSettings.Installation.CurrentProfile.FortniteVersion);
+        Log.Information("Archive Path: {Path}", AppSettings.Installation.CurrentProfile.FortniteVersion is EFortniteVersion.LatestOnDemand ? "On-Demand" : AppSettings.Installation.CurrentProfile.ArchiveDirectory);
+        Log.Information("Unreal Version: {Version}", Provider.Versions.Game.ToString());
+        
         ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting"));
         ObjectTypeRegistry.RegisterEngine(Assembly.Load("FortnitePorting.Shared"));
 
-        Provider.LoadExtraDirectories = AppSettings.Installation.CurrentProfile.LoadCreativeMaps && SupaBase.Permissions.CanExportUEFN;
-        
-        _onlineStatus = await Api.FortnitePorting.Online() ?? new OnlineResponse();
+        Provider.LoadExtraDirectories = AppSettings.Installation.CurrentProfile.LoadInstalledBundles;
         
         Provider.ReadNaniteData = AppSettings.Installation.CurrentProfile.LoadNaniteData;
         
@@ -124,7 +124,10 @@ public partial class CUE4ParseService : ObservableObject, IService
         await InitializeProvider();
         await InitializeTextureStreaming();
         
+        UpdateStatus("Submitting Keys");
         await LoadKeys();
+        
+        UpdateStatus("Loading Virtual Paths");
         Provider.LoadVirtualPaths();
         Provider.PostMount();
         
@@ -167,7 +170,11 @@ public partial class CUE4ParseService : ObservableObject, IService
         if (!File.Exists(mainPakPath)) return;
 
         var mainPakReader = new PakFileReader(mainPakPath);
-        if (mainPakReader.TestAesKey(new FAesKey(aes.MainKey))) return;
+        if (mainPakReader.TestAesKey(new FAesKey(aes.MainKey)))
+        {
+            Log.Information("Main key {Key} succeeded on pak {PakName}", aes.MainKey, mainPakPath);
+            return;
+        }
         
         BlackHole.Open(isMinigame: false);
     }
@@ -180,15 +187,17 @@ public partial class CUE4ParseService : ObservableObject, IService
         {
             if (file.LastWriteTime >= cutoffDate) continue;
             
+            Log.Information("Removing old chunk {ChunkName}", file.Name);
             file.Delete();
         }
     }
     
     private async Task InitializeOodle()
     {
-        var oodlePath = Path.Combine(App.DataFolder.FullName, OodleHelper.OODLE_DLL_NAME);
-        if (!File.Exists(oodlePath)) await OodleHelper.DownloadOodleDllAsync(oodlePath);
-        OodleHelper.Initialize(oodlePath);
+        if (!File.Exists(Dependencies.NoodleFile.FullName)) 
+            await OodleHelper.DownloadOodleDllAsync(Dependencies.NoodleFile.FullName);
+        
+        OodleHelper.Initialize(Dependencies.NoodleFile.FullName);
     }
     
     private async Task InitializeZlib()
@@ -326,17 +335,18 @@ public partial class CUE4ParseService : ObservableObject, IService
             case EFortniteVersion.LatestOnDemand:
             {
                 var aes =  await Api.FortnitePorting.Aes();
-                
                 if (aes is null)
                 {
                     await LoadLocalKeys();
                     break;
                 }
 
+                Log.Information("Submitting Main Key {Key}", aes.MainKey);
                 await Provider.SubmitKeyAsync(Globals.ZERO_GUID, new FAesKey(aes.MainKey));
                 
                 foreach (var key in aes.DynamicKeys)
                 {
+                    Log.Information("Submitting Dynamic Key {Key} with GUID {Guid}", key.Key, key.GUID);
                     await Provider.SubmitKeyAsync(new FGuid(key.GUID), new FAesKey(key.Key));
                 }
 
@@ -357,6 +367,8 @@ public partial class CUE4ParseService : ObservableObject, IService
         var mainKey = AppSettings.Installation.CurrentProfile.MainKey;
         if (mainKey.IsEmpty) mainKey = FileEncryptionKey.Empty;
                 
+        
+        Log.Information("Submitting Local Main Key {Key}", mainKey.KeyString);
         await Provider.SubmitKeyAsync(Globals.ZERO_GUID, mainKey.EncryptionKey);
 
         await LoadLocalExtraKeys();
@@ -371,6 +383,7 @@ public partial class CUE4ParseService : ObservableObject, IService
                 if (extraKey.IsEmpty) continue;
                 if (!vfs.TestAesKey(extraKey.EncryptionKey)) continue;
                         
+                Log.Information("Submitting Local Extra Key {Key} with GUID {Guid} for {FileName}", extraKey.EncryptionKey, vfs.EncryptionKeyGuid, vfs.Name);
                 await Provider.SubmitKeyAsync(vfs.EncryptionKeyGuid, extraKey.EncryptionKey);
             }
         }
@@ -384,8 +397,12 @@ public partial class CUE4ParseService : ObservableObject, IService
             _ when AppSettings.Installation.CurrentProfile.UseMappingsFile && File.Exists(AppSettings.Installation.CurrentProfile.MappingsFile) => AppSettings.Installation.CurrentProfile.MappingsFile,
             _ => string.Empty
         };
-        
-        if (string.IsNullOrEmpty(mappingsPath)) return;
+
+        if (string.IsNullOrEmpty(mappingsPath))
+        {
+            Log.Information("Failed to load mappings, path is empty");
+            return;
+        }
         
         Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(mappingsPath);
         Log.Information("Loaded Mappings: {Path}", mappingsPath);
@@ -397,7 +414,7 @@ public partial class CUE4ParseService : ObservableObject, IService
         if (mappings?.Url is null) return null;
 
         var mappingsFilePath = Path.Combine(App.DataFolder.FullName, mappings.Url.SubstringAfterLast("/"));
-        if (File.Exists(mappingsFilePath)) return mappingsFilePath;
+        if (File.Exists(mappingsFilePath) && new FileInfo(mappingsFilePath).GetFileHashMD5().Equals(mappings.HashMD5)) return mappingsFilePath;
             
         var createdFile = await Api.DownloadFileAsync(mappings.Url, mappingsFilePath);
         if (!createdFile.Exists) return null;

@@ -22,7 +22,7 @@ public partial class InstallationProfile : ObservableValidator
     [NotifyPropertyChangedFor(nameof(EncryptionKeyEnabled))]
     [NotifyPropertyChangedFor(nameof(MappingsFileEnabled))]
     [NotifyPropertyChangedFor(nameof(TextureStreamingEnabled))]
-    [NotifyPropertyChangedFor(nameof(LoadCreativeMapsEnabled))]
+    [NotifyPropertyChangedFor(nameof(LoadInstalledBundlesEnabled))]
     [NotifyPropertyChangedFor(nameof(IsCustom))]
     private EFortniteVersion _fortniteVersion = EFortniteVersion.LatestInstalled;
     
@@ -30,7 +30,7 @@ public partial class InstallationProfile : ObservableValidator
     [ArchiveDirectory(canValidateProperty: nameof(ArchiveDirectoryEnabled))]
     [ObservableProperty] private string _archiveDirectory;
     
-    [ObservableProperty] private EGame _unrealVersion = EGame.GAME_UE5_7;
+    [ObservableProperty] private EGame _unrealVersion = EGame.GAME_UE5_8;
     
     [NotifyDataErrorInfo]
     [EncryptionKey(canValidateProperty: nameof(EncryptionKeyEnabled))]
@@ -50,7 +50,7 @@ public partial class InstallationProfile : ObservableValidator
     
     [ObservableProperty] private ELanguage _gameLanguage = ELanguage.English;
     [ObservableProperty] private bool _useTextureStreaming = true;
-    [ObservableProperty] private bool _loadCreativeMaps = true;
+    [ObservableProperty] private bool _loadInstalledBundles = true;
     [ObservableProperty] private bool _loadNaniteData;
     
     [ObservableProperty] private bool _sendExports = true;
@@ -61,7 +61,7 @@ public partial class InstallationProfile : ObservableValidator
     [JsonIgnore] public bool EncryptionKeyEnabled => IsCustom;
     [JsonIgnore] public bool MappingsFileEnabled => IsCustom;
     [JsonIgnore] public bool TextureStreamingEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
-    [JsonIgnore] public bool LoadCreativeMapsEnabled => FortniteVersion is EFortniteVersion.LatestInstalled && SupaBase.Permissions.CanExportUEFN;
+    [JsonIgnore] public bool LoadInstalledBundlesEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
     
     public async Task BrowseArchivePath()
     {

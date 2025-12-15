@@ -9,6 +9,7 @@ using FortnitePorting.Framework;
 using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
+using FortnitePorting.Windows;
 
 namespace FortnitePorting.ViewModels;
 
@@ -37,6 +38,7 @@ public partial class HomeViewModel() : ViewModelBase
             await FilesVM.Initialize();
         });
         
+        return;
 
         if (!AppSettings.Application.DontAskAboutKofi &&
             DateTime.Now.Date >= AppSettings.Application.NextKofiAskDate)
@@ -62,7 +64,7 @@ public partial class HomeViewModel() : ViewModelBase
 
     public void OpenNews(NewsResponse news)
     {
-        Info.Dialog($"{news.Title}: {news.SubTitle}", news.Description);
+        ChangelogWindow.Preview(news.Description);
     }
 
     public void OpenFeaturedArt(FeaturedArtResponse featured)

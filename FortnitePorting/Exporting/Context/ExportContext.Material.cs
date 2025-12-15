@@ -85,20 +85,21 @@ public partial class ExportContext
         if (overrideData.TryGetValue<FSoftObjectPath[]>(out var alterMats, "MaterialsToAlter"))
             materialsToAlter.AddRangeIfNotNull(alterMats);
 
-        materialsToAlter.RemoveAll(mat => mat.AssetPathName.IsNone || "".Equals(mat.AssetPathName.Text));
-        if (materialsToAlter.Count == 0) return null;
+        materialsToAlter.RemoveAll(mat => 
+            mat.AssetPathName.IsNone || "".Equals(mat.AssetPathName.Text));
 
-        List<ExportOverrideParameters> returnParams = [];
+        var exportParametersSet = new List<ExportOverrideParameters>();
         foreach (var materialToAlter in materialsToAlter)
         {
             var exportParams = new ExportOverrideParameters();
             AccumulateParameters(overrideData, ref exportParams);
+            
             exportParams.MaterialNameToAlter = materialToAlter.AssetPathName.Text.SubstringAfterLast(".");
             exportParams.Hash = exportParams.GetHashCode();
-            returnParams.Add(exportParams);
+            exportParametersSet.Add(exportParams);
         }
 
-        return returnParams;
+        return exportParametersSet;
     }
 
 
