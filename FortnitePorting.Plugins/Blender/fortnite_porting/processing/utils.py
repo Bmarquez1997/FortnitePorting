@@ -259,6 +259,10 @@ def make_quat(data):
 def make_euler(data):
     return Euler((radians(data.get("Roll")), -radians(data.get("Pitch")), -radians(data.get("Yaw"))))
 
+def make_quat_from_euler(data):
+    euler_rotation = Euler((radians(data.get("Roll")), radians(data.get("Pitch")), radians(data.get("Yaw"))))
+    return euler_rotation.to_quaternion()
+
 def time_to_frame(time, fps = 30):
     return int(round(time * fps))
 
