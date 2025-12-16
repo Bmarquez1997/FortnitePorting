@@ -656,7 +656,7 @@ public partial class FilesViewModel : ViewModelBase
             var basePath = Exporter.FixPath(path);
             var fileExports = await UEParse.Provider.LoadAllObjectsAsync(basePath);
             
-            var exportPath = context.GetExportPath(meta.CustomPath is not null 
+            var exportPath = context.BuildExportPath(meta.CustomPath is not null 
                 ? basePath.SubstringAfterLast("/").SubstringBeforeLast(".") 
                 : basePath , "json");
             
@@ -701,7 +701,7 @@ public partial class FilesViewModel : ViewModelBase
 
             foreach (var (assetPath, assetData) in assets)
             {
-                var exportPath = context.GetExportPath(meta.CustomPath is not null 
+                var exportPath = context.BuildExportPath(meta.CustomPath is not null 
                     ? assetPath.SubstringAfterLast("/").SubstringBeforeLast(".") 
                     : assetPath, assetPath.SubstringAfterLast("."));
                 
@@ -715,8 +715,9 @@ public partial class FilesViewModel : ViewModelBase
     private bool IsValidFilePath(string path)
     {
         var isValidExtension = path.EndsWith(".uasset") || path.EndsWith(".umap") || path.EndsWith(".ufont");
+        var isOptionalSegment = path.Contains(".o.");
         var isVerse = path.Contains("/_Verse/");
-        return AppSettings.Debug.ShowAllFilesInFilesTab || (isValidExtension && !isVerse);
+        return AppSettings.Debug.ShowAllFilesInFilesTab || (isValidExtension && !isOptionalSegment && !isVerse);
     }
     
     private Func<FlatItem, bool> CreateAssetFilter((string, bool) items)

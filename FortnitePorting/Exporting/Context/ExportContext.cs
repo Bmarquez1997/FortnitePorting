@@ -347,12 +347,12 @@ public partial class ExportContext
             path = embeddedAsset ? $"{obj.Owner.Name}/{obj.Name}" : obj.Owner?.Name ?? string.Empty;
         }
 
-        return GetExportPath(path, ext);
+        return BuildExportPath(path, ext, isNanite, obj);
     }
     
     
     
-    public string GetExportPath(string path, string ext)
+    public string BuildExportPath(string path, string ext, bool isNanite = false, UObject? obj = null)
     {
         path = path.SubstringBeforeLast('.');
         if (path.StartsWith("/")) path = path[1..];
