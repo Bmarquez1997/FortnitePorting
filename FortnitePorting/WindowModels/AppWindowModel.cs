@@ -9,6 +9,7 @@ using FluentAvalonia.UI.Controls;
 using FortnitePorting.Framework;
 using FortnitePorting.Models;
 using FortnitePorting.Models.API.Responses;
+using FortnitePorting.Models.Information;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Views;
@@ -36,6 +37,7 @@ public partial class AppWindowModel(
     [ObservableProperty] private SetupView? _setupViewContent;
 
     [ObservableProperty] private OnlineResponse? _onlineStatus;
+    [ObservableProperty] private BroadcastResponse[] _broadcasts = [];
 
     private const string PORTLE_URL = "https://portle.halfheart.dev/release/Portle.exe";
 
@@ -51,6 +53,11 @@ public partial class AppWindowModel(
         
         OnlineStatus = await Api.FortnitePorting.Online();
 
+        foreach (var broadcast in await Api.FortnitePorting.Broadcasts())
+        {
+            Info.Broadcast(broadcast);
+        }
+
         await CheckForUpdate(isAutomatic: true);
     }
 
@@ -59,18 +66,8 @@ public partial class AppWindowModel(
         void NoUpdate()
         {
             if (isAutomatic) return;
-
-            TaskService.RunDispatcher(async () =>
-            {
-                var dialog = new ContentDialog
-                {
-                    Title = "No Update Available",
-                    Content = "Fortnite Porting is up to date.",
-                    CloseButtonText = "Continue"
-                };
-
-                await dialog.ShowAsync();
-            });
+            
+            Info.Dialog("No Update Available", "Fortnite Porting is up to date.");
         }
 
         var repositoryInfo = await Api.FortnitePorting.Repository();
@@ -89,17 +86,13 @@ public partial class AppWindowModel(
             }
 
             Settings.Application.LastOnlineVersion = newestRelease.Version;
-
-            await TaskService.RunDispatcherAsync(async () =>
-            {
-                var dialog = new ContentDialog
+            
+            Info.Dialog("Update Available",  $"Fortnite Porting {newestRelease.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)} is now available. Would you like to update?", buttons: 
+            [
+                new DialogButton
                 {
-                    Title = "Update Available",
-                    Content =
-                        $"Fortnite Porting {newestRelease.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)} is now available. Would you like to update?",
-                    CloseButtonText = "No",
-                    PrimaryButtonText = "Yes",
-                    PrimaryButtonCommand = new RelayCommand(async () =>
+                    Text = "Update",
+                    Action = async () =>
                     {
                         if (!File.Exists(Settings.Application.PortlePath) ||
                             (!Settings.Application.UsePortlePath && (!Api.GetHash(PORTLE_URL)
@@ -112,7 +105,7 @@ public partial class AppWindowModel(
                         {
                             "--silent",
                             "--skip-setup",
-                            $"--add-repository https://api.fortniteporting.app/v1/static/repository",
+                            "--add-repository https://api.fortniteporting.app/v1/static/repository",
                             $"--import-profile \"Fortnite Porting\" \"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName + ".exe")}\" \"FortnitePorting\"",
                             "--update-profile \"Fortnite Porting\" -force",
                             "--launch-profile \"Fortnite Porting\"",
@@ -127,11 +120,9 @@ public partial class AppWindowModel(
                         });
 
                         App.Lifetime.Shutdown();
-                    })
-                };
-
-                await dialog.ShowAsync();
-            });
+                    }
+                }
+            ]);
 
             return;
         }

@@ -11,6 +11,8 @@
              xmlns:tables="clr-namespace:FortnitePorting.Models.Supabase.Tables"
              xmlns:framework="clr-namespace:FortnitePorting.Framework"
              xmlns:controls="clr-namespace:FortnitePorting.Controls"
+             xmlns:loading="clr-namespace:FortnitePorting.Controls.Loading"
+             xmlns:views="clr-namespace:FortnitePorting.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="FortnitePorting.Views.ChatView"
              x:DataType="viewModels:ChatViewModel">
@@ -126,10 +128,13 @@
                         
                         <StackPanel Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" Grid.ColumnSpan="9">
                             <Grid IsVisible="{Binding Text, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                                <TextBlock IsVisible="{Binding !IsEditing}"
-                                           Text="{Binding Text}" TextWrapping="Wrap" 
+                                <controls:HighlightableTextBlock IsVisible="{Binding !IsEditing}"
+                                            HighlightBackground="#A9953BF8"
+                                            HighlightForeground="White"
+                                            HighlightText="{Binding $parent[views:ChatView].((viewModels:ChatViewModel)DataContext).MentionTextMatch}"
+                                           TextToHighlight="{Binding Text}" TextWrapping="Wrap" 
                                            Classes="BodyTextBlockStyle TextFillColorSecondaryBrush" VerticalAlignment="Center">
-                                </TextBlock>
+                                </controls:HighlightableTextBlock>
                         
                                 <TextBox IsVisible="{Binding IsEditing}"
                                          KeyDown="OnEditBoxKeyDown" Margin="{ext:Space 0, 0.5}"
@@ -188,7 +193,7 @@
             <ItemsControl ItemsSource="{Binding Chat.Messages}" Margin="{ext:Space 1, 1, 1, 0}" ItemTemplate="{StaticResource MessageTemplate}"/>
         </ScrollViewer>
         
-        <Grid Grid.Row="2" Grid.Column="0" RowDefinitions="Auto *" Margin="{ext:Space 1}" 
+        <Grid Grid.Row="2" Grid.Column="0" RowDefinitions="Auto Auto *" Margin="{ext:Space 1}" 
               IsVisible="{Binding SupaBase.Permissions.Role,
                 Converter={StaticResource EnumNotEquals},
                 ConverterParameter={x:Static tables:ESupabaseRole.Muted}}"
@@ -222,8 +227,22 @@
                     </Border>
                 </Grid>
             </controls:ContentCard>
+            <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="{ext:Space 0, 0, 0, 1}" 
+                  IsVisible="{Binding Chat.TypingUsersText, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="{ext:Space 1}"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <loading:ButtonPulseLoading Grid.Column="0" Width="64" Margin="{ext:Space -2, 0}"/>
+                
+                <TextBlock Grid.Column="2" Text="{Binding Chat.TypingUsersText}" Classes="BodyStrongTextBlockStyle"/>
+            </Grid>
+           
             
-            <Button Grid.Row="1" x:Name="ImageButton" Grid.Column="0" 
+            
+            <Button Grid.Row="2" x:Name="ImageButton" Grid.Column="0" 
                     IsVisible="{Binding SupaBase.Permissions.Role, 
                         Converter={StaticResource EnumGreaterOrEqual}, 
                         ConverterParameter={x:Static tables:ESupabaseRole.Verified}}" 
@@ -231,7 +250,7 @@
                     Command="{Binding OpenImageCommand}" 
                     Margin="{ext:Space 0, 0, 1, 0}"/>
             
-            <ui:TeachingTip Grid.Row="1" x:Name="ImageFlyout" Grid.Column="0" 
+            <ui:TeachingTip Grid.Row="2" x:Name="ImageFlyout" Grid.Column="0" 
                             Target="{Binding #ImageButton}" 
                             Title="{Binding SelectedImageName}">
                 <Border CornerRadius="4" ClipToBounds="True">
@@ -241,8 +260,9 @@
                 </Border>
             </ui:TeachingTip>
                     
-            <AutoCompleteBox Grid.Row="1" Grid.Column="1" x:Name="TextBox" Text="{Binding Text}"
-                             ItemsSource="{Binding Commands}" Watermark="Enter a message"/>
+            <AutoCompleteBox Grid.Row="2" Grid.Column="1" x:Name="TextBox" Text="{Binding Text}"
+                             ItemsSource="{Binding Chat.UserMentionNames}" Watermark="Enter a message"
+                             TextChanged="OnTextBoxTextChanged"/>
             
         </Grid>
         

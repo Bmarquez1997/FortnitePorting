@@ -15,12 +15,15 @@ using FortnitePorting.Models.Supabase.Tables;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.ViewModels;
+using Serilog;
 using Supabase.Storage.Exceptions;
 
 namespace FortnitePorting.Views;
 
 public partial class ChatView : ViewBase<ChatViewModel>
 {
+    private bool _isAtBottom = true;
+    
     public ChatView()
     {
         InitializeComponent();
@@ -29,23 +32,42 @@ public partial class ChatView : ViewBase<ChatViewModel>
 
         Chat.MessageReceived += (sender, args) =>
         {
-            TaskService.RunDispatcher(() =>
-            {
-                var isScrolledToEnd = Math.Abs(Scroll.Offset.Y - Scroll.Extent.Height + Scroll.Viewport.Height) < 500;
-                if (isScrolledToEnd)
-                    Scroll.ScrollToEnd();
-            });
+            TaskService.RunDispatcher(TryScrollToEnd);
         };
         
         Chat.Messages.CollectionChanged += (sender, args) =>
         {
-            TaskService.RunDispatcher(() =>
-            {
-                var isScrolledToEnd = Math.Abs(Scroll.Offset.Y - Scroll.Extent.Height + Scroll.Viewport.Height) < 500;
-                if (isScrolledToEnd)
-                    Scroll.ScrollToEnd();
-            });
+            TaskService.RunDispatcher(TryScrollToEnd);
         };
+
+        Scroll.ScrollChanged += (sender, args) =>
+        {
+            _isAtBottom = Math.Abs(Scroll.Offset.Y - Scroll.Extent.Height + Scroll.Viewport.Height) < 100;
+        };
+        
+        Scroll.LayoutUpdated += (sender, args) =>
+        {
+            TaskService.RunDispatcher(TryScrollToEnd);
+        };
+        
+        Chat.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(Chat.TypingUsersText))
+            {
+                TaskService.RunDispatcher(TryScrollToEnd);
+            }
+        };
+    }
+
+    private void TryScrollToEnd()
+    {
+        if (!_isAtBottom) return; 
+        
+        var isScrolledToEnd = Math.Abs(Scroll.Offset.Y - Scroll.Extent.Height + Scroll.Viewport.Height) < 500;
+        if (isScrolledToEnd)
+        {
+            Scroll.ScrollToEnd();
+        }
     }
 
     public void OnTextKeyDown(object? sender, KeyEventArgs e)
@@ -109,6 +131,20 @@ public partial class ChatView : ViewBase<ChatViewModel>
             textBox.CaretIndex = textBox.Text.Length;
             e.Handled = true;
         }
+        
+        if (e.Key != Key.Enter)
+        {
+            var isTyping = !string.IsNullOrWhiteSpace(textBox.Text);
+            TaskService.Run(async () =>
+            {
+                if (ViewModel.Chat.Presence.IsTyping != isTyping)
+                {
+                    ViewModel.Chat.Presence.IsTyping = isTyping;
+                    await ViewModel.Chat.ChatPresence.Track(ViewModel.Chat.Presence);
+                }
+            });
+        }
+        
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
@@ -212,5 +248,21 @@ public partial class ChatView : ViewBase<ChatViewModel>
         if (control.DataContext is not ChatMessageV2 message) return;
 
         App.Clipboard.SetTextAsync(message.Text);
+    }
+
+    private void OnTextBoxTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (sender is not AutoCompleteBox autoCompleteBox) return;
+        if (autoCompleteBox.GetVisualDescendants().FirstOrDefault(x => x is TextBox) is not TextBox textBox) return;
+        if (textBox.Text is not { } text) return;
+        
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            TaskService.Run(async () =>
+            {
+                ViewModel.Chat.Presence.IsTyping = false;
+                await ViewModel.Chat.ChatPresence.Track(ViewModel.Chat.Presence);
+            });
+        }
     }
 }

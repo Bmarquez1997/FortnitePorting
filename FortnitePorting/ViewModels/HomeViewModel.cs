@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.API.Responses;
+using FortnitePorting.Models.Information;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Windows;
@@ -37,28 +38,25 @@ public partial class HomeViewModel() : ViewModelBase
             await UEParse.Initialize();
             await FilesVM.Initialize();
         });
-        
-        return;
 
         if (!AppSettings.Application.DontAskAboutKofi &&
             DateTime.Now.Date >= AppSettings.Application.NextKofiAskDate)
         {
             AppSettings.Application.NextKofiAskDate = DateTime.Today.AddDays(7);
-            await TaskService.RunDispatcherAsync(async () =>
-            {
-                var dialog = new ContentDialog
+            
+            Info.Dialog("Enjoying FortnitePorting?", "Consider donating to the Ko-Fi to support the development of the project!!", buttons: 
+            [
+                new DialogButton
                 {
-                    Title = "Enjoying FortnitePorting?",
-                    Content = "Consider donating to the Ko-Fi to support the development of the project!!",
-                    CloseButtonText = "No",
-                    PrimaryButtonText = "Donate",
-                    PrimaryButtonCommand = new RelayCommand(LaunchKoFi),
-                    SecondaryButtonText = "Don't Ask Again",
-                    SecondaryButtonCommand = new RelayCommand(() => AppSettings.Application.DontAskAboutKofi = true)
-                };
-
-                await dialog.ShowAsync();
-            });
+                    Text = "Donate",
+                    Action = LaunchKoFi
+                },
+                new DialogButton
+                {
+                    Text = "Don't Ask Again",
+                    Action = () => AppSettings.Application.DontAskAboutKofi = true
+                }
+            ]);
         }
     }
 
