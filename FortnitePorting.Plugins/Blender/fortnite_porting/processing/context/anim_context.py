@@ -56,10 +56,14 @@ class AnimImportContext:
                 active_mesh.data.shape_keys.animation_data_create()
             
             
-        if sequencer := get_sequencer():
-            sequences_to_remove = where(sequencer.sequences, lambda seq: seq.get("FPSound"))
-            for sequence in sequences_to_remove:
-                sequencer.sequences.remove(sequence)
+        # if sequencer := get_sequencer():
+        #     sequences_to_remove = where(sequencer.sequences, lambda seq: seq.get("FPSound"))
+        #     for sequence in sequences_to_remove:
+        #         sequencer.sequences.remove(sequence)
+
+        sequences_to_remove = where(bpy.context.scene.sequence_editor.strips, lambda seq: seq.get("FPSound"))
+        for sequence in sequences_to_remove:
+            bpy.context.scene.sequence_editor.strips.remove(sequence)
 
         bpy.context.scene.frame_set(0)
 
