@@ -80,7 +80,6 @@ public partial class UnrealPluginViewModel : ViewModelBase
     public async Task Sync(UnrealProjectInfo unrealProjectInfo)
     {
         MiscExtensions.Copy(Path.Combine(App.PluginsFolder.FullName, "Unreal"), unrealProjectInfo.PluginsFolder);
-        MiscExtensions.Copy(Path.Combine(App.PluginsFolder.FullName, "UEFormat", "Unreal"), unrealProjectInfo.PluginsFolder);
         unrealProjectInfo.Update();
     }
 }
