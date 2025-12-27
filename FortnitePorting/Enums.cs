@@ -125,6 +125,9 @@ public enum EExportType
     
     [Description("Sidekicks"), Export(EPrimitiveExportType.Mesh)]
     SideKick,
+    
+    [Description("Wraps"), Export(EPrimitiveExportType.Material)]
+    Wrap,
 
     [Description("Kicks"), Export(EPrimitiveExportType.Mutable)]
     Kicks,

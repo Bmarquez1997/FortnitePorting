@@ -33,6 +33,7 @@ class EExportType(IntEnum):
     LOADING_SCREEN = auto()
     EMOTE = auto()
     SIDEKICK = auto()
+    WRAP = auto()
     KICKS = auto()
     
     # Rocket Racing

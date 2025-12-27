@@ -108,6 +108,10 @@ public partial class AssetLoaderService : ObservableObject, IService
                     ClassNames = ["CosmeticCompanionItemDefinition"],
                     HideNames = ["Companion_SitPlant_PerfTest", "Companion_TestCompanion2_Mutable", "Companion_Placeholder"]
                 },
+                new AssetLoader(EExportType.Wrap)
+                {
+                    ClassNames = ["AthenaItemWrapDefinition"]
+                },
                 new AssetLoader(EExportType.Kicks)
                 {
                     ClassNames = ["CosmeticShoesItemDefinition"]
