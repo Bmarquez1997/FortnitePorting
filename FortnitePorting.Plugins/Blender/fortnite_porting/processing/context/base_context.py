@@ -15,6 +15,7 @@ class BaseImportContext:
     def run(self, data):
         self.name = data.get("Name")
         self.type = EExportType(data.get("Type"))
+        self.primitive_type = EPrimitiveExportType(data.get("PrimitiveType"))
         self.scale = 0.01 if self.options.get("ScaleDown") else 1
         self.meshes = []
         self.override_materials = []
@@ -45,6 +46,8 @@ class BaseImportContext:
             self.import_pose_asset_data(data, get_selected_armature(), None)
         elif import_type == EPrimitiveExportType.MATERIAL:
             self.import_material_standalone(data)
+        elif import_type == EPrimitiveExportType.MUTABLE:
+            self.import_mutable_data(data)
 
     def gather_metadata(self, *search_props):
         out_props = {}

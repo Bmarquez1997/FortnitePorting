@@ -320,32 +320,52 @@ class MeshImportContext:
                     break
     
         bpy.ops.object.mode_set(mode='OBJECT')
-    
+
     def import_light_data(self, lights, parent=None):
         if not lights:
             return
-        
-        for point_light in lights.get("PointLights"):
-            self.import_point_light(point_light, parent)
-    
-    def import_point_light(self, point_light, parent=None):
-        name = point_light.get("Name")
-        light_data = bpy.data.lights.new(name=name, type='POINT')
+
+        if point_lights := lights.get("PointLights"):
+            for point_light in point_lights:
+                self.import_light_base(point_light, 'POINT', parent)
+
+        if spot_lights := lights.get("SpotLights"):
+            for spot_light in spot_lights:
+                self.import_light_base(spot_light, 'SPOT', parent)
+
+        if sun_lights := lights.get("DirectionalLights"):
+            for sun_light in sun_lights:
+                self.import_light_base(sun_light, 'SUN', parent)
+
+    def import_light_base(self, base_light, light_type, parent=None):
+        name = base_light.get("Name")
+        light_data = bpy.data.lights.new(name=name, type=light_type)
         light = bpy.data.objects.new(name=name, object_data=light_data)
         self.collection.objects.link(light)
-        
+
         light.parent = parent
-        light.rotation_euler = make_euler(point_light.get("Rotation"))
-        light.location = make_vector(point_light.get("Location"), unreal_coords_correction=True) * self.scale
-        light.scale = make_vector(point_light.get("Scale"))
-        
-        color = point_light.get("Color")
+        light.rotation_mode = "QUATERNION"
+        light_rotation = make_quat_from_euler(base_light.get("Rotation"))
+        light_rotation.rotate(Euler((0, 90, 0))) # Rotate Y to account for UE light default rotation
+        light.rotation_quaternion = light_rotation
+        light.location = make_vector(base_light.get("Location"), unreal_coords_correction=True) * self.scale
+        light.scale = make_vector(base_light.get("Scale"))
+
+        color = base_light.get("Color")
         light_data.color = (color["R"], color["G"], color["B"])
-        light_data.energy = point_light.get("Intensity")
-        light_data.use_custom_distance = True
-        light_data.cutoff_distance = point_light.get("AttenuationRadius") * self.scale
-        light_data.shadow_soft_size = point_light.get("Radius") * self.scale
-        light_data.use_shadow = point_light.get("CastShadows")
+        light_data.energy = base_light.get("Intensity")
+        light_data.use_shadow = base_light.get("CastShadows")
+
+        if light_type != 'SUN':
+            light_data.shadow_soft_size = base_light.get("Radius") * self.scale
+            light_data.use_custom_distance = True
+            light_data.cutoff_distance = base_light.get("AttenuationRadius") * self.scale
+        else:
+            light_data.angle = radians(base_light.get("Radius"))
+
+        if light_type == 'SPOT':
+            light_data.spot_size = radians(base_light.get("OuterConeAngle"))
+            light_data.spot_blend = base_light.get("InnerConeAngle") / base_light.get("OuterConeAngle")
 
     def import_mesh(self, path: str, can_reorient=True):
         options = UEModelOptions(scale_factor=self.scale,
@@ -362,4 +382,21 @@ class MeshImportContext:
         mesh_path = os.path.join(self.assets_root, path.split(".")[0] + ".uemodel")
 
         mesh, mesh_data = UEFormatImport(options).import_file(mesh_path)
+
+        if mesh is not None and self.primitive_type == EPrimitiveExportType.MUTABLE:
+            bpy.context.view_layer.objects.active = get_armature_mesh(mesh)
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.set_normals_from_faces()
+            bpy.ops.object.editmode_toggle()
+            
         return mesh
+
+    def import_mutable_data(self, data):
+        groups = data.get("Objects")
+        if groups is None:
+            return
+    
+        for i, group in enumerate(groups):
+            self.import_mesh_data(group)
+            Log.info(f"Completed {i+1} / {len(groups)} mutable objects")

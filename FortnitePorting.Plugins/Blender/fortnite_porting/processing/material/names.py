@@ -30,7 +30,8 @@ emissive_crop_vector_names = [
     "EmissiveUVs_RG_UpperLeftCorner_BA_LowerRightCorner",
     "Emissive Texture UVs RG_TopLeft BA_BottomRight",
     "Emissive 2 UV Positioning (RG)UpperLeft (BA)LowerRight",
-    "EmissiveUVPositioning (RG)UpperLeft (BA)LowerRight"
+    "EmissiveUVPositioning (RG)UpperLeft (BA)LowerRight",
+    "CroppedEmissiveUVs"
 ]
 
 emissive_crop_switch_names = [

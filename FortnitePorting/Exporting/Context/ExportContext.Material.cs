@@ -193,7 +193,7 @@ public partial class ExportContext
         if (param.TryGetValue(out FName paramName, "ParamName")
             && param.TryGetValue(out FSoftObjectPath texturePath, "Value")
             && texturePath.TryLoad(out UTexture texture))
-            return new TextureParameter(paramName.PlainText, Export(texture, embeddedAsset: texture.Owner != null), texture.SRGB, texture.CompressionSettings);
+            return new TextureParameter(paramName.PlainText, new ExportTexture(Export(texture, embeddedAsset: texture.Owner != null), texture.SRGB, texture.CompressionSettings));
 
         return null;
     }

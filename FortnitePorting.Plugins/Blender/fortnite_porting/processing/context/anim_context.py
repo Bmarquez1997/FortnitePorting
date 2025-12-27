@@ -238,7 +238,10 @@ class AnimImportContext:
                     is_anim_legacy = any(anim_data.curves, lambda curve: curve.name in legacy_curve_names)
                     is_anim_metahuman = any(anim_data.curves, lambda curve: curve.name == "is_3L")
                     
-                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
+                    # Include case where it isn't a fortnite human animation
+                    is_fortnite_human_anim = (is_anim_legacy or is_anim_metahuman) and (is_skeleton_legacy or is_skeleton_metahuman)
+                    
+                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman) or not is_fortnite_human_anim:  
                         for curve in anim_data.curves:
                             if target_block := best(key_blocks, lambda block: block.name.lower(), curve.name.lower()):
                                 for key in curve.keys:

@@ -14,6 +14,8 @@ class PoseImportContext:
         file_path, name = path.split(".")
         pose_path = os.path.join(self.assets_root, file_path + ".uepose")
 
+        # TODO: Handle cases where character doesn't have neck_01 bone (sidekicks)
+
         options = UEPoseOptions(scale_factor=self.scale,
                                 override_skeleton=override_skeleton,
                                 root_bone="neck_01")
