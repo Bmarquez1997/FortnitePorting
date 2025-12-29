@@ -22,7 +22,9 @@ namespace FortnitePorting.Views;
 
 public partial class ChatView : ViewBase<ChatViewModel>
 {
-    private bool _isAtBottom = true;
+    private const double AutoScrollThreshold = 400;
+    
+    private bool _shouldAutoScroll = true;
     
     public ChatView()
     {
@@ -30,44 +32,31 @@ public partial class ChatView : ViewBase<ChatViewModel>
         ViewModel.ImageFlyout = ImageFlyout;
         TextBox.AddHandler(KeyDownEvent, OnTextKeyDown, RoutingStrategies.Tunnel);
 
-        Chat.MessageReceived += (sender, args) =>
-        {
-            TaskService.RunDispatcher(TryScrollToEnd);
-        };
-        
-        Chat.Messages.CollectionChanged += (sender, args) =>
-        {
-            TaskService.RunDispatcher(TryScrollToEnd);
-        };
-
         Scroll.ScrollChanged += (sender, args) =>
         {
-            _isAtBottom = Math.Abs(Scroll.Offset.Y - Scroll.Extent.Height + Scroll.Viewport.Height) < 100;
-        };
-        
-        Scroll.LayoutUpdated += (sender, args) =>
-        {
-            TaskService.RunDispatcher(TryScrollToEnd);
-        };
-        
-        Chat.PropertyChanged += (sender, args) =>
-        {
-            if (args.PropertyName == nameof(Chat.TypingUsersText))
+            var distanceFromBottom = Scroll.Extent.Height - Scroll.Viewport.Height - Scroll.Offset.Y;
+            _shouldAutoScroll = distanceFromBottom <= AutoScrollThreshold;
+
+            if (_shouldAutoScroll)
             {
-                TaskService.RunDispatcher(TryScrollToEnd);
+                ViewModel.ClearNewMessageIndicator();
             }
         };
-    }
 
-    private void TryScrollToEnd()
-    {
-        if (!_isAtBottom) return; 
-        
-        var isScrolledToEnd = Math.Abs(Scroll.Offset.Y - Scroll.Extent.Height + Scroll.Viewport.Height) < 500;
-        if (isScrolledToEnd)
+        Chat.Messages.CollectionChanged += (sender, args) =>
         {
-            Scroll.ScrollToEnd();
-        }
+            TaskService.RunDispatcher(() =>
+            {
+                if (_shouldAutoScroll)
+                {
+                    Scroll.ScrollToEnd();
+                }
+                else
+                {
+                    ViewModel.IncrementNewMessageIndicator();
+                }
+            });
+        };
     }
 
     public void OnTextKeyDown(object? sender, KeyEventArgs e)
@@ -153,7 +142,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
         
         Scroll.ScrollToEnd();
         TextBox.Focus();
-        //AppWM.ChatNotifications = 0;
+        ViewModel.ClearNewMessageIndicator();
     }
 
     private void OnUserPressed(object? sender, PointerPressedEventArgs e)
@@ -166,7 +155,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private async void OnYeahPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessageV2 message) return;
+        if (control.DataContext is not ChatMessage message) return;
 
         if (message.DidReactTo)
         {
@@ -181,7 +170,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private void OnDeletePressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessageV2 message) return;
+        if (control.DataContext is not ChatMessage message) return;
 
         TaskService.Run(async () =>
         {
@@ -201,7 +190,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private async void OnReplyPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessageV2 chatMessage) return;
+        if (control.DataContext is not ChatMessage chatMessage) return;
 
         ViewModel.ReplyMessage = chatMessage;
     }
@@ -209,7 +198,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private void OnEditPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessageV2 message) return;
+        if (control.DataContext is not ChatMessage message) return;
 
         // TODO focus edit textbox
         message.IsEditing = !message.IsEditing;
@@ -218,7 +207,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private void OnEditBoxKeyDown(object? sender, KeyEventArgs e)
     {
         if (sender is not TextBox textBox) return;
-        if (textBox.DataContext is not ChatMessageV2 message) return;
+        if (textBox.DataContext is not ChatMessage message) return;
         
         if (e.Key == Key.Enter && !e.KeyModifiers.HasFlag(KeyModifiers.Shift))
         {
@@ -245,7 +234,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private void OnCopyPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessageV2 message) return;
+        if (control.DataContext is not ChatMessage message) return;
 
         App.Clipboard.SetTextAsync(message.Text);
     }
@@ -264,5 +253,11 @@ public partial class ChatView : ViewBase<ChatViewModel>
                 await ViewModel.Chat.ChatPresence.Track(ViewModel.Chat.Presence);
             });
         }
+    }
+
+    private void OnNewMessageIndicatorPressed(object? sender, PointerPressedEventArgs e)
+    {
+        Scroll.ScrollToEnd();
+        ViewModel.ClearNewMessageIndicator();
     }
 }

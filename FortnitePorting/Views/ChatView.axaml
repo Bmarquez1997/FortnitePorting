@@ -19,7 +19,7 @@
     <UserControl.Resources>
         <DataTemplate x:Key="MessageTemplate">
             <DataTemplate.DataType>
-                <x:Type TypeName="framework:ObservableKeyValuePair" x:TypeArguments="x:String, chat:ChatMessageV2"/>
+                <x:Type TypeName="framework:ObservableKeyValuePair" x:TypeArguments="x:String, chat:ChatMessage"/>
             </DataTemplate.DataType>
             
             <Grid DataContext="{Binding Value}">
@@ -181,17 +181,33 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
-        <ScrollViewer Grid.Row="0" Grid.Column="0" x:Name="Scroll" >
-            <ScrollViewer.OpacityMask>
-                <LinearGradientBrush StartPoint="0%, 0%" EndPoint="0%, 10%">
-                    <GradientStops>
-                        <GradientStop Color="#00FFFFFF" Offset="0"/> 
-                        <GradientStop Color="#FFFFFFFF" Offset="1"/> 
-                    </GradientStops>
-                </LinearGradientBrush>
-            </ScrollViewer.OpacityMask>
-            <ItemsControl ItemsSource="{Binding Chat.Messages}" Margin="{ext:Space 1, 1, 1, 0}" ItemTemplate="{StaticResource MessageTemplate}"/>
-        </ScrollViewer>
+        <Grid Grid.Row="0" Grid.Column="0">
+            <controls:DynamicFadeScrollViewer x:Name="Scroll"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Chat.Messages}" Margin="{ext:Space 1, 0}" ItemTemplate="{StaticResource MessageTemplate}"/>
+            </controls:DynamicFadeScrollViewer>
+            
+            <Border IsVisible="{Binding ShowNewMessageIndicator}"
+                    Background="#953BF8"
+                    CornerRadius="16"
+                    Padding="{ext:Space 1.5, 0.75}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="{ext:Space 0, 0, 0, 2}"
+                    Cursor="Hand"
+                    ClipToBounds="False"
+                    PointerPressed="OnNewMessageIndicatorPressed">
+                <Border.BoxShadow>
+                    inset 0 1 2 -1 #50ffffff,
+                    inset 0 -1 2 -2 #50ffffff,
+                    0 4 8 #20000000,
+                    0 8 12 #10000000
+                </Border.BoxShadow>
+                
+                <controls:IconText Icon="ArrowDown" Text="{Binding NewMessageCountText}"/>
+            </Border>
+        </Grid>
         
         <Grid Grid.Row="2" Grid.Column="0" RowDefinitions="Auto Auto *" Margin="{ext:Space 1}" 
               IsVisible="{Binding SupaBase.Permissions.Role,
@@ -290,7 +306,7 @@
                             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Hidden">
                                 <ItemsControl ItemsSource="{Binding Value}" >
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="chat:ChatUserV2">
+                                        <DataTemplate DataType="chat:ChatUser">
                                             <controls:ContentCard HorizontalAlignment="Stretch" Cursor="Hand" PointerPressed="OnUserPressed" Margin="{ext:Space 0, 0, 0, 1}">
                                                 <FlyoutBase.AttachedFlyout>
                                                     <MenuFlyout>
