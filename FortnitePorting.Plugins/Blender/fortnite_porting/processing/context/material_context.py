@@ -826,7 +826,7 @@ class MaterialImportContext:
             case "FPv3 Fur":
                 set_param("AO", self.options.get("AmbientOcclusion"))
                 
-                emission_slot = shader_node.inputs["Emission"]
+                emission_slot = shader_node.inputs["Emissive"]
                 if (crop_bounds := get_param_multiple(vectors, emissive_crop_vector_names)) and get_param_multiple(switches, emissive_crop_switch_names) and len(emission_slot.links) > 0:
                     emission_node = emission_slot.links[0].from_node
                     emission_node.extension = "CLIP"
