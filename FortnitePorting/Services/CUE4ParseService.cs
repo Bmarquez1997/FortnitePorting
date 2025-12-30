@@ -112,7 +112,9 @@ public partial class CUE4ParseService : ObservableObject, IService
         {
             if (sender is not IAesVfsReader reader) return;
 
-            UpdateStatus($"Loading {reader.Name}");
+            UpdateStatus(reader.Name.Equals("plugin.utoc")
+                ? $"Loading GameFeature {reader.Path.SubstringBeforeLast("\\").SubstringAfterLast("\\")}"
+                : $"Loading File {reader.Name}");
         };
         
         UpdateStatus("Loading Native Libraries");

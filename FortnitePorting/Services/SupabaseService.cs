@@ -127,10 +127,7 @@ public partial class SupabaseService : ObservableObject, IService
     {
         if (AppSettings.Installation.CurrentProfile.SendExports)
         {
-            await Client.From<Models.Supabase.Tables.Export>().Insert(new Models.Supabase.Tables.Export
-            {
-                ExportPaths = objectPaths
-            });
+            await Api.FortnitePorting.PostExports(objectPaths);
         }
     }
 
@@ -169,13 +166,8 @@ public partial class SupabaseService : ObservableObject, IService
     private async Task PostLogin()
     {
         if (_postedLogin) return;
-        
-        await Client.From<Login>().Insert(new Login
-        {
-            Version = Globals.Version.GetDisplayString()
-        });
-        
-        
+
+        await Api.FortnitePorting.PostLogin();
         _postedLogin = true;
     }
 
