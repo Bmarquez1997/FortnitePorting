@@ -182,7 +182,7 @@ eye_mappings = MappingCollection(
 )
 # End base groups
 
-# Start FX groups
+# Start basic FX groups
 
 # Dynamic layer numbers, replace # with number when mapping values (setup_params() extra parameter, loop until "Use i Layers" == false?)
 layer_mappings = MappingCollection(
@@ -334,7 +334,9 @@ metal_lut_mappings = MappingCollection(
         SlotMapping("UseMetalLUT", "Use MetalLUT"),
     ],
 )
+# End basic FX groups
 
+# Start advanced FX groups
 composite_mappings = MappingCollection(
     node_name="FPv4 Composite",
     textures=[
@@ -462,6 +464,60 @@ gradient_mappings = MappingCollection(
     ]
 )
 
+custom_color_mappings = MappingCollection(
+    node_name="FPv4 CustomColor",
+    textures=[
+        SlotMapping("TechArtMask"),
+        SlotMapping("SkinFX_Mask", "TechArtMask"),
+        SlotMapping("Custom Color Mask"),
+        SlotMapping("TieDye_Pattern_Mask", "Custom Color Mask"),
+        SlotMapping("Pattern Mask"),
+        SlotMapping("CustomColor_mask", "Pattern Mask"),
+    ],
+    vectors=[
+        SlotMapping("Base Color"),
+        SlotMapping("PrimaryColor", "Base Color"),
+        SlotMapping("TieDye_Color_1", "Base Color"),
+        SlotMapping("Primary Color"),
+        SlotMapping("AccentColor_01", "Primary Color"),
+        SlotMapping("TieDye_Color_2", "Primary Color"),
+        SlotMapping("Secondary Color"),
+        SlotMapping("AccentColor_02", "Secondary Color"),
+        SlotMapping("TieDye_Color_3", "Secondary Color"),
+        SlotMapping("Tertiary Color"),
+        SlotMapping("AccentColor_03", "Tertiary Color"),
+        SlotMapping("Pattern Color"),
+        SlotMapping("PatternColor", "Pattern Color"),
+        SlotMapping("TieDye_Color_Base", "Pattern Color"),
+
+        SlotMapping("Base Blend Color"),
+        SlotMapping("Primary Blend Color"),
+        SlotMapping("Secondary Blend Color"),
+        SlotMapping("Tertiary Blend Color"),
+
+        SlotMapping("Tech Art Mask Channel"),
+        SlotMapping("PrimaryColorMask_Channel", "Tech Art Mask Channel"),
+        SlotMapping("PrimaryMaskChannel"),
+        SlotMapping("AccentColor_01_Channel", "PrimaryMaskChannel"),
+        SlotMapping("SecondaryMaskChannel"),
+        SlotMapping("AccentColor_02_Channel", "SecondaryMaskChannel"),
+        SlotMapping("TertiaryMaskChannel"),
+        SlotMapping("AccentColor_03_Channel", "TertiaryMaskChannel"),
+        SlotMapping("Pattern Mask Channel"),
+        SlotMapping("PatternMask_Channel", "Pattern Mask Channel"),
+        SlotMapping("BaseColorValueChannel"),
+        SlotMapping("BaseColorAdvancedBlendChannel"),
+    ],
+    scalars=[
+        SlotMapping("BaseColorValueBias"),
+        SlotMapping("BaseColorValuePow"),
+        SlotMapping("Pattern Strength"),
+    ],
+    switches=[
+        SlotMapping("UseAdvancedColorBlend")
+    ]
+)
+
 sequin_mappings = MappingCollection(
     node_name="FPv4 Sequin",
     textures=[
@@ -556,8 +612,6 @@ sequin_secondary_mappings = MappingCollection(
 gmap_material_mappings = MappingCollection(
     node_name="FPv4 Gmap Material", # TODO: Rename to "Gmap" or "GMap Color"?
     textures=[
-        SlotMapping("Diffuse"),
-        SlotMapping("M"),
         SlotMapping("Color Mask 1"),
         SlotMapping("Color Mask 2"),
         SlotMapping("Color Mask 3"),
@@ -612,7 +666,7 @@ gmap_material_mappings = MappingCollection(
         SlotMapping("Uses ColorVariety/Scratch/Dirt Mask", "ColorVariety/Scratch/Dirt Mask")
     ]
 )
-# End FX groups
+# End advanced FX groups
 
 
 # Start tail groups (Hair, Fur, etc)

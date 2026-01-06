@@ -297,7 +297,7 @@ def import_material(self, material_slot, material_data, meta, as_material_data=F
 
     def setup_params(mappings, target_node, add_unused_params=False):
         for texture in textures:
-            texture_param(texture, mappings, target_node, add_unused_params)
+            texture_param(texture, mappings, target_node, add_unused_params) # TODO: need to account for default textures
 
         for scalar in scalars:
             scalar_param(scalar, mappings, target_node, add_unused_params)
@@ -457,6 +457,12 @@ def import_material(self, material_slot, material_data, meta, as_material_data=F
 
     match shader_node.node_tree.name:
         # Use base node group for switch?
+        
+        # Node group order:
+        # Base (material, layer, toon, eye)
+        # Basic FX (see order below)
+        # Advanced FX (composite, detail, sequin, etc)
+        # Tail (hair, fur)
         
         # Basic FX order:
         # ClothFuzz
