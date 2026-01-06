@@ -518,6 +518,45 @@ custom_color_mappings = MappingCollection(
     ]
 )
 
+skratch_mappings = MappingCollection(
+    node_name="FPv4 Skratch",
+    textures=[
+        SlotMapping("CamoTex", closure=True),
+        SlotMapping("CamuTex", "CamoTex", closure=True),
+        SlotMapping("TattoosTex", closure=True),
+        SlotMapping("TatoosTex", "TattoosTex", closure=True),
+        SlotMapping("BannerTex", closure=True),
+    ],
+    vectors=[
+        SlotMapping("Zone1Color"),
+        SlotMapping("Zone2Color"),
+        SlotMapping("Zone3Color"),
+        SlotMapping("BannerColor"),
+    ],
+    scalars=[
+        SlotMapping("OverlayAdding"),
+        SlotMapping("useCamo", "Use Camo"),
+        SlotMapping("isCamoUV2", "IsCamoUV2"),
+        SlotMapping("CamoTiling"),
+        SlotMapping("CamuTiling", "CamoTiling"),
+        SlotMapping("CamoOffsetX"),
+        SlotMapping("CamoOffsetY"),
+        SlotMapping("CamoAdding"),
+        SlotMapping("TC_UseSecondUVChannel(Tattoo)"),
+        SlotMapping("TattooOpacity"),
+        SlotMapping("TattooColorIntensity"),
+        SlotMapping("Front_BannerIconSize"),
+        SlotMapping("Front_BannerIconMask"),
+        SlotMapping("Front_BannerPos"),
+        SlotMapping("Back_BannerIconSizeX"),
+        SlotMapping("Back_BannerIconSizeY"),
+        SlotMapping("Back_BannerIconMaskX"),
+        SlotMapping("Back_BannerIconMaskY"),
+        SlotMapping("Back_BannerPosShirt"),
+        SlotMapping("Back_BannerPosVest"),
+    ]
+)
+
 sequin_mappings = MappingCollection(
     node_name="FPv4 Sequin",
     textures=[
