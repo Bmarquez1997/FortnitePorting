@@ -714,7 +714,7 @@ class MaterialImportContext:
                     if diffuse_node := get_node(detail_node, "Diffuse"):
                         nodes.active = diffuse_node
                     
-                if get_param(switches, "UseSequins"):
+                if get_param_multiple(switches, ["UseSequins", "UseSequin"]):
                     sequin_node = nodes.new(type="ShaderNodeGroup")
                     sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Sequin")
                     sequin_node.location = -600, 0

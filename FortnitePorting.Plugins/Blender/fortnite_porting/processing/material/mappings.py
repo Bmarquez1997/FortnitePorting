@@ -812,6 +812,7 @@ sequin_mappings = MappingCollection(
     ],
     switches=[
         SlotMapping("UseSequins"),
+        SlotMapping("UseSequin", "UseSequins"),
         SlotMapping("MFSequin_UseThinFilmOnSequins"),
         SlotMapping("MFSequin_UseBaseColor"),
         SlotMapping("SwizzleRoughnessToGreen"),
@@ -936,20 +937,27 @@ fur_mappings = MappingCollection(
 sidekick_mappings = MappingCollection(
     textures=[
         SlotMapping("TechArtMask"),
+        SlotMapping("SkinFX_Mask", "TechArtMask"),
         SlotMapping("Custom Color Mask"),
+        SlotMapping("TieDye_Pattern_Mask", "Custom Color Mask"),
         SlotMapping("Pattern Mask"),
+        SlotMapping("CustomColor_mask", "Pattern Mask"),
     ],
     vectors=[
         SlotMapping("Base Color"),
         SlotMapping("PrimaryColor", "Base Color"),
+        SlotMapping("TieDye_Color_1", "Base Color"),
         SlotMapping("Primary Color"),
         SlotMapping("AccentColor_01", "Primary Color"),
+        SlotMapping("TieDye_Color_2", "Primary Color"),
         SlotMapping("Secondary Color"),
         SlotMapping("AccentColor_02", "Secondary Color"),
+        SlotMapping("TieDye_Color_3", "Secondary Color"),
         SlotMapping("Tertiary Color"),
         SlotMapping("AccentColor_03", "Tertiary Color"),
         SlotMapping("Pattern Color"),
         SlotMapping("PatternColor", "Pattern Color"),
+        SlotMapping("TieDye_Color_Base", "Pattern Color"),
 
         SlotMapping("Base Blend Color"),
         SlotMapping("Primary Blend Color"),
