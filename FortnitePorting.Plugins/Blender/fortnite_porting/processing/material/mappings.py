@@ -1012,8 +1012,8 @@ minifig_head_mappings = MappingCollection(
     textures=[
         SlotMapping("Tex Color-D", "Tex Color D"),
         SlotMapping("Tex Color-M", "Tex Color M", alpha_slot="Tex Color M Alpha"),
-        SlotMapping("Tex Background-D", "Tex Deco D", alpha_slot="Tex Deco D Alpha"),
-        SlotMapping("Tex Background-M", "Tex Deco M", alpha_slot="Tex Deco M Alpha"),
+        SlotMapping("Tex Background-D", "Tex Deco D", alpha_slot="Tex Deco D Alpha", coords="UV1"),
+        SlotMapping("Tex Background-M", "Tex Deco M", alpha_slot="Tex Deco M Alpha", coords="UV1"),
         SlotMapping("Tex Normal"),
     ],
     scalars=[
