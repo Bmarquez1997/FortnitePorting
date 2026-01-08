@@ -35,7 +35,11 @@ public class BaseExport
     {
         foreach (var task in Exporter.ExportTasks)
         {
+#if DEBUG
+            await task.WaitAsync(TimeSpan.FromSeconds(60));
+#else
             await task.WaitAsync(TimeSpan.FromSeconds(5));
+#endif
         }
     }
 }
