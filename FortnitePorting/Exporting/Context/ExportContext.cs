@@ -364,7 +364,7 @@ public partial class ExportContext
             directory += string.Concat("-", splineComponent.GetMeshId().AsSpan(0, 6));
 
         if (isNanite)
-            directory += "-Nanite";
+            directory += "_Nanite";
         
         var finalPath = $"{directory}.{ext.ToLower()}";
         return finalPath;
