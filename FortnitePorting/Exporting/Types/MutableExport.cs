@@ -92,7 +92,7 @@ public class MutableExport : BaseExport
 
         if (customizableObject == null) return;
         
-        var mutableExporter = new MutableExporter(customizableObject, metaData.Settings.CreateExportOptions(), UEParse.Provider, filterSkeletonName);
+        var mutableExporter = new MutableExporter(customizableObject, metaData.Settings.CreateExportOptions(), filterSkeletonName);
        
        foreach (var mutableObject in mutableExporter.Objects)
        {
