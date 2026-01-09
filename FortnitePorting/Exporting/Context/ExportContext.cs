@@ -88,14 +88,14 @@ public partial class ExportContext
 
         if (isNanite && !returnRealPath)
         {
-            var naniteName = returnValue.SubstringAfterLast(".") + "-Nanite";
+            var naniteName = returnValue.SubstringAfterLast(".") + "_Nanite";
             returnValue = $"{returnValue.SubstringBeforeLast("/")}/{naniteName}.{naniteName}";
         }
 
         if (asset is USplineMeshComponent splineComponent)
         {
             var assetName = $"{asset.Name}-{splineComponent.GetMeshId().AsSpan(0, 6)}";
-            if (isNanite) assetName += "-Nanite";
+            if (isNanite) assetName += "_Nanite";
             returnValue = $"{asset.Owner.Name}/{assetName}.{assetName}";
         }
 
