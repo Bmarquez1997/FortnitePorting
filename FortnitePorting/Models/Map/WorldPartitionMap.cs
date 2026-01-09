@@ -247,7 +247,7 @@ public partial class WorldPartitionMap : ObservableObject
         if (WorldFlagsMainLevel)
             exportedProperly = await Exporter.Export(_world, EExportType.World, meta);
         
-        if (!exportedProperly)
+        if (!exportedProperly && WorldFlagsMainLevel)
             return;
         
         SelectedMaps.ForEach(map => map.Status = EWorldPartitionGridMapStatus.Waiting);
