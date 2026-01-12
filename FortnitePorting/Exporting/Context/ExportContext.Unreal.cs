@@ -367,7 +367,7 @@ public partial class ExportContext
             Scale = pointLightComponent.RelativeScale3D,
             Intensity = pointLightComponent.Intensity,
             Color = pointLightComponent.LightColor.ToLinearColor(),
-            CastShadows = pointLightComponent.CastShadows,
+            CastShadows = pointLightComponent.CastShadows == 1,
             AttenuationRadius = pointLightComponent.AttenuationRadius,
             Radius = pointLightComponent.SourceRadius
         };
@@ -384,7 +384,7 @@ public partial class ExportContext
             Scale = spotLightComponent.RelativeScale3D,
             Intensity = spotLightComponent.Intensity,
             Color = spotLightComponent.LightColor.ToLinearColor(),
-            CastShadows = spotLightComponent.CastShadows,
+            CastShadows = spotLightComponent.CastShadows == 1,
             AttenuationRadius = spotLightComponent.AttenuationRadius,
             Radius = spotLightComponent.SourceRadius,
             OuterConeAngle = outerConeAngle,
@@ -402,7 +402,7 @@ public partial class ExportContext
             Scale = directional.RelativeScale3D,
             Intensity = directional.Intensity,
             Color = directional.LightColor.ToLinearColor(),
-            CastShadows = directional.CastShadows,
+            CastShadows = directional.CastShadows == 1,
             Radius = directional.LightSourceAngle
         };
     }
