@@ -2,7 +2,7 @@
   "Id": "FortnitePorting-Mutable",
   "Title": "Fortnite Porting - Mutable Edition",
   "Description": "The experimental branch of Fortnite Porting with mutable support",
-  "Icon": "https://raw.githubusercontent.com/Bmarquez1997/FortnitePorting/refs/heads/v3-mutable/FortnitePorting/Assets/LogoV3_Mutable.png",
+  "Icon": "https://raw.githubusercontent.com/Bmarquez1997/FortnitePorting/refs/heads/mutable/FortnitePorting/Assets/LogoRebrand_Chip.png",
   "Versions": [
     {
       "Version": "v3.0.7",
