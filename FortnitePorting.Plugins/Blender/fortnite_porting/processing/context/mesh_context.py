@@ -73,7 +73,7 @@ class MeshImportContext:
                 master_mesh.data.materials.append(bpy.data.materials.get("M_FP_Outline"))
 
                 solidify = master_mesh.modifiers.new(name="Outline", type='SOLIDIFY')
-                solidify.thickness = 0.001
+                solidify.thickness = 0.01
                 solidify.offset = 1
                 solidify.thickness_clamp = 5.0
                 solidify.use_rim = False
