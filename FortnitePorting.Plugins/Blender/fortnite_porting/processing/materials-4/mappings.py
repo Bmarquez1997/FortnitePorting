@@ -180,6 +180,42 @@ eye_mappings = MappingCollection(
         SlotMapping("UseEyeColorTinting"),
     ]
 )
+
+toon_mappings = MappingCollection(
+    node_name="FPv4 Base Toon",
+    textures=[
+        SlotMapping("LitDiffuse"),
+        SlotMapping("Color_Lit_Map", "LitDiffuse"),
+        SlotMapping("ShadedDiffuse"),
+        SlotMapping("Color_Shaded_Map", "ShadedDiffuse"),
+        SlotMapping("Diffuse", "ShadedDiffuse"),
+        SlotMapping("DistanceField_InkLines"),
+        SlotMapping("DFL_Map", "DistanceField_InkLines"),
+        SlotMapping("InkLineColor_Texture"),
+        SlotMapping("DFL_Color_Map", "InkLineColor_Texture"),
+        SlotMapping("SSC_Texture"),
+        SlotMapping("STM_Map", "SSC_Texture"),
+        SlotMapping("STT_Map"),
+        SlotMapping("Normals"),
+        SlotMapping("Normal_Map", "Normals")
+    ],
+    scalars=[
+        SlotMapping("ShadedColorDarkening"),
+        SlotMapping("FakeNormalBlend_Amt"),
+        SlotMapping("VertexBakedNormal_Blend", "FakeNormalBlend_Amt"),
+        SlotMapping("PBR_Shading", "Use PBR Shading", value_func=lambda value: int(value))
+    ],
+    vectors=[
+        SlotMapping("InkLineColor", "InkLineColor_Texture"),
+        SlotMapping("Color_Lit", "LitDiffuse"),
+        SlotMapping("Color_Shaded", "ShadedDiffuse"),
+        SlotMapping("SpecularTint"),
+        SlotMapping("Specular Tint", "SpecularTint"),
+    ],
+    switches=[
+        SlotMapping("UseFakePBR", "Use PBR Shading")
+    ]
+)
 # End base groups
 
 # Start basic FX groups
