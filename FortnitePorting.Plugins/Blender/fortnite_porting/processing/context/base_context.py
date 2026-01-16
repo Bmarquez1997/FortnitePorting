@@ -46,6 +46,8 @@ class BaseImportContext:
             self.import_pose_asset_data(data, get_selected_armature(), None)
         elif import_type == EPrimitiveExportType.MATERIAL:
             self.import_material_standalone(data)
+        elif import_type == EPrimitiveExportType.TASTY_RIG:
+            self.import_tasty_rig_standalone(data)
         elif import_type == EPrimitiveExportType.MUTABLE:
             self.import_mutable_data(data)
 

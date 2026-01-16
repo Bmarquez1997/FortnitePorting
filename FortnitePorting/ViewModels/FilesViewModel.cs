@@ -28,6 +28,7 @@ using FortnitePorting.Exporting.Context;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
+using FortnitePorting.Models;
 using FortnitePorting.Models.Files;
 using FortnitePorting.Models.Information;
 using FortnitePorting.Models.Unreal;
@@ -394,14 +395,16 @@ public partial class FilesViewModel : ViewModelBase
             Info.Message("Properties", $"Failed to preview {selectedItemPath}");
         }
     }
-    
+        
     [RelayCommand]
     public async Task Preview()
     {
-        var selectedPaths = UseFlatView 
+        var selectedPaths = (UseFlatView 
             ? SelectedFlatViewItems.Select(file => file.Path) 
-            : SelectedFileViewItems.Where(file => file.Type == ENodeType.File).Select(file => file.FilePath);
-
+            : SelectedFileViewItems.Where(file => file.Type == ENodeType.File).Select(file => file.FilePath)).ToList();
+        
+        
+        var loadedAssets = new List<UObject>();
         foreach (var path in selectedPaths)
         {
             var basePath = Exporter.FixPath(path);
@@ -417,41 +420,59 @@ public partial class FilesViewModel : ViewModelBase
                 asset = await UEParse.Provider.SafeLoadPackageObjectAsync(basePath);
                 asset ??= await UEParse.Provider.SafeLoadPackageObjectAsync($"{basePath}.{basePath.SubstringAfterLast("/")}_C");
             }
+            
+            asset = TransformAssetForPreview(asset);
 
             if (asset is null)
             {
-                await Properties();
-                return;
+                continue;
             }
-
-            await PreviewAsset(asset);
+            
+            loadedAssets.Add(asset);
         }
         
+        if (loadedAssets.Count == 0)
+        {
+            await Properties();
+            return;
+        }
+
+        var meshAssets = loadedAssets.Where(x => x is ULevel or UStaticMesh or USkeletalMesh).ToArray();
+        if (meshAssets.Length > 0)
+        {
+            loadedAssets.RemoveMany(meshAssets);
+            ModelPreviewWindow.Preview(meshAssets);
+        }
+
+        foreach (var asset in loadedAssets)
+        {
+            await PreviewAsset(asset);
+        }
     }
 
-    public async Task PreviewAsset(UObject asset)
+    private UObject? TransformAssetForPreview(UObject? asset)
     {
-        var name = asset.Name;
-
         switch (asset)
         {
             case UVirtualTextureBuilder virtualTextureBuilder:
-            {
-                asset = virtualTextureBuilder.Texture.Load<UVirtualTexture2D>();
-                break;
-            }
+                return virtualTextureBuilder.Texture.Load<UVirtualTexture2D>();
             
             case UPaperSprite paperSprite:
-            {
-                asset = paperSprite.BakedSourceTexture.Load<UTexture2D>();
-                break;
-            }
+                return paperSprite.BakedSourceTexture?.Load<UTexture2D>();
+            
             case UWorld world:
-            {
-                asset = world.PersistentLevel.Load<ULevel>();
-                break;
-            }
+                return world.PersistentLevel.Load<ULevel>();
+            
+            default:
+                return asset;
         }
+    }
+
+    public async Task PreviewAsset(UObject? asset)
+    {
+        var name = asset?.Name!;
+        asset = TransformAssetForPreview(asset);
+        if (asset is null) return;
         
         switch (asset)
         {
@@ -524,7 +545,7 @@ public partial class FilesViewModel : ViewModelBase
             }
         }
     }
-    
+        
     [RelayCommand]
     public async Task Export()
     {

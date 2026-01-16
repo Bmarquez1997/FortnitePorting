@@ -42,18 +42,16 @@ public partial class WorldPartitionMap : ObservableObject
     [ObservableProperty] private bool _dataLoaded = false;
     [ObservableProperty] private EMapTextureExportType _textureExportType = EMapTextureExportType.Minimap;
     
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(CanExport))] private bool _worldFlagsMainLevel = false;
-    
     [ObservableProperty] private bool _worldFlagsActors = true;
     [ObservableProperty] private bool _worldFlagsInstancedFoliage = true;
-    [ObservableProperty] private bool _worldFlagsLandscape = false;
+    [ObservableProperty] private bool _worldFlagsLandscape = true;
     [ObservableProperty] private bool _worldFlagsHLODs = false;
+
+    [ObservableProperty] private bool _includeMainLevel;
     
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(CanExport))] private ObservableCollection<WorldPartitionGridMap> _selectedMaps = [];
+    [ObservableProperty] private ObservableCollection<WorldPartitionGridMap> _selectedMaps = [];
     
     [ObservableProperty] private ObservableCollection<WorldPartitionGrid> _grids = [];
-
-    public bool CanExport => SelectedMaps.Count > 0 || WorldFlagsMainLevel;
     
     public DirectoryInfo MapsFolder => new(Path.Combine(App.ApplicationDataFolder.FullName, "Maps"));
     private string ExportPath => Path.Combine(MapsFolder.FullName, WorldName);
@@ -67,8 +65,6 @@ public partial class WorldPartitionMap : ObservableObject
     public WorldPartitionMap(MapInfo info)
     {
         MapInfo = info;
-        
-        SelectedMaps.CollectionChanged += (sender, args) => OnPropertyChanged(nameof(CanExport));
     }
 
     public async Task Load()
@@ -201,6 +197,7 @@ public partial class WorldPartitionMap : ObservableObject
     {
         Grids.ForEach(grid => grid.IsSelected = false);
         SelectedMaps.Clear();
+        IncludeMainLevel = false;
     }
     
     [RelayCommand]
@@ -243,15 +240,9 @@ public partial class WorldPartitionMap : ObservableObject
         if (WorldFlagsLandscape) meta.WorldFlags |= EWorldFlags.Landscape;
         if (WorldFlagsHLODs) meta.WorldFlags |= EWorldFlags.HLODs;
 
-        var exportedProperly = false;
-        if (WorldFlagsMainLevel)
-            exportedProperly = await Exporter.Export(_world, EExportType.World, meta);
-        
-        if (!exportedProperly && WorldFlagsMainLevel)
-            return;
-        
         SelectedMaps.ForEach(map => map.Status = EWorldPartitionGridMapStatus.Waiting);
         
+        var exportedProperly = true;
         foreach (var map in SelectedMaps.ToArray())
         {
             map.Status = EWorldPartitionGridMapStatus.Exporting;
@@ -259,7 +250,7 @@ public partial class WorldPartitionMap : ObservableObject
             var world = await UEParse.Provider.SafeLoadPackageObjectAsync<UWorld>(map.Path);
             if (world is null) continue;
             
-            exportedProperly |= await Exporter.Export(world, EExportType.World, meta);
+            exportedProperly &= await Exporter.Export(world, EExportType.World, meta);
             
             map.Status = EWorldPartitionGridMapStatus.Finished;
         }
@@ -269,12 +260,12 @@ public partial class WorldPartitionMap : ObservableObject
             await SupaBase.PostExports(
                 SelectedMaps
                     .Select(map => map.Path)
-                    .Concat([_world.GetPathName()])
             );
         }
         
         SelectedMaps.ForEach(map => map.Status = EWorldPartitionGridMapStatus.None);
-        ClearSelectedMaps();
+        if (exportedProperly)
+            ClearSelectedMaps();
         
     }
 

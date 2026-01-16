@@ -233,6 +233,11 @@ public enum EExportType
     [Description("MaterialInstance"), Export(EPrimitiveExportType.Material)]
     MaterialInstance,
     
+    // UTILITY
+    [Description("Tasty Rig"), Export(EPrimitiveExportType.TastyRig)]
+    TastyRig,
+    
+    // EXPERIMENTAL
     [Description("Mutable"), Export(EPrimitiveExportType.Mutable)]
     Mutable
 }
@@ -260,6 +265,11 @@ public enum EPrimitiveExportType
     [Description("Material")]
     Material,
     
+    // UTILITY
+    [Description("Tasty Rig")]
+    TastyRig,
+    
+    // EXPERIMENTAL
     [Description("Mutable")]
     Mutable
 }

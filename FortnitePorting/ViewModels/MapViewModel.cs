@@ -33,6 +33,14 @@ public partial class MapViewModel : ViewModelBase
     [ObservableProperty] private ObservableCollection<WorldPartitionMap> _maps = [];
     [ObservableProperty] private WorldPartitionMap _selectedMap;
     [ObservableProperty] private EExportLocation _exportLocation = EExportLocation.Blender;
+
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private string? _currentlyLoadingMap;
+    
+    
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(LoadingPercentageText))] private int _loadedMaps;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(LoadingPercentageText))] private int _totalMaps = int.MaxValue;
+    public string LoadingPercentageText => $"{(LoadedMaps == 0 && TotalMaps == 0 ? 0 : LoadedMaps * 100f / TotalMaps):N0}%";
     
     [ObservableProperty, NotifyPropertyChangedFor(nameof(MapTransform))] private Matrix _mapMatrix = Matrix.Identity;
     public MatrixTransform MapTransform => new(MapMatrix);
@@ -230,6 +238,8 @@ public partial class MapViewModel : ViewModelBase
 
     public override async Task Initialize()
     {
+        IsLoading = true;
+        
         // in-game maps
         foreach (var mapInfo in MapInfos)
         {
@@ -267,15 +277,19 @@ public partial class MapViewModel : ViewModelBase
             Info.Message("No Supported Maps", "Failed to find any supported maps for processing.");
         }
 
+        TotalMaps = Maps.Count;
         foreach (var map in Maps.ToArray())
         {
+            LoadedMaps++;
+            
             try
             {
+                CurrentlyLoadingMap = map.MapInfo.Name;
                 await map.Load();
             }
             catch (Exception e)
             {
-                Info.Message("Map Export", $"Failed to load {map.MapInfo.Name} for export, skipping.");
+                Info.Message(map.MapInfo.Name, $"Failed to load {map.MapInfo.Name} for export, skipping.");
 #if DEBUG
                 Log.Error(e.ToString());
 #else
@@ -283,7 +297,8 @@ public partial class MapViewModel : ViewModelBase
 #endif
             }
         }
-        
+
+        IsLoading = false;
     }
     
     [RelayCommand]
@@ -298,7 +313,6 @@ public partial class MapViewModel : ViewModelBase
         Navigation.App.Open<ExportSettingsView>();
         Navigation.ExportSettings.Open(ExportLocation);
     }
-    
     
     [RelayCommand]
     public async Task SetExportLocation(EExportLocation location)

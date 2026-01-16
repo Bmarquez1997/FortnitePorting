@@ -78,6 +78,11 @@ class EExportType(IntEnum):
     POSE_ASSET = auto()
     MATERIAL = auto()
     MATERIAL_INSTANCE = auto()
+    
+    # UTILITY
+    TASTY_RIG = auto()
+    
+    # EXPERIMENTAL
     MUTABLE = auto()
 
 
@@ -89,6 +94,11 @@ class EPrimitiveExportType(IntEnum):
     FONT = auto()
     POSE_ASSET = auto()
     MATERIAL = auto()
+
+    # UTILITY
+    TASTY_RIG = auto()
+    
+    # EXPERIMENTAL
     MUTABLE = auto()
 
 
