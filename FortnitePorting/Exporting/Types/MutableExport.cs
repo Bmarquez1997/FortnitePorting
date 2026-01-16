@@ -30,7 +30,7 @@ public class MutableExport : BaseExport
     public readonly List<string> Textures = [];
     
     
-    public MutableExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData) : base(name, asset, styles, exportType, metaData)
+    public MutableExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
     {
         UCustomizableObject? customizableObject = null;
         string? filterSkeletonName = null;
