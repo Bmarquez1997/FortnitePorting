@@ -1,4 +1,4 @@
-﻿class MappingCollection:
+class MappingCollection:
     def __init__(self, node_name, textures=(), scalars=(), vectors=(), switches=(), component_masks=()):
         self.node_name = node_name
         self.textures = textures
@@ -6,6 +6,8 @@
         self.vectors = vectors
         self.switches = switches
         self.component_masks = component_masks
+        # TODO: add meets_criteria(material_data) method that each mappings collection overrides?
+        # Node type enum? (Base, FX, Tail, End)?
 
 
 class SlotMapping:
@@ -101,14 +103,14 @@ default_mappings = MappingCollection(
         SlotMapping("SpecRoughnessMax", "Roughness Max"),
         SlotMapping("RawRoughnessMax", "Roughness Max"),
         SlotMapping("Rough Max", "Roughness Max"),
-        
+
         SlotMapping("emissive mult", "Emission Strength"),
         SlotMapping("DayMult", "Emission Strength"),
     ],
     vectors=[
         SlotMapping("TintColor", "Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
-        
+
         SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
         SlotMapping("Emissive Multiplier", "Emission Multiplier"),
         SlotMapping("Emissive Color", "Emission Multiplier"),
@@ -230,7 +232,7 @@ layer_mappings = MappingCollection(
         SlotMapping("EmissiveTexture"),
         SlotMapping("MaskTexture"),
         SlotMapping("Background Diffuse", alpha_slot="Background Diffuse Alpha"),
-        
+
         SlotMapping("Diffuse_Texture_#", "Diffuse", alpha_slot="MaskTexture"),
         SlotMapping("SpecularMasks_#", "SpecularMasks"),
         SlotMapping("Normals_Texture_#", "Normals"),
@@ -336,7 +338,7 @@ silk_mappings = MappingCollection(
     vectors=[
         SlotMapping("SilkMaskChannel"),
         SlotMapping("Silk_Channel", "SilkMaskChannel"),
-        
+
         SlotMapping("SilkEdgeTint"),
     ],
     switches=[
@@ -358,7 +360,7 @@ metal_lut_mappings = MappingCollection(
     vectors=[
         SlotMapping("MetalLUTMaskChannel"),
         SlotMapping("MetalLUT_Channel", "MetalLUTMaskChannel"),
-        
+
         SlotMapping("LUTChannel"),
     ],
     switches=[
@@ -373,6 +375,50 @@ metal_lut_mappings = MappingCollection(
 # End basic FX groups
 
 # Start advanced FX groups
+glass_mappings = MappingCollection(
+    node_name="FPv4 Glass",
+    textures=[
+        SlotMapping("Color_DarkTint"),
+        SlotMapping("Diffuse", "Color"),
+        SlotMapping("Diffuse Texture", "Color"),
+        SlotMapping("Diffuse Texture with Alpha Mask", "Color"),
+        SlotMapping("Diffuse Texture with Alpha Mask", "Color", alpha_slot="Mask"),
+        SlotMapping("PM_Diffuse", "Color"),
+
+        SlotMapping("Normals"),
+        SlotMapping("BakedNormal", "Normals"),
+        SlotMapping("PM_Normals", "Normals"),
+    ],
+    scalars=[
+        SlotMapping("Specular"),
+        SlotMapping("GlassSpecular", "Specular"),
+        SlotMapping("Metallic"),
+        SlotMapping("GlassMetallic", "Metallic"),
+        SlotMapping("Roughness"),
+        SlotMapping("GlassRoughness", "Roughness"),
+        SlotMapping("Window Tint Amount", "Tint Amount"),
+        SlotMapping("Exponent"),
+        SlotMapping("Fresnel Exponent", "Exponent"),
+        SlotMapping("FresnelExponentTransparency", "Exponent"),
+        SlotMapping("Inner Transparency"),
+        SlotMapping("InnerTransparency", "Inner Transparency"),
+        SlotMapping("Fresnel Inner Transparency", "Inner Transparency"),
+        SlotMapping("Inner Transparency Max Tint"),
+        SlotMapping("Fresnel Inner Transparency Max Tint", "Inner Transparency Max Tint"),
+        SlotMapping("Outer Transparency"),
+        SlotMapping("OuterTransparency", "Outer Transparency"),
+        SlotMapping("Fresnel Outer Transparency", "Outer Transparency"),
+        SlotMapping("Glass thickness", "Thickness"),
+        SlotMapping("GlassThickness", "Thickness"),
+        SlotMapping("Alpha Channel Mask Opacity", "Mask Opacity")
+    ],
+    vectors=[
+        SlotMapping("ColorFront", "Color"),
+        SlotMapping("Base Color", "Color"),
+        SlotMapping("GlassDiffuse", "Color"),
+    ]
+)
+
 composite_mappings = MappingCollection(
     node_name="FPv4 Composite",
     textures=[
@@ -442,7 +488,7 @@ flipbook_mappings = MappingCollection(
 
         SlotMapping("Affects Base Color"),
         SlotMapping("Multiply Flipbook Emissive"),
-        
+
         SlotMapping("BumpOffset Intensity"),
         SlotMapping("Bump Height"),
     ],

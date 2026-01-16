@@ -26,6 +26,20 @@ def ensure_blend_data():
         for font in data_from.fonts:
             if not bpy.data.fonts.get(font):
                 data_to.fonts.append(font)
+    
+    # Load new node groups along with current ones
+    with bpy.data.libraries.load(os.path.join(addon_dir, "data", "fortnite_porting_data_v4.blend")) as (data_from, data_to):
+        for node_group in data_from.node_groups:
+            if not bpy.data.node_groups.get(node_group):
+                data_to.node_groups.append(node_group)
+
+        for mat in data_from.materials:
+            if not bpy.data.materials.get(mat):
+                data_to.materials.append(mat)
+
+        for image in data_from.images:
+            if not bpy.data.images.get(image):
+                data_to.images.append(image)
 
 def hash_code(num):
     return hex(abs(num))[2:]

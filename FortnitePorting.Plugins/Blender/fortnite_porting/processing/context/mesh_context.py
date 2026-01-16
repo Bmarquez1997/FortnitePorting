@@ -207,7 +207,7 @@ class MeshImportContext:
             if index >= len(imported_mesh.material_slots):
                 continue
 
-            self.import_material(imported_mesh.material_slots[index], material, meta)
+            self.import_material_new(imported_mesh.material_slots[index], material, meta) if self.use_new_materials else self.import_material(imported_mesh.material_slots[index], material, meta)
 
         for override_material in mesh.get("OverrideMaterials"):
             index = override_material.get("Slot")
@@ -218,7 +218,7 @@ class MeshImportContext:
             slots = where(imported_mesh.material_slots,
                           lambda slot: slot.name == overridden_material.name)
             for slot in slots:
-                self.import_material(slot, override_material, meta)
+                self.import_material_new(slot, override_material, meta) if self.use_new_materials else self.import_material(slot, override_material, meta)
 
         for variant_override_material in self.override_materials:
             material_name_to_swap = variant_override_material.get("MaterialNameToSwap")
@@ -226,7 +226,7 @@ class MeshImportContext:
             slots = where(imported_mesh.material_slots,
                           lambda slot: slot.material.get("OriginalName") == material_name_to_swap)
             for slot in slots:
-                self.import_material(slot, variant_override_material.get("Material"), meta)
+                self.import_material_new(slot, variant_override_material.get("Material"), meta) if self.use_new_materials else self.import_material(slot, variant_override_material.get("Material"), meta)
                 
         for texture_data in mesh.get("TextureData"):
             if not (td_override_material := texture_data.get("OverrideMaterial")):
@@ -242,7 +242,7 @@ class MeshImportContext:
             slots = where(imported_mesh.material_slots,
                           lambda slot: slot.name == overridden_material.name)
             for slot in slots:
-                self.import_material(slot, td_override_material, meta)
+                self.import_material_new(slot, td_override_material, meta) if self.use_new_materials else self.import_material(slot, td_override_material, meta)
                 
         self.import_light_data(mesh.get("Lights"), imported_object)
 
