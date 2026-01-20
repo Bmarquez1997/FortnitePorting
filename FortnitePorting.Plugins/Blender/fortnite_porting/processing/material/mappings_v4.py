@@ -149,9 +149,9 @@ class BaseEyeMappings(MappingCollection):
 
     textures=(
         SlotMapping("Diffuse", closure=True),
-        SlotMapping("Normal"), # TODO: fix node group, possibly make switch for when normal doesn't exist or include blank normal as default
+        SlotMapping("Normal", default="FlatNormal", closure=True),
         SlotMapping("SpecularMasks", closure=True),
-        SlotMapping("SRM", "SpecularMasks", closure=True),
+        SlotMapping("SRM", "SpecularMasks", closure=True), # TODO: Default SMR?
         SlotMapping("Emissive", closure=True),
     )
 
@@ -817,10 +817,10 @@ class SequinMappings(MappingCollection):
 
 
     textures=(
-        SlotMapping("SequinOffset", default="T_SequinTile.png", closure=True),
-        SlotMapping("SequinOffest", "SequinOffset", default="T_SequinTile.png", closure=True),
-        SlotMapping("SequinRoughness", default="T_SequinTile_roughness.png", closure=True),
-        SlotMapping("SequinNormal", default="T_SequinTile_N.png", closure=True),
+        SlotMapping("SequinOffset", default="T_SequinTile", closure=True),
+        SlotMapping("SequinOffest", "SequinOffset", default="T_SequinTile", closure=True),
+        SlotMapping("SequinRoughness", default="T_SequinTile_roughness", closure=True),
+        SlotMapping("SequinNormal", default="T_SequinTile_N", closure=True),
         SlotMapping("StripeMask", closure=True),
         SlotMapping("SequinThinFilmColor", default="T_ThinFilm_Spectrum_COLOR", closure=True),
     )
@@ -881,10 +881,10 @@ class SequinTrimMappings(SequinMappings):
 
 
     textures=SequinMappings.textures + (
-        SlotMapping("SequinOffset_Main", "SequinOffset", default="T_SequinTile.png", closure=True),
-        SlotMapping("SequinOffest_Main", "SequinOffset", default="T_SequinTile.png", closure=True),
-        SlotMapping("SequinRoughness_Main", "SequinRoughness", default="T_SequinTile_roughness.png", closure=True),
-        SlotMapping("SequinNormal_,Main", "SequinNormal", default="T_SequinTile_N.png", closure=True),
+        SlotMapping("SequinOffset_Main", "SequinOffset", default="T_SequinTile", closure=True),
+        SlotMapping("SequinOffest_Main", "SequinOffset", default="T_SequinTile", closure=True),
+        SlotMapping("SequinRoughness_Main", "SequinRoughness", default="T_SequinTile_roughness", closure=True),
+        SlotMapping("SequinNormal_,Main", "SequinNormal", default="T_SequinTile_N", closure=True),
         SlotMapping("SequinThinFilm_Trim", "SequinThinFilmColor", default="T_ThinFilm_Spectrum_COLOR", closure=True),
     )
 
@@ -910,10 +910,10 @@ class SequinSecondaryMappings(SequinMappings):
 
 
     textures=SequinMappings.textures + (
-        SlotMapping("SequinOffset_Secondary", "SequinOffset", default="T_SequinTile.png", closure=True),
-        SlotMapping("SequinOffest_Secondary", "SequinOffset", default="T_SequinTile.png", closure=True),
-        SlotMapping("SequinRoughness_Secondary", "SequinRoughness", default="T_SequinTile_roughness.png", closure=True),
-        SlotMapping("SequinNormal_,Secondary", "SequinNormal", default="T_SequinTile_N.png", closure=True),
+        SlotMapping("SequinOffset_Secondary", "SequinOffset", default="T_SequinTile", closure=True),
+        SlotMapping("SequinOffest_Secondary", "SequinOffset", default="T_SequinTile", closure=True),
+        SlotMapping("SequinRoughness_Secondary", "SequinRoughness", default="T_SequinTile_roughness", closure=True),
+        SlotMapping("SequinNormal_,Secondary", "SequinNormal", default="T_SequinTile_N", closure=True),
         SlotMapping("SequinThinFilm_Secondary", "SequinThinFilmColor", default="T_ThinFilm_Spectrum_COLOR", closure=True),
     )
 
