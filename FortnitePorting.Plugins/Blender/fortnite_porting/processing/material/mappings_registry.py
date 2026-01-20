@@ -5,6 +5,7 @@ class MappingCollection:
     node_name = ""
     type = None
     order = 99
+    node_spacing = 500
     textures = ()
     scalars = ()
     vectors = ()

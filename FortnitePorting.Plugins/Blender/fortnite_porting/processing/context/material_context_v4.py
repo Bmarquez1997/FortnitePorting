@@ -190,7 +190,7 @@ class MaterialImportContextNew:
                 if mappings.alpha_slot:
                     links.new(node.outputs[1], target_node.inputs[mappings.alpha_slot])
                 if mappings.switch_slot:  # Set based on lambda?
-                    target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
+                    target_node.inputs[mappings.switch_slot].default_value = 1 
                 if mappings.coords != "UV0":
                     uv = nodes.new(type="ShaderNodeUVMap")
                     uv.location = node.location.x - 250, node.location.y
@@ -207,28 +207,35 @@ class MaterialImportContextNew:
                 name = data.get("Name")
                 value = data.get("Value")
 
-                mappings = first(target_mappings.scalars, lambda x: x.name.casefold() == name.casefold())
-                if mappings is None:
+                node = nodes.new(type="ShaderNodeValue")
+                node.outputs[0].default_value = value
+                node.label = name
+                node.width = 250
+                
+                if mappings := first(target_mappings.scalars, lambda x: x.name.casefold() == name.casefold()):
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[mappings.slot])
+                else:
                     if add_unused_params:
                         nonlocal unused_parameter_height
-                        node = nodes.new(type="ShaderNodeValue")
-                        node.outputs[0].default_value = value
-                        node.label = name
-                        node.width = 250
                         node.location = 400, unused_parameter_height
                         unused_parameter_height -= 100
+                    else:
+                        nodes.remove(node)
                     return
 
-                value = mappings.value_func(value) if mappings.value_func else value
-                target_socket = target_node.inputs[mappings.slot]
-
-                match target_socket.type:
-                    case "INT":
-                        target_socket.default_value = int(value)
-                    case "BOOL":
-                        target_socket.default_value = int(value) == 1
-                    case _:
-                        target_socket.default_value = value
+                # value = mappings.value_func(value) if mappings.value_func else value
+                # target_socket = target_node.inputs[mappings.slot]
+                # 
+                # match target_socket.type:
+                #     case "INT":
+                #         target_socket.default_value = int(value)
+                #     case "BOOLEAN":
+                #         target_socket.default_value = int(value) == 1
+                #     case _:
+                #         target_socket.default_value = value
                     
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
@@ -241,25 +248,32 @@ class MaterialImportContextNew:
             try:
                 name = data.get("Name")
                 value = data.get("Value")
-
-                mappings = first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold())
-                if mappings is None:
+                
+                node = nodes.new(type="ShaderNodeRGB")
+                node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
+                node.label = name
+                node.width = 250
+                
+                if mappings := first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold()):
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[mappings.slot])
+                else:
                     if add_unused_params:
                         nonlocal unused_parameter_height
-                        node = nodes.new(type="ShaderNodeRGB")
-                        node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
-                        node.label = name
-                        node.width = 250
                         node.location = 400, unused_parameter_height
                         unused_parameter_height -= 200
+                    else:
+                        nodes.remove(node)
                     return
 
-                value = mappings.value_func(value) if mappings.value_func else value
-                if isinstance(target_node.inputs[mappings.slot], bpy.types.NodeSocketColor):
-                    target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"], 1.0)
-                else:
-                    target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"])
-                if mappings.alpha_slot:
+                # value = mappings.value_func(value) if mappings.value_func else value
+                # if isinstance(target_node.inputs[mappings.slot], bpy.types.NodeSocketColor):
+                #     target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"], 1.0)
+                # else:
+                #     target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"])
+                if mappings.alpha_slot: # TODO: How to handle this with connected nodes?
                     target_node.inputs[mappings.alpha_slot].default_value = value["A"]
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
@@ -273,20 +287,25 @@ class MaterialImportContextNew:
                 name = data.get("Name")
                 value = data.get("Value")
 
-                mappings = first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold())
-                if mappings is None:
+                node = nodes.new(type="ShaderNodeRGB")
+                node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
+                node.label = name
+                node.width = 250
+                
+                if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold()):
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[mappings.slot])
+                else:
                     if add_unused_params:
                         nonlocal unused_parameter_height
-                        node = nodes.new(type="ShaderNodeRGB")
-                        node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
-                        node.label = name
-                        node.width = 250
                         node.location = 400, unused_parameter_height
                         unused_parameter_height -= 200
+                    else:
+                        nodes.remove(node)
                     return
 
-                value = mappings.value_func(value) if mappings.value_func else value
-                target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"], value["A"])
             except KeyError:
                 pass
             except Exception:
@@ -297,26 +316,33 @@ class MaterialImportContextNew:
                 name = data.get("Name")
                 value = data.get("Value")
 
-                mappings = first(target_mappings.switches, lambda x: x.name.casefold() == name.casefold())
-                if mappings is None:
+                node = nodes.new("ShaderNodeGroup")
+                node.node_tree = bpy.data.node_groups.get("FPv4 Switch")
+                node.inputs[0].default_value = 1 if value else 0
+                node.label = name
+                node.width = 250
+                
+                if mappings := first(target_mappings.switches, lambda x: x.name.casefold() == name.casefold()):
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[mappings.slot])
+                else:
                     if add_unused_params:
                         nonlocal unused_parameter_height
-                        node = nodes.new("ShaderNodeGroup")
-                        node.node_tree = bpy.data.node_groups.get("FPv4 Switch")
-                        node.inputs[0].default_value = 1 if value else 0
-                        node.label = name
-                        node.width = 250
                         node.location = 400, unused_parameter_height
                         unused_parameter_height -= 125
+                    else:
+                        nodes.remove(node)
                     return
 
-                value = mappings.value_func(value) if mappings.value_func else value
-                target_socket = target_node.inputs[mappings.slot]
-                match target_socket.type:
-                    case "INT":
-                        target_socket.default_value = 1 if value else 0
-                    case "BOOLEAN":
-                        target_socket.default_value = value
+                # value = mappings.value_func(value) if mappings.value_func else value
+                # target_socket = target_node.inputs[mappings.slot]
+                # match target_socket.type:
+                #     case "INT":
+                #         target_socket.default_value = 1 if value else 0
+                #     case "BOOLEAN":
+                #         target_socket.default_value = value
             except KeyError:
                 pass
             except Exception:
@@ -397,7 +423,7 @@ class MaterialImportContextNew:
                 setup_params(mapping, new_node, False)
                 links.new(new_node.outputs[0], previous_node.inputs[0])
                 previous_node = new_node
-                node_position -= 500 # TODO: add node spacing in mappings (500 for no closures, 1k for closures?)
+                node_position -= mapping.node_spacing 
 
 
         # Temp to add all params for debugging

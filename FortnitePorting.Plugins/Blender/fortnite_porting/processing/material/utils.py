@@ -86,9 +86,9 @@ def setup_closure(texture_node, socket_x, socket_y, slot_name, target_node, node
     closure_input.outputs[1].hide = True
     closure_output.inputs[2].hide = True
 
-    closure_input.location = socket_x - 520, socket_y
-    texture_node.location = socket_x - 410, socket_y
-    closure_output.location = socket_x - 160, socket_y
+    closure_input.location = socket_x - 510, socket_y
+    texture_node.location = socket_x - 400, socket_y
+    closure_output.location = socket_x - 150, socket_y
 
     links.new(closure_input.outputs[0], texture_node.inputs[0])
     links.new(texture_node.outputs[0], closure_output.inputs[0])

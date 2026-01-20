@@ -39,7 +39,7 @@ class DefaultMappings(MappingCollection):
 
         SlotMapping("SpecularMasks"),
         SlotMapping("S", "SpecularMasks"),
-        SlotMapping("SRM", "SpecularMasks"),
+        SlotMapping("SRM", "SpecularMasks", switch_slot="SwizzleRoughnessToGreen"),
         SlotMapping("S Mask", "SpecularMasks"),
         SlotMapping("Specular Mask", "SpecularMasks"),
         SlotMapping("SpecularMask", "SpecularMasks"),
@@ -141,6 +141,7 @@ class BaseLayerMappings(MappingCollection):
 class BaseEyeMappings(MappingCollection):
     node_name="FPv4 3L Eyes"
     type=ENodeType.NT_Base
+    node_spacing=700
 
     @classmethod
     def meets_criteria(self, material_data):
@@ -239,7 +240,7 @@ class BaseToonMappings(MappingCollection):
     )
 
     switches=(
-        SlotMapping("UseFakePBR", "Use PBR Shading")
+        SlotMapping("UseFakePBR", "Use PBR Shading"),
     )
 # End base groups
 
@@ -266,7 +267,7 @@ class LayerMappings(MappingCollection):
 
     switches=(
         SlotMapping("Is Transparent"), # "Is Transparent" = override_blend_mode is not EBlendMode.BLEND_Opaque
-        SlotMapping("Use # Layers", "Use Layer")
+        SlotMapping("Use # Layers", "Use Layer"),
     )
 
 
@@ -290,6 +291,7 @@ class ClothFuzzMappings(MappingCollection):
     node_name="FPv4 ClothFuzz"
     type=ENodeType.NT_Core_FX
     order=2
+    node_spacing=700
 
     textures=(
         SlotMapping("ClothFuzz Texture", default="T_Fuzz_MASK", closure=True),
@@ -365,6 +367,7 @@ class ThinFilmMappings(MappingCollection):
     node_name="FPv4 ThinFilm"
     type=ENodeType.NT_Core_FX
     order=4
+    node_spacing=700
 
     textures=(
         SlotMapping("ThinFilm_Texture", default="T_ThinFilm_Spectrum_COLOR", closure=True),
@@ -493,41 +496,58 @@ class GlassMappings(MappingCollection):
 
     textures=(
         SlotMapping("Color_DarkTint"),
-        SlotMapping("Diffuse", "Color"),
-        SlotMapping("Diffuse Texture", "Color"),
-        SlotMapping("Diffuse Texture with Alpha Mask", "Color"),
-        SlotMapping("Diffuse Texture with Alpha Mask", "Color", alpha_slot="Mask"),
-        SlotMapping("PM_Diffuse", "Color"),
+        SlotMapping("GlassDiffuse"),
+        SlotMapping("Diffuse Texture with Alpha Mask", "GlassDiffuse", alpha_slot="Mask"),
+        SlotMapping("PM_Diffuse", "GlassDiffuse"),
     )
-# TODO: Fix glass mappings for new node
+
     scalars=(
-        SlotMapping("Specular"),
-        SlotMapping("GlassSpecular", "Specular"),
-        SlotMapping("Metallic"),
-        SlotMapping("GlassMetallic", "Metallic"),
-        SlotMapping("Roughness"),
-        SlotMapping("GlassRoughness", "Roughness"),
         SlotMapping("Window Tint Amount", "Tint Amount"),
-        SlotMapping("Exponent"),
-        SlotMapping("Fresnel Exponent", "Exponent"),
-        SlotMapping("FresnelExponentTransparency", "Exponent"),
-        SlotMapping("Inner Transparency"),
-        SlotMapping("InnerTransparency", "Inner Transparency"),
-        SlotMapping("Fresnel Inner Transparency", "Inner Transparency"),
-        SlotMapping("Inner Transparency Max Tint"),
-        SlotMapping("Fresnel Inner Transparency Max Tint", "Inner Transparency Max Tint"),
-        SlotMapping("Outer Transparency"),
-        SlotMapping("OuterTransparency", "Outer Transparency"),
-        SlotMapping("Fresnel Outer Transparency", "Outer Transparency"),
+        
+        SlotMapping("DiffuseTextureBlend"),
+        
+        SlotMapping("GlassSpecular"),
+        SlotMapping("Specular", "GlassSpecular"),
+        SlotMapping("SpecularTextureBlend"),
+        SlotMapping("GlassRoughness"),
+        SlotMapping("Roughness", "GlassRoughness"),
+        SlotMapping("RoughnessTextureBlend"),
+        SlotMapping("GlassMetallic"),
+        SlotMapping("Metallic", "GlassMetallic"),
+        SlotMapping("MetallicTextureBlend"),
+        
+        SlotMapping("Thickness"),
         SlotMapping("Glass thickness", "Thickness"),
         SlotMapping("GlassThickness", "Thickness"),
-        SlotMapping("Alpha Channel Mask Opacity", "Mask Opacity")
+        SlotMapping("InnerTransparency"),
+        SlotMapping("Inner Transparency", "InnerTransparency"),
+        SlotMapping("Fresnel Inner Transparency", "InnerTransparency"),
+        SlotMapping("Inner Transparency Max Tint"),
+        SlotMapping("Fresnel Inner Transparency Max Tint", "Inner Transparency Max Tint"),
+        SlotMapping("OuterTransparency"),
+        SlotMapping("Outer Transparency", "OuterTransparency"),
+        SlotMapping("Fresnel Outer Transparency", "OuterTransparency"),
+        SlotMapping("FresnelExponentTransparency"),
+        SlotMapping("Exponent", "FresnelExponentTransparency"),
+        SlotMapping("Fresnel Exponent", "FresnelExponentTransparency"),
+        
+        SlotMapping("TextureOpacityAdd"),
+        SlotMapping("TextureOpacityBlend"),
+        SlotMapping("Mask"),
+        SlotMapping("Mask Opacity"),
+        SlotMapping("Alpha Channel Mask Opacity", "Mask Opacity"),
     )
 
     vectors=(
-        SlotMapping("ColorFront", "Color"),
-        SlotMapping("Base Color", "Color"),
-        SlotMapping("GlassDiffuse", "Color"),
+        SlotMapping("GlassDiffuse"),
+        SlotMapping("ColorFront", "GlassDiffuse"),
+        SlotMapping("Base Color", "GlassDiffuse"),
+        
+        SlotMapping("TextureOpacityChannel"),
+    )
+    
+    switches=(
+        SlotMapping("UseTextureOpacity", "Texture Opacity"),
     )
 
 
@@ -535,6 +555,7 @@ class GlassMappings(MappingCollection):
 class CompositeMappings(MappingCollection):
     node_name="FPv4 Composite"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
 
     textures=(
         SlotMapping("UV2Composite_AlphaTexture", closure=True),
@@ -564,6 +585,7 @@ class CompositeMappings(MappingCollection):
 class DetailMappings(MappingCollection):
     node_name="FPv4 Detail"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
 
     textures=(
         SlotMapping("Detail Diffuse", closure=True),
@@ -597,6 +619,7 @@ class DetailMappings(MappingCollection):
 class FlipbookMappings(MappingCollection):
     node_name="FPv4 Flipbook"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
 
     textures=(
         SlotMapping("Flipbook", closure=True),
@@ -666,6 +689,7 @@ class EyelashMappings(MappingCollection):
 class GradientMappings(MappingCollection):
     node_name="FPv4 Gradient"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
     
     @classmethod
     def meets_criteria(self, material_data):
@@ -688,7 +712,7 @@ class GradientMappings(MappingCollection):
     )
 
     component_masks=(
-        SlotMapping("GmapSkinCustomization_Channel")
+        SlotMapping("GmapSkinCustomization_Channel"),
     )
 
 
@@ -753,7 +777,7 @@ class CustomColorMappings(MappingCollection):
     )
 
     switches=(
-        SlotMapping("UseAdvancedColorBlend")
+        SlotMapping("UseAdvancedColorBlend"),
     )
 
 
@@ -761,6 +785,7 @@ class CustomColorMappings(MappingCollection):
 class SkratchMappings(MappingCollection):
     node_name="FPv4 Skratch"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
     
     @classmethod
     def meets_criteria(self, material_data):
@@ -810,6 +835,7 @@ class SkratchMappings(MappingCollection):
 class SequinMappings(MappingCollection):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
 
     @classmethod
     def meets_criteria(self, material_data):
@@ -874,6 +900,7 @@ class SequinMappings(MappingCollection):
 class SequinTrimMappings(SequinMappings):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
     
     @classmethod
     def meets_criteria(self, material_data):
@@ -903,6 +930,7 @@ class SequinTrimMappings(SequinMappings):
 class SequinSecondaryMappings(SequinMappings):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
+    node_spacing=700
     
     @classmethod
     def meets_criteria(self, material_data):
@@ -993,7 +1021,7 @@ class GmapMappings(MappingCollection):
         SlotMapping("Use Diffuse as Base Color"),
         SlotMapping("Uses 2+ Color Masks", "Mask 2"),
         SlotMapping("Uses 3 Color Masks", "Mask 3"),
-        SlotMapping("Uses ColorVariety/Scratch/Dirt Mask", "ColorVariety/Scratch/Dirt Mask")
+        SlotMapping("Uses ColorVariety/Scratch/Dirt Mask", "ColorVariety/Scratch/Dirt Mask"),
     )
 
 
@@ -1019,7 +1047,7 @@ class HairMappings(MappingCollection):
     vectors=(
         SlotMapping("Hair_Color_Variation"),
         SlotMapping("Paint_Hair_Color_Darkness"),
-        SlotMapping("Paint_Hair_Color_Brightness")
+        SlotMapping("Paint_Hair_Color_Brightness"),
     )
 
     scalars=(
@@ -1132,7 +1160,7 @@ class FurMappings(MappingCollection):
     )
 
     switches=(
-        SlotMapping("UseAnisotropicShading")
+        SlotMapping("UseAnisotropicShading"),
     )
         
 # End advanced FX groups
