@@ -12,6 +12,7 @@ from mathutils import Vector
 #from ..material import *
 from ..material.enums import *
 from ..material.mappings_v4 import *
+from ..material.mappings_registry import *
 from ..material.names import *
 from ..material.utils import *
 from ..enums import *
@@ -100,11 +101,6 @@ class MaterialImportContextNew:
         nodes.clear()
         links = material.node_tree.links
         links.clear()
-
-        override_blend_mode = EBlendMode(material_data.get("OverrideBlendMode"))
-        base_blend_mode = EBlendMode(material_data.get("BaseBlendMode"))
-        translucency_lighting_mode = ETranslucencyLightingMode(material_data.get("TranslucencyLightingMode"))
-        shading_model = EMaterialShadingModel(material_data.get("ShadingModel"))
         
         textures = material_data.get("Textures")
         scalars = material_data.get("Scalars")
@@ -127,8 +123,7 @@ class MaterialImportContextNew:
         output_node.location = (200, 0)
 
         shader_node = nodes.new(type="ShaderNodeGroup")
-        shader_node.node_tree = bpy.data.node_groups.get("FPv4 Base Material")
-        # shader_node.node_tree = bpy.data.node_groups.get("FPv3 Material Lite" if self.type in lite_shader_types else "FPv3 Material")
+        shader_node.node_tree = bpy.data.node_groups.get("FPv4 Material Build")
 
         def replace_shader_node(name):
             nonlocal shader_node
@@ -190,7 +185,7 @@ class MaterialImportContextNew:
                     setup_closure(node, x, y, mappings.slot, target_node, nodes, links)
                 else:
                     node.location = x - 300, y
-                links.new(node.outputs[0], target_node.inputs[mappings.slot])
+                    links.new(node.outputs[0], target_node.inputs[mappings.slot])
 
                 if mappings.alpha_slot:
                     links.new(node.outputs[1], target_node.inputs[mappings.alpha_slot])
@@ -320,7 +315,7 @@ class MaterialImportContextNew:
                 match target_socket.type:
                     case "INT":
                         target_socket.default_value = 1 if value else 0
-                    case "BOOL":
+                    case "BOOLEAN":
                         target_socket.default_value = value
             except KeyError:
                 pass
@@ -374,100 +369,39 @@ class MaterialImportContextNew:
             if texture_node := get_node(target_node, slot_name):
                 links.new(uv_output, texture_node.inputs[0])
 
-        # decide which material type and mappings to use
-        socket_mappings = default_mappings
-        base_material_path = material_data.get("BaseMaterialPath")
+        # TODO: Handle individually or as one group?
+        all_mappings = find_all_matching_mappings(material_data)
+        base_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Base)
+        base_fx_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Core_FX)
+        advanced_fx_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Advanced_FX)
 
-        if get_param_multiple(switches, layer_switch_names) and get_param_multiple(textures, extra_layer_names):
-            replace_shader_node("FPv4 Base Layer")
-            socket_mappings = base_layer_mappings
+        # TODO
+        # Separate handling for layered
+        # Ensure only one base node
+        # Set SwizzleRoughness
 
-            set_param("Is Transparent", override_blend_mode is not EBlendMode.BLEND_Opaque)
+        # TODO: Move to mappings to allow for other build nodes?
+        set_param("AO", self.options.get("AmbientOcclusion"))
+        set_param("Cavity", self.options.get("Cavity"))
+        set_param("Subsurface Scale", self.options.get("Subsurface"))
 
-        if get_param_multiple(textures, toon_texture_names) or get_param_multiple(vectors, toon_vector_names):
-            replace_shader_node("FPv3 Toon")
-            socket_mappings = toon_mappings
+        node_position = -200
+        previous_node = shader_node
 
-        if "M_FN_Valet_Master" in base_material_path:
-            replace_shader_node("FPv3 Valet")
-            socket_mappings = valet_mappings
+        if len(all_mappings) > 0:
+            for mapping in all_mappings:
+                Log.info(f"Adding node: {mapping.node_name}")
+                new_node = nodes.new(type="ShaderNodeGroup")
+                new_node.node_tree = bpy.data.node_groups.get(mapping.node_name)
+                new_node.location = (node_position, 0)
+                setup_params(mapping, new_node, False)
+                links.new(new_node.outputs[0], previous_node.inputs[0])
+                previous_node = new_node
+                node_position -= 500 # TODO: add node spacing in mappings (500 for no closures, 1k for closures?)
 
-# TODO: Move to FX
-        is_glass = material_data.get("PhysMaterialName") == "Glass" or any(glass_master_names, lambda x: x in base_material_path) or (base_blend_mode is EBlendMode.BLEND_Translucent and translucency_lighting_mode in [ETranslucencyLightingMode.TLM_SurfacePerPixelLighting, ETranslucencyLightingMode.TLM_VolumetricPerVertexDirectional])
-        if is_glass:
-            replace_shader_node("FPv3 Glass")
-            socket_mappings = glass_mappings
 
-            material.surface_render_method = "BLENDED"
-            material.show_transparent_back = False
-
-        is_trunk = get_param(switches, "IsTrunk")
-        if is_trunk:
-            socket_mappings = trunk_mappings
-
-        is_foliage = base_blend_mode is EBlendMode.BLEND_Masked and shading_model in [EMaterialShadingModel.MSM_TwoSidedFoliage, EMaterialShadingModel.MSM_Subsurface]
-        if is_foliage and not is_trunk:
-            replace_shader_node("FPv3 Foliage")
-            socket_mappings = foliage_mappings
-
-        if "MM_BeanCharacter_Body" in base_material_path:
-            replace_shader_node("FPv3 Bean Base")
-            socket_mappings = bean_base_mappings
-            
-        if "MM_BeanCharacter_Costume" in base_material_path:
-            replace_shader_node("FPv3 Bean Costume")
-            socket_mappings = bean_head_costume_mappings if meta.get("IsHead") else bean_costume_mappings
-
-        if any(eye_names, lambda eye_mat_name: eye_mat_name in base_material_path) or get_param(scalars, "Eye Cornea IOR") is not None:
-            replace_shader_node("FPv4 3L Eyes")
-            socket_mappings = eye_mappings
-
-# TODO: Move to FX
-        if "M_HairParent_2023" in base_material_path or get_param(textures, "Hair Mask") is not None:
-            replace_shader_node("FPv3 Hair")
-            socket_mappings = hair_mappings
-
-# TODO: Move to FX
-        if "M_Companion_Fur_Parent_2025" in base_material_path or "furparent" in base_material_path.lower():
-            replace_shader_node("FPv3 Fur")
-            socket_mappings = fur_mappings
-
-        if "MAT_Vehicle_Body_Base" in base_material_path:
-            replace_shader_node("FPv3 Vehicle Body")
-            socket_mappings = vehicle_body_mappings
-
-        if "MAT_Vehicle_Chassis_Base" in base_material_path:
-            replace_shader_node("FPv3 Vehicle Chassis")
-            socket_mappings = vehicle_chassis_mappings
-
-        if "M_Vehicle_Interior" in base_material_path:
-            replace_shader_node("FPv3 Vehicle Interior")
-            socket_mappings = vehicle_interior_mappings
-
-        if "M_InteriorCombined" in base_material_path:
-            replace_shader_node("FPv3 Vehicle Interior Combined")
-            socket_mappings = vehicle_interior_combined_mappings
-
-        if "MAT_Vehicle_Trim_Base" in base_material_path:
-            replace_shader_node("FPv3 Vehicle Trim")
-            socket_mappings = vehicle_trim_mappings
-
-        # TODO: M_WheelParent_Simple base material
-        if "M_WheelParent" in base_material_path:
-            replace_shader_node("FPv3 Vehicle Wheel")
-            socket_mappings = vehicle_wheel_mappings
-
-        # TODO: TexColor builder?
-        if "M_Figure_DecoratedPlastic" in base_material_path:
-            replace_shader_node("FPv3 Lego Minifig")
-            socket_mappings = minifig_body_mappings
-
-        # TODO: Minifig face mappings
-        if "M_Figure_RigDrivenFace_rc1" in base_material_path:
-            replace_shader_node("FPv3 Lego Minifig")
-            socket_mappings = minifig_head_mappings
-
-        setup_params(socket_mappings, shader_node, True)
+        # Temp to add all params for debugging
+        setup_params(MappingCollection(), shader_node, True)
 
         links.new(shader_node.outputs[0], output_node.inputs[0])
 
@@ -488,510 +422,6 @@ class MaterialImportContextNew:
             
             self.partial_vertex_crunch_materials[material] = elements
 
-        match shader_node.node_tree.name:
-            # Use base node group for switch?
-            
-            # Node group order:
-            # Base (material, layer, toon, eye)
-            # Basic FX (see order below)
-            # Advanced FX (composite, detail, sequin, etc)
-            # Tail (hair, fur)
-            
-            # Basic FX order:
-            # ClothFuzz
-            # Silk
-            # ThinFilm
-            # ClearCoat
-            # MetalLUT
-            # Gem
-            # Subsurface
-            # Advanced Emission
-            # Anisotropic
-            
-            # Start with base
-            # Priority value in mappings
-            # Sort all FX by priority
-            # TODO: "shouldUse" method in mappings?
-            # Loop through FX
-            # Loop through tail
-            # Add build
-            
-            # Should we go end to start for layout purposes?
-        
-            case "FPv3 Material":
-                # PRE FX START
-                pre_fx_node = nodes.new(type="ShaderNodeGroup")
-                pre_fx_node.node_tree = bpy.data.node_groups.get("FPv3 Pre FX")
-                pre_fx_node.location = -600, -700
-                setup_params(socket_mappings, pre_fx_node, False)
-
-                thin_film_node = get_node(shader_node, "Thin Film Texture")
-                if get_param_multiple(switches, ["Use Thin Film", "UseThinFilm"]) or "M_ReconExpert_FNCS_Parent" in base_material_path:
-                    connect_or_add_default_texture(shader_node, "Thin Film Texture", "T_ThinFilm_Spectrum_COLOR", True, pre_fx_node.outputs["Thin Film UV"])
-                elif thin_film_node is not None:
-                    nodes.remove(thin_film_node)
-
-                cloth_fuzz_node = get_node(shader_node, "ClothFuzz Texture")
-                if get_param_multiple(switches, ["Use Cloth Fuzz", "UseClothFuzz"]):
-                    connect_or_add_default_texture(shader_node, "ClothFuzz Texture", "T_Fuzz_MASK", True, pre_fx_node.outputs["Cloth UV"])
-                elif cloth_fuzz_node is not None:
-                    nodes.remove(cloth_fuzz_node)
-
-                if flipbook_node := get_node(shader_node, "Flipbook Color"):
-                    links.new(pre_fx_node.outputs["Flipbook UV"], flipbook_node.inputs[0])
-                    links.new(pre_fx_node.outputs["Flipbook Mask"], shader_node.inputs["Flipbook Mask"])
-
-                if emissive_distance_field_node := get_node(shader_node, "EmissiveDistanceField"):
-                    links.new(pre_fx_node.outputs["Emissive Distance Field UV"], emissive_distance_field_node.inputs[0])
-
-                if ice_gradient_node := get_node(shader_node, "IceGradient"):
-                    links.new(pre_fx_node.outputs["Ice UV"], ice_gradient_node.inputs[0])
-                    links.new(pre_fx_node.outputs["Ice UV"], shader_node.inputs["Ice UV"])
-                    
-                if not any(pre_fx_node.outputs, lambda output: len(output.links) > 0):
-                    for input in pre_fx_node.inputs:
-                        if len(input.links) > 0:
-                            nodes.remove(input.links[0].from_node)
-                            
-                    nodes.remove(pre_fx_node)
-                    
-                # PRE FX END
-                
-            # TODO: set on build node
-                set_param("AO", self.options.get("AmbientOcclusion"))
-                set_param("Cavity", self.options.get("Cavity"))
-                set_param("Subsurface", self.options.get("Subsurface"))
-
-                if override_blend_mode == EBlendMode.BLEND_Masked and (diffuse_links := shader_node.inputs["Diffuse"].links) and len(diffuse_links) > 0 and (diffuse_node := diffuse_links[0].from_node):
-                    links.new(diffuse_node.outputs[1], shader_node.inputs["Alpha"])
-
-                if (skin_color := meta.get("SkinColor")) and skin_color["A"] != 0:
-                    set_param("Skin Color", (skin_color["R"], skin_color["G"], skin_color["B"], 1.0))
-                    set_param("Skin Boost", skin_color["A"])
-
-                if all(get_params(switches, emissive_toggle_names), lambda bool: bool is False):
-                    set_param("Emission Strength", 0)
-
-                if get_param(textures, "SRM"):
-                    set_param("SwizzleRoughnessToGreen", 1)
-
-            # TODO: separate "Emission Crop" fx node?
-                emission_slot = shader_node.inputs["Emission"]
-                if (crop_bounds := get_param_multiple(vectors, emissive_crop_vector_names)) and get_param_multiple(switches, emissive_crop_switch_names) and len(emission_slot.links) > 0:
-                    emission_node = emission_slot.links[0].from_node
-                    emission_node.extension = "CLIP"
-    
-                    crop_texture_node = nodes.new("ShaderNodeGroup")
-                    crop_texture_node.node_tree = bpy.data.node_groups.get("FPv3 Texture Cropping")
-                    crop_texture_node.location = emission_node.location + Vector((-200, 25))
-                    crop_texture_node.inputs["Left"].default_value = crop_bounds.get('R')
-                    crop_texture_node.inputs["Top"].default_value = crop_bounds.get('G')
-                    crop_texture_node.inputs["Right"].default_value = crop_bounds.get('B')
-                    crop_texture_node.inputs["Bottom"].default_value = crop_bounds.get('A')
-                    links.new(crop_texture_node.outputs[0], emission_node.inputs[0])
-
-                if get_param(switches, "Modulate Emissive with Diffuse"):
-                    diffuse_node = shader_node.inputs["Diffuse"].links[0].from_node
-                    links.new(diffuse_node.outputs[0], shader_node.inputs["Emission Multiplier"])
-
-                if get_param(switches, "Use Engine Colorized GMap"):
-                    gmap_node = nodes.new(type="ShaderNodeGroup")
-                    gmap_node.node_tree = bpy.data.node_groups.get(".FPv3 GMap Material")
-                    gmap_node.location = -1100, -69
-                    if len(shader_node.inputs["Diffuse"].links) > 0:
-                        nodes.remove(shader_node.inputs["Diffuse"].links[0].from_node)
-                    links.new(gmap_node.outputs[0], shader_node.inputs[0])
-                    setup_params(gmap_material_mappings, gmap_node)
-
-                if get_param(switches, "useGmapGradientLayers"):
-                    gradient_node = nodes.new(type="ShaderNodeGroup")
-                    gradient_node.node_tree = bpy.data.node_groups.get("FPv3 Gradient")
-                    gradient_node.location = -500, 0
-                    nodes.remove(shader_node.inputs["Diffuse"].links[0].from_node)
-                    links.new(gradient_node.outputs[0], shader_node.inputs[0])
-
-                    gmap_node = nodes.new(type="ShaderNodeGroup")
-                    gmap_node.node_tree = bpy.data.node_groups.get(".FPv3 GMap")
-                    gmap_node.location = -1120, -240
-                    setup_params(gmap_mappings, gmap_node, False)
-
-                    setup_params(gradient_mappings, gradient_node)
-
-                    for item in gradient_node.node_tree.interface.items_tree:
-                        if item.name != "Colors":
-                            continue
-
-                        panel_items = item.interface_items
-                        for panel_item in panel_items:
-                            item_links = gradient_node.inputs[panel_item.name].links
-                            if len(item_links) == 0:
-                                continue
-                            links.new(gmap_node.outputs[0], item_links[0].from_node.inputs[0])
-
-                if eye_texture_data := get_param_info(textures, "EyeTexture"):
-                    eye_texture_node = nodes.new(type="ShaderNodeTexImage")
-                    eye_texture_node.image = self.import_image(eye_texture_data.get("Texture").get("Path"))
-                    eye_texture_node.image.alpha_mode = 'CHANNEL_PACKED'
-                    eye_texture_node.image.colorspace_settings.name = "sRGB" if eye_texture_data.get("Texture").get("sRGB") else "Non-Color"
-                    eye_texture_node.interpolation = "Smart"
-                    eye_texture_node.hide = True
-                    eye_texture_node.location = [-500, -75]
-
-                    uv_map_node = nodes.new(type="ShaderNodeUVMap")
-                    uv_map_node.location = [-700, 25]
-                    uv_map_node.uv_map = "UV1"
-
-                    links.new(uv_map_node.outputs[0], eye_texture_node.inputs[0])
-
-                    mix_node = nodes.new(type="ShaderNodeMixRGB")
-                    mix_node.location = [-200, 75]
-
-                    links.new(eye_texture_node.outputs[0], mix_node.inputs[2])
-
-                    compare_node = nodes.new(type="ShaderNodeMath")
-                    compare_node.operation = 'COMPARE'
-                    compare_node.hide = True
-                    compare_node.location = [-500, 100]
-                    compare_node.inputs[1].default_value = 0.510
-                    links.new(uv_map_node.outputs[0], compare_node.inputs[0])
-                    links.new(compare_node.outputs[0], mix_node.inputs[0])
-
-                    diffuse_node = shader_node.inputs["Diffuse"].links[0].from_node
-                    diffuse_node.location = [-500, 0]
-                    links.new(diffuse_node.outputs[0], mix_node.inputs[1])
-                    links.new(mix_node.outputs[0], shader_node.inputs["Diffuse"])
-                    
-                if diffuse_node := get_node(shader_node, "Diffuse"):
-                    nodes.active = diffuse_node
-
-                if "Elastic_Master" in base_material_path and "_Head_" not in base_material_path:
-                    superhero_node = nodes.new(type="ShaderNodeGroup")
-                    superhero_node.node_tree = bpy.data.node_groups.get("FPv3 Superhero")
-                    superhero_node.location = -600, 0
-                    setup_params(superhero_mappings, superhero_node, False)
-                    
-                    base_normal = superhero_node.inputs["Normals"].links[0].from_node
-                    if len(superhero_node.inputs["PrimaryNormal"].links) == 0:
-                        links.new(base_normal.outputs[0], superhero_node.inputs["PrimaryNormal"])
-                    if len(superhero_node.inputs["SecondaryNormal"].links) == 0:
-                        links.new(base_normal.outputs[0], superhero_node.inputs["SecondaryNormal"])
-
-                    if sticker_texture_data := get_param_info(textures, "Sticker"):
-                        if "/Game/Global/Textures/Default/Blanks/" not in sticker_texture_data.get("Texture").get("Path"):
-                            sticker_node = nodes.new(type="ShaderNodeTexImage")
-                            sticker_node.image = self.import_image(sticker_texture_data.get("Texture").get("Path"))
-                            sticker_node.image.alpha_mode = 'CHANNEL_PACKED'
-                            sticker_node.image.colorspace_settings.name = "sRGB" if sticker_texture_data.get("Texture").get("sRGB") else "Non-Color"
-                            sticker_node.interpolation = "Smart"
-                            sticker_node.extension = "CLIP"
-                            sticker_node.hide = True
-                            sticker_node.location = [-885, -585]
-                            
-                            back_sticker_node = nodes.new(type="ShaderNodeTexImage")
-                            back_sticker_node.image = self.import_image(sticker_texture_data.get("Texture").get("Path"))
-                            back_sticker_node.image.alpha_mode = 'CHANNEL_PACKED'
-                            back_sticker_node.image.colorspace_settings.name = "sRGB" if sticker_texture_data.get("Texture").get("sRGB") else "Non-Color"
-                            back_sticker_node.interpolation = "Smart"
-                            back_sticker_node.extension = "CLIP"
-                            back_sticker_node.hide = True
-                            back_sticker_node.location = [-885, -640]
-                        
-                            pre_superhero_node = nodes.new(type="ShaderNodeGroup")
-                            pre_superhero_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Superhero")
-                            pre_superhero_node.location = -1150, -560
-                            setup_params(superhero_mappings, pre_superhero_node, False)
-
-                            links.new(pre_superhero_node.outputs["StickerUV"], sticker_node.inputs[0])
-                            links.new(pre_superhero_node.outputs["StickerMask"], superhero_node.inputs["StickerMask"])
-                            links.new(sticker_node.outputs[0], superhero_node.inputs["Sticker"])
-                            links.new(sticker_node.outputs[1], superhero_node.inputs["StickerAlpha"])
-
-                            links.new(pre_superhero_node.outputs["BackStickerUV"], back_sticker_node.inputs[0])
-                            links.new(pre_superhero_node.outputs["BackStickerMask"], superhero_node.inputs["BackStickerMask"])
-                            links.new(back_sticker_node.outputs[0], superhero_node.inputs["BackSticker"])
-                            links.new(back_sticker_node.outputs[1], superhero_node.inputs["BackStickerAlpha"])
-
-                    shader_node.inputs["Background Diffuse Alpha"].default_value = 0.0
-                    links.new(superhero_node.outputs["Diffuse"], shader_node.inputs["Background Diffuse"])
-                    links.new(superhero_node.outputs["Normals"], shader_node.inputs["Normals"])
-                    links.new(superhero_node.outputs["SpecularMasks"], shader_node.inputs["SpecularMasks"])
-                    links.new(superhero_node.outputs["ClothFuzzChannel"], shader_node.inputs["Cloth Channel"])
-
-                if get_param(switches, "UseUV2Composite"):
-                    composite_node = nodes.new(type="ShaderNodeGroup")
-                    composite_node.node_tree = bpy.data.node_groups.get("FPv3 Composite")
-                    composite_node.location = -600, 0
-                    setup_params(composite_mappings, composite_node, False)
-
-                    pre_composite_node = nodes.new(type="ShaderNodeGroup")
-                    pre_composite_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Composite")
-                    pre_composite_node.location = -1150, -225
-                    setup_params(composite_mappings, pre_composite_node, False)
-
-                    connect_texture_uvs(composite_node, "UV2Composite_AlphaTexture", pre_composite_node.outputs[0])
-                    connect_texture_uvs(composite_node, "UV2Composite_Diffuse", pre_composite_node.outputs[1])
-                    connect_texture_uvs(composite_node, "UV2Composite_Normals", pre_composite_node.outputs[1])
-                    connect_texture_uvs(composite_node, "UV2Composite_SRM", pre_composite_node.outputs[1])
-
-                    move_texture_node(composite_node, "Diffuse")
-                    move_texture_node(composite_node, "Normals")
-                    move_texture_node(composite_node, "SpecularMasks")
-
-                    if diffuse_node := get_node(composite_node, "Diffuse"):
-                        nodes.active = diffuse_node
-
-                if "M_Detail_Texturing_Parent_2025" in base_material_path:
-                    detail_node = nodes.new(type="ShaderNodeGroup")
-                    detail_node.node_tree = bpy.data.node_groups.get("FPv3 Detail")
-                    detail_node.location = -600, 0
-                    setup_params(detail_mappings, detail_node, False)
-
-                    pre_detail_node = nodes.new(type="ShaderNodeGroup")
-                    pre_detail_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Detail")
-                    pre_detail_node.location = -1150, -350
-                    setup_params(detail_mappings, pre_detail_node, False)
-
-                    connect_texture_uvs(detail_node, "Detail Diffuse", pre_detail_node.outputs[0])
-                    connect_texture_uvs(detail_node, "Detail Normal", pre_detail_node.outputs[0])
-                    connect_texture_uvs(detail_node, "Detail SRM", pre_detail_node.outputs[0])
-
-                    move_texture_node(detail_node, "Diffuse")
-                    move_texture_node(detail_node, "Normals")
-                    move_texture_node(detail_node, "SpecularMasks")
-
-                    if diffuse_node := get_node(detail_node, "Diffuse"):
-                        nodes.active = diffuse_node
-                    
-                if get_param_multiple(switches, ["UseSequins", "UseSequin"]):
-                    sequin_node = nodes.new(type="ShaderNodeGroup")
-                    sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Sequin")
-                    sequin_node.location = -600, 0
-                    setup_params(sequin_mappings, sequin_node, False)
-                    if get_param(textures, "SRM"):
-                        set_param("SwizzleRoughnessToGreen", 1, sequin_node)
-
-                    pre_sequin_node = nodes.new(type="ShaderNodeGroup")
-                    pre_sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Sequin")
-                    pre_sequin_node.location = -1150, -350
-                    setup_params(sequin_mappings, pre_sequin_node, False)
-                    
-                    if "M_DimeBlanket_Parent" not in base_material_path:
-                        connect_or_add_default_texture(sequin_node, "SequinOffset", "T_SequinTile.png", False, pre_sequin_node.outputs[0])
-                        connect_or_add_default_texture(sequin_node, "SequinRoughness", "T_SequinTile_roughness.png", False, pre_sequin_node.outputs[0])
-                        connect_or_add_default_texture(sequin_node, "SequinNormal", "T_SequinTile_N.png", False, pre_sequin_node.outputs[0])
-                        
-                        if get_param(switches, "MFSequin_UseThinFilmOnSequins"):
-                            connect_or_add_default_texture(sequin_node, "SequinThinFilmColor", "T_ThinFilm_Spectrum_COLOR", True, pre_sequin_node.outputs[1])
-                    
-                    move_texture_node(sequin_node, "Diffuse")
-                    move_texture_node(sequin_node, "Normals")
-                    move_texture_node(sequin_node, "SpecularMasks")
-                    move_texture_node(sequin_node, "Emission")
-                    move_texture_node(sequin_node, "SkinFX_Mask")
-
-                    if diffuse_node := get_node(sequin_node, "Diffuse"):
-                        nodes.active = diffuse_node
-                    
-                    if "M_Sequin_Parent_StrideMice" in base_material_path:
-                        connect_or_add_default_texture(sequin_node, "StripeMask", "T_SequinTile_StripesMask.png", False, pre_sequin_node.outputs[0])
-                        set_param("UseStripes", 1, sequin_node)
-                    
-                    if "M_DimeBlanket_Parent" in base_material_path:
-                        setup_params(sequin_secondary_mappings, sequin_node, False)
-                        setup_params(sequin_secondary_mappings, pre_sequin_node, False)
-                        connect_or_add_default_texture(sequin_node, "SequinOffset", "T_SequinTile.png", False, pre_sequin_node.outputs[0])
-                        connect_or_add_default_texture(sequin_node, "SequinRoughness", "T_SequinTile_roughness.png", False, pre_sequin_node.outputs[0])
-                        connect_or_add_default_texture(sequin_node, "SequinNormal", "T_SequinTile_N.png", False, pre_sequin_node.outputs[0])
-                        connect_or_add_default_texture(sequin_node, "SequinThinFilmColor", "T_ThinFilm_Spectrum_COLOR", True, pre_sequin_node.outputs[1])
-                        
-                        trim_sequin_node = nodes.new(type="ShaderNodeGroup")
-                        trim_sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Sequin")
-                        trim_sequin_node.location = -1650, 0
-                        setup_params(sequin_mappings, trim_sequin_node, False)
-                        setup_params(sequin_trim_mappings, trim_sequin_node, False)
-                        if get_param(textures, "SRM"):
-                            set_param("SwizzleRoughnessToGreen", 1, sequin_node)
-    
-                        pre_trim_sequin_node = nodes.new(type="ShaderNodeGroup")
-                        pre_trim_sequin_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Sequin")
-                        pre_trim_sequin_node.location = -2200, -350
-                        setup_params(sequin_mappings, pre_trim_sequin_node, False)
-                        setup_params(sequin_trim_mappings, pre_trim_sequin_node, False)
-                        
-                        connect_or_add_default_texture(trim_sequin_node, "SequinOffset", "T_SequinTile.png", False, pre_trim_sequin_node.outputs[0])
-                        connect_or_add_default_texture(trim_sequin_node, "SequinRoughness", "T_SequinTile_roughness.png", False, pre_trim_sequin_node.outputs[0])
-                        connect_or_add_default_texture(trim_sequin_node, "SequinNormal", "T_SequinTile_N.png", False, pre_trim_sequin_node.outputs[0])
-                        connect_or_add_default_texture(trim_sequin_node, "SequinThinFilmColor", "T_ThinFilm_Spectrum_COLOR", True, pre_trim_sequin_node.outputs[1])
-                    
-                        move_texture_node(trim_sequin_node, "Diffuse", sequin_node)
-                        move_texture_node(trim_sequin_node, "Normals", sequin_node)
-                        move_texture_node(trim_sequin_node, "SpecularMasks", sequin_node)
-                        move_texture_node(trim_sequin_node, "Emission", sequin_node)
-                        move_texture_node(trim_sequin_node, "SkinFX_Mask", sequin_node)
-
-            case "FPv3 Glass":
-                mask_slot = shader_node.inputs["Mask"]
-                if len(mask_slot.links) > 0 and get_param(switches, "Use Diffuse Texture for Color [ignores alpha channel]"):
-                    links.remove(mask_slot.links[0])
-
-                if color_node := get_node(shader_node, "Color"):
-                    nodes.active = color_node
-            
-            case "FPv3 Bean Costume":
-                set_param("Ambient Occlusion", self.options.get("AmbientOcclusion"))
-                mask_slot = shader_node.inputs["MaterialMasking"]
-                position = get_param(vectors, "Head_Costume_UVPatternPosition" if meta.get("IsHead") else "Costume_UVPatternPosition")
-                if position and len(mask_slot.links) > 0:
-                    mask_node = mask_slot.links[0].from_node
-                    mask_node.extension = "CLIP"
-
-                    mask_position_node = nodes.new("ShaderNodeGroup")
-                    mask_position_node.node_tree = bpy.data.node_groups.get("FPv3 Bean Mask Position")
-                    mask_position_node.location = mask_node.location + Vector((-200, 25))
-                    mask_position_node.inputs["Costume_UVPatternPosition"].default_value = position.get('R'), position.get('G'), position.get('B')
-                    links.new(mask_position_node.outputs[0], mask_node.inputs[0])
-                
-            case "FPv3 Toon":
-                set_param("Brightness", self.options.get("ToonShadingBrightness"))
-                self.add_toon_outline = True
-            
-            case "FPv3 3L Eyes":
-                pre_eye_node = nodes.new(type="ShaderNodeGroup")
-                pre_eye_node.node_tree = bpy.data.node_groups.get("FPv3 Pre 3L Eyes")
-                pre_eye_node.location = -600, 0
-                setup_params(socket_mappings, pre_eye_node, False)
-                
-                for texture_mapping in socket_mappings.textures:
-                    if node := get_node(shader_node, texture_mapping.slot):
-                        links.new(pre_eye_node.outputs["EyeUVs"], node.inputs[0])
-
-                if diffuse_node := get_node(shader_node, "Diffuse"):
-                    nodes.active = diffuse_node
-            
-            case "FPv3 Layer":
-                if diffuse_node := get_node(shader_node, "Diffuse"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Hair":
-                set_param("AO", self.options.get("AmbientOcclusion"))
-                if diffuse_node := get_node(shader_node, "Diffuse"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Fur":
-                set_param("AO", self.options.get("AmbientOcclusion"))
-                
-                emission_slot = shader_node.inputs["Emissive"]
-                if (crop_bounds := get_param_multiple(vectors, emissive_crop_vector_names)) and get_param_multiple(switches, emissive_crop_switch_names) and len(emission_slot.links) > 0:
-                    emission_node = emission_slot.links[0].from_node
-                    emission_node.extension = "CLIP"
-
-                    crop_texture_node = nodes.new("ShaderNodeGroup")
-                    crop_texture_node.node_tree = bpy.data.node_groups.get("FPv3 Texture Cropping")
-                    crop_texture_node.location = emission_node.location + Vector((-200, 25))
-                    crop_texture_node.inputs["Left"].default_value = crop_bounds.get('R')
-                    crop_texture_node.inputs["Top"].default_value = crop_bounds.get('G')
-                    crop_texture_node.inputs["Right"].default_value = crop_bounds.get('B')
-                    crop_texture_node.inputs["Bottom"].default_value = crop_bounds.get('A')
-                    links.new(crop_texture_node.outputs[0], emission_node.inputs[0])
-                    
-                if diffuse_node := get_node(shader_node, "Diffuse"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Vehicle Interior":
-                set_param("AO", self.options.get("AmbientOcclusion"))
-                if diffuse_node := get_node(shader_node, "BaseColor"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Vehicle Interior Combined":
-                set_param("AO", self.options.get("AmbientOcclusion"))
-                if diffuse_node := get_node(shader_node, "Filler_BaseColor"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Vehicle Body":
-                set_param("AO", self.options.get("AmbientOcclusion"))
-
-                pre_vehicle_body_node = nodes.new(type="ShaderNodeGroup")
-                pre_vehicle_body_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Vehicle Body")
-                pre_vehicle_body_node.location = -600, -500
-                setup_params(socket_mappings, pre_vehicle_body_node, False)
-
-                connect_or_add_default_texture(shader_node, "BottomNormalBase", "T_Wrap_metallicFlakes_Small", False, pre_vehicle_body_node.outputs["UV_BottomNormal"])
-
-                if skin_base_color_node := get_node(shader_node, "SkinBaseColor"):
-                    links.new(pre_vehicle_body_node.outputs["UV"], skin_base_color_node.inputs[0])
-                if detail_base_node := get_node(shader_node, "DetailBase"):
-                    links.new(pre_vehicle_body_node.outputs["UV_Detail"], detail_base_node.inputs[0])
-                if detail_accent_node := get_node(shader_node, "DetailAccent"):
-                    links.new(pre_vehicle_body_node.outputs["UV_Detail"], detail_accent_node.inputs[0])
-                if bottom_normal_accent_node := get_node(shader_node, "BottomNormalAccent"):
-                    links.new(pre_vehicle_body_node.outputs["UV_BottomNormal"], bottom_normal_accent_node.inputs[0])
-
-                if diffuse_node := get_node(shader_node, "BaseColor"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Vehicle Chassis":
-                set_param("AO", self.options.get("AmbientOcclusion"))
-
-                emission_slot = shader_node.inputs["EmissiveMasks"]
-                if (crop_bounds := get_param(vectors, "EmissiveUVs_RG_UpperLeftCorner_BA_LowerRightCorner")) and get_param(switches, "CroppedEmissive") and len(emission_slot.links) > 0:
-                    emission_node = emission_slot.links[0].from_node
-                    emission_node.extension = "CLIP"
-
-                    crop_texture_node = nodes.new("ShaderNodeGroup")
-                    crop_texture_node.node_tree = bpy.data.node_groups.get("FPv3 Texture Cropping")
-                    crop_texture_node.location = emission_node.location + Vector((-200, 25))
-                    crop_texture_node.inputs["Left"].default_value = crop_bounds.get('R')
-                    crop_texture_node.inputs["Top"].default_value = crop_bounds.get('G')
-                    crop_texture_node.inputs["Right"].default_value = crop_bounds.get('B')
-                    crop_texture_node.inputs["Bottom"].default_value = crop_bounds.get('A')
-                    links.new(crop_texture_node.outputs[0], emission_node.inputs[0])
-
-                if diffuse_node := get_node(shader_node, "BaseColor"):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Vehicle Wheel":
-                set_param("Rim_AO", self.options.get("AmbientOcclusion"))
-                set_param("Tire_AO", self.options.get("AmbientOcclusion"))
-
-                pre_vehicle_wheel_node = nodes.new(type="ShaderNodeGroup")
-                pre_vehicle_wheel_node.node_tree = bpy.data.node_groups.get("FPv3 Pre Vehicle Wheel")
-                setup_params(socket_mappings, pre_vehicle_wheel_node, False)
-
-                tex_positions = []
-
-                if tire_diffuse := get_node(shader_node, "TireDiffuse"):
-                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_diffuse.inputs[0])
-                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("TireDiffuse"))[1])
-                if tire_color_mask := get_node(shader_node, "Tire_CustomColorMask"):
-                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_color_mask.inputs[0])
-                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("Tire_CustomColorMask"))[1])
-                if tire_pbr := get_node(shader_node, "TirePBR"):
-                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_pbr.inputs[0])
-                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("TirePBR"))[1])
-                if tire_normal := get_node(shader_node, "TireNormal"):
-                    links.new(pre_vehicle_wheel_node.outputs["Tread_UV"], tire_normal.inputs[0])
-                    tex_positions.append(get_socket_pos(shader_node, shader_node.inputs.find("TireNormal"))[1])
-
-                pre_node_y = (sum(tex_positions) / len(tex_positions)) if len(tex_positions) > 0 else -950
-                pre_vehicle_wheel_node.location = -300, pre_node_y
-
-                if diffuse_node := get_first_node(shader_node, ["RimDiffuse", "TireDiffuse", "Rim_CustomColorMask", "Tire_CustomColorMask"]):
-                    nodes.active = diffuse_node
-
-            case "FPv3 Lego Minifig":
-                if diffuse_node := get_node(shader_node, "Tex Deco D"):
-                    nodes.active = diffuse_node
-
-        if get_param(switches, "UseCustomColors") or get_param(switches, "Use Color Customization"):
-            sidekick_node = nodes.new(type="ShaderNodeGroup")
-            sidekick_node.node_tree = bpy.data.node_groups.get("FPv3 Sidekick")
-            sidekick_node.location = -600, 0
-            setup_params(sidekick_mappings, sidekick_node, False)
-
-            move_texture_node(sidekick_node, "Diffuse")
-
-            if diffuse_node := get_node(sidekick_node, "Diffuse"):
-                nodes.active = diffuse_node
                     
     def import_material_standalone_new(self, data):
         is_object_import = EMaterialImportMethod.OBJECT == EMaterialImportMethod(self.options.get("MaterialImportMethod"))
