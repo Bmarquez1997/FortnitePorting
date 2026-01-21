@@ -157,7 +157,7 @@ class MaterialImportContextNew:
         unused_parameter_height = 0
 
         # parameter handlers
-        def texture_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
+        def texture_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
             try:
                 name = data.get("Name")
                 path = data.get("Texture").get("Path")
@@ -171,7 +171,7 @@ class MaterialImportContextNew:
                 node.label = name
                 node.hide = True
 
-                mappings = first(target_mappings.textures, lambda x: x.name.casefold() == name.casefold())
+                mappings = first(target_mappings.textures, lambda x: x.name.casefold().replace("#", param_index) == name.casefold())
                 if mappings is None or texture_name in texture_ignore_names:
                     if add_unused_params:
                         nonlocal unused_parameter_height
@@ -204,7 +204,7 @@ class MaterialImportContextNew:
             except Exception:
                 traceback.print_exc()
 
-        def scalar_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
+        def scalar_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
@@ -214,7 +214,7 @@ class MaterialImportContextNew:
                 node.label = name
                 node.width = 250
 
-                if mappings := first(target_mappings.scalars, lambda x: x.name.casefold() == name.casefold()):
+                if mappings := first(target_mappings.scalars, lambda x: x.name.casefold().replace("#", param_index) == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -230,21 +230,22 @@ class MaterialImportContextNew:
 
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
-            except KeyError as e:
+            except KeyError:
+                nodes.remove(node)
                 pass
             except Exception:
                 traceback.print_exc()
 
-        def vector_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
+        def vector_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
 
-                mappings = first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold())
+                mappings = first(target_mappings.vectors, lambda x: x.name.casefold().replace("#", param_index) == name.casefold())
                 is_vector = mappings is not None
 
                 if not is_vector:
-                    mappings = first(target_mappings.colors, lambda x: x.name.casefold() == name.casefold())
+                    mappings = first(target_mappings.colors, lambda x: x.name.casefold().replace("#", param_index) == name.casefold())
 
                 if mappings is None:
                     is_vector = any(vector_param_names, lambda x: x.casefold() in name.casefold()) or any(list(value.values())[0:4], lambda v: v < 0)
@@ -283,31 +284,35 @@ class MaterialImportContextNew:
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
             except KeyError:
+                nodes.remove(node)
                 pass
             except Exception:
                 traceback.print_exc()
 
-        def component_mask_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
+        def component_mask_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
 
                 # TODO: Move masks from vectors to component masks in mappings?
                 node = nodes.new(type="ShaderNodeGroup")
-                node.node_tree = bpy.data.node_groups.get("FPv4 ComponentMask")
-                node.inputs[0].default_value = int(value["R"])
-                node.inputs[1].default_value = int(value["G"])
-                node.inputs[2].default_value = int(value["B"])
-                node.inputs[3].default_value = int(value["A"])
+                # node.node_tree = bpy.data.node_groups.get("FPv4 ComponentMask")
+                # node.inputs[0].default_value = int(value["R"])
+                # node.inputs[1].default_value = int(value["G"])
+                # node.inputs[2].default_value = int(value["B"])
+                # node.inputs[3].default_value = int(value["A"])
+                node = nodes.new(type="ShaderNodeRGB") # TODO: switch back to FPv4 ComponentMask node
+                node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
                 node.label = name
                 node.width = 250
 
                 # Dev logging to find component mask params
+                # M_F_Tie_Dye_Fashion_Summer_Lime - ClothFuzz and ThinFilm channels
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
 
-                if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold()):
+                if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold().replace("#", param_index) == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -322,11 +327,12 @@ class MaterialImportContextNew:
                     return
 
             except KeyError:
+                nodes.remove(node)
                 pass
             except Exception:
                 traceback.print_exc()
 
-        def switch_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
+        def switch_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
@@ -337,7 +343,7 @@ class MaterialImportContextNew:
                 node.label = name
                 node.width = 250
 
-                if mappings := first(target_mappings.switches, lambda x: x.name.casefold() == name.casefold()):
+                if mappings := first(target_mappings.switches, lambda x: x.name.casefold().replace("#", param_index) == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -352,6 +358,7 @@ class MaterialImportContextNew:
                     return
 
             except KeyError:
+                nodes.remove(node)
                 pass
             except Exception:
                 traceback.print_exc()
@@ -382,8 +389,8 @@ class MaterialImportContextNew:
                             uv.uv_map = texture.coords
                             links.new(uv.outputs[0], node.inputs[0])
 
-                    if mappings.switch_slot:
-                        target_node.inputs[mappings.switch_slot].default_value = 1
+                    if texture.switch_slot:
+                        target_node.inputs[texture.switch_slot].default_value = 1
 
             for scalar in mappings.scalars:
                 if scalar.default is not None and get_node(target_node, scalar.slot) is None:
@@ -428,21 +435,21 @@ class MaterialImportContextNew:
                     links.new(node.outputs[0], target_node.inputs[switch.slot])
 
 
-        def setup_params(mappings, target_node, add_unused_params=False):
+        def setup_params(mappings, target_node, add_unused_params=False, param_index=""):
             for texture in textures:
-                texture_param(texture, mappings, target_node, add_unused_params)
+                texture_param(texture, mappings, target_node, add_unused_params, param_index)
 
             for scalar in scalars:
-                scalar_param(scalar, mappings, target_node, add_unused_params)
+                scalar_param(scalar, mappings, target_node, add_unused_params, param_index)
 
             for vector in vectors:
-                vector_param(vector, mappings, target_node, add_unused_params)
+                vector_param(vector, mappings, target_node, add_unused_params, param_index)
 
             for component_mask in component_masks:
-                component_mask_param(component_mask, mappings, target_node, add_unused_params)
+                component_mask_param(component_mask, mappings, target_node, add_unused_params, param_index)
 
             for switch in switches:
-                switch_param(switch, mappings, target_node, add_unused_params)
+                switch_param(switch, mappings, target_node, add_unused_params, param_index)
 
             handle_default_params(mappings, target_node)
 
@@ -454,9 +461,6 @@ class MaterialImportContextNew:
         base_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Base)
         base_fx_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Core_FX)
         advanced_fx_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Advanced_FX)
-
-        # TODO
-        # Separate handling for layered
 
         # TODO: Move to mappings to allow for other build nodes?
         set_param("AO", self.options.get("AmbientOcclusion"))
@@ -471,7 +475,7 @@ class MaterialImportContextNew:
             all_mappings.append(DefaultMappings)
 
 
-        def add_shader_module(mapping):
+        def add_shader_module(mapping, param_index=""):
             nonlocal node_position
             nonlocal previous_node
             Log.info(f"Adding node: {mapping.node_name}")
@@ -479,7 +483,7 @@ class MaterialImportContextNew:
             new_node.node_tree = bpy.data.node_groups.get(mapping.node_name)
             new_node.location = (node_position, 0)
             links.new(new_node.outputs[0], previous_node.inputs[0])
-            setup_params(mapping, new_node, False)
+            setup_params(mapping, new_node, False, param_index)
             previous_node = new_node
             node_position -= mapping.node_spacing
             return new_node
@@ -489,7 +493,7 @@ class MaterialImportContextNew:
             case BaseLayerMappings.node_name:
                 for layer in range(6, 1, -1):
                     if LayerMappings.meets_criteria_dynamic(material_data, layer):
-                        layer_node = add_shader_module(LayerMappings) # TODO: Pass index to setup_params method?
+                        layer_node = add_shader_module(LayerMappings, str(layer))
                         set_param("Layer", layer, layer_node)
 
                 add_shader_module(BaseLayerMappings)

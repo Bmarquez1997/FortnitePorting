@@ -207,7 +207,7 @@ class BaseToonMappings(MappingCollection):
     @classmethod
     def meets_criteria(self, material_data):
         return get_param_multiple(material_data.get("Textures"), toon_texture_names) or get_param_multiple(material_data.get("Vectors"), toon_vector_names)
-    
+
 
     textures=(
         SlotMapping("LitDiffuse"),
@@ -257,6 +257,8 @@ class LayerMappings(MappingCollection):
     def meets_criteria_dynamic(self, material_data, index):
         return get_param(material_data.get("Switches"), f"Use {index} Layers")
 
+
+    # TODO: get_slots_dynamic() method to replace # with index?
 
     textures=(
         SlotMapping("Diffuse_Texture_#", "Diffuse", alpha_slot="MaskTexture"),
@@ -404,8 +406,8 @@ class ThinFilmMappings(MappingCollection):
     )
 
     component_masks=(
-        SlotMapping("ThinFilm_Channel"),
-        SlotMapping("ThinFilmMaskChannel", "ThinFilm_Channel"),
+        SlotMapping("ThinFilmMaskChannel"),
+        SlotMapping("ThinFilm_Channel", "ThinFilmMaskChannel"),
     )
 
 
@@ -493,8 +495,8 @@ class GlassMappings(MappingCollection):
     def meets_criteria(self, material_data):
         return material_data.get("PhysMaterialName") == "Glass" \
             or any(glass_master_names, lambda x: x in material_data.get("BaseMaterialPath")) \
-            or (EBlendMode(material_data.get("BaseBlendMode")) is EBlendMode.BLEND_Translucent 
-                and ETranslucencyLightingMode(material_data.get("TranslucencyLightingMode")) in 
+            or (EBlendMode(material_data.get("BaseBlendMode")) is EBlendMode.BLEND_Translucent
+                and ETranslucencyLightingMode(material_data.get("TranslucencyLightingMode")) in
                 [ETranslucencyLightingMode.TLM_SurfacePerPixelLighting, ETranslucencyLightingMode.TLM_VolumetricPerVertexDirectional])
 
 
@@ -507,9 +509,9 @@ class GlassMappings(MappingCollection):
 
     scalars=(
         SlotMapping("Window Tint Amount", "Tint Amount"),
-        
+
         SlotMapping("DiffuseTextureBlend"),
-        
+
         SlotMapping("GlassSpecular"),
         SlotMapping("Specular", "GlassSpecular"),
         SlotMapping("SpecularTextureBlend"),
@@ -519,7 +521,7 @@ class GlassMappings(MappingCollection):
         SlotMapping("GlassMetallic"),
         SlotMapping("Metallic", "GlassMetallic"),
         SlotMapping("MetallicTextureBlend"),
-        
+
         SlotMapping("Thickness"),
         SlotMapping("Glass thickness", "Thickness"),
         SlotMapping("GlassThickness", "Thickness"),
@@ -534,7 +536,7 @@ class GlassMappings(MappingCollection):
         SlotMapping("FresnelExponentTransparency"),
         SlotMapping("Exponent", "FresnelExponentTransparency"),
         SlotMapping("Fresnel Exponent", "FresnelExponentTransparency"),
-        
+
         SlotMapping("TextureOpacityAdd"),
         SlotMapping("TextureOpacityBlend"),
         SlotMapping("Mask"),
@@ -546,10 +548,10 @@ class GlassMappings(MappingCollection):
         SlotMapping("GlassDiffuse"),
         SlotMapping("ColorFront", "GlassDiffuse"),
         SlotMapping("Base Color", "GlassDiffuse"),
-        
+
         SlotMapping("TextureOpacityChannel"),
     )
-    
+
     switches=(
         SlotMapping("UseTextureOpacity", "Texture Opacity"),
     )
@@ -694,7 +696,7 @@ class GradientMappings(MappingCollection):
     node_name="FPv4 Gradient"
     type=ENodeType.NT_Advanced_FX
     node_spacing=700
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         return get_param(material_data.get("Switches"), "useGmapGradientLayers")
@@ -790,7 +792,7 @@ class SkratchMappings(MappingCollection):
     node_name="FPv4 Skratch"
     type=ENodeType.NT_Advanced_FX
     node_spacing=700
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         return "TacticKale" in material_data.get("BaseMaterialPath")
@@ -900,7 +902,7 @@ class SequinTrimMappings(SequinMappings):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
     node_spacing=700
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         return False # "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
@@ -930,7 +932,7 @@ class SequinSecondaryMappings(SequinMappings):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
     node_spacing=700
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         return False # "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
@@ -959,7 +961,7 @@ class SequinSecondaryMappings(SequinMappings):
 class GmapMappings(MappingCollection):
     node_name="FPv4 Gmap Material" # TODO: Rename to "Gmap" or "GMap Color"?
     type=ENodeType.NT_Advanced_FX
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         return False
@@ -1030,7 +1032,7 @@ class HairMappings(MappingCollection):
     node_name="FPv4 Hair"
     type=ENodeType.NT_Advanced_FX
     order=98
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         base_material_path = material_data.get("BaseMaterialPath")
@@ -1090,7 +1092,7 @@ class FurMappings(MappingCollection):
     node_name="FPv4 Fur"
     type=ENodeType.NT_Advanced_FX
     order=99
-    
+
     @classmethod
     def meets_criteria(self, material_data):
         base_material_path = material_data.get("BaseMaterialPath")
@@ -1161,5 +1163,5 @@ class FurMappings(MappingCollection):
     switches=(
         SlotMapping("UseAnisotropicShading"),
     )
-        
+
 # End advanced FX groups
