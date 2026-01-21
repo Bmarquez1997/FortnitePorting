@@ -50,3 +50,5 @@ glass_master_names = ["M_MED_Glass_Master", "M_GlassParent"]
 lite_shader_types = [EExportType.PROP, EExportType.PREFAB, EExportType.WORLD]
 
 eye_names = ["M_Companion_Eyes_Parent", "M_Eyes_Parent"]
+
+vector_param_names = ["position", "scale", "rotation", "coordinate", "offset", "tiling", "pivot", "center"]

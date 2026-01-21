@@ -8,6 +8,7 @@ class MappingCollection:
     node_spacing = 500
     textures = ()
     scalars = ()
+    colors = ()
     vectors = ()
     switches = ()
     component_masks = ()
@@ -25,12 +26,13 @@ class MappingCollection:
 
         match_tex = any(material_data.get("Textures"), lambda tex: matches(tex.get("Name"), self.textures))
         match_scal = any(material_data.get("Scalars"), lambda scal: matches(scal.get("Name"), self.scalars))
+        match_col = any(material_data.get("Vectors"), lambda vec: matches(vec.get("Name"), self.colors))
         match_vec = any(material_data.get("Vectors"), lambda vec: matches(vec.get("Name"), self.vectors))
         match_switch = any(material_data.get("Switches"), lambda switch: matches(switch.get("Name"), self.switches))
         match_comp = any(material_data.get("ComponentMasks"), lambda comp: matches(comp.get("Name"), self.component_masks))
 
 
-        return match_tex or match_scal or match_vec or match_switch or match_comp
+        return match_tex or match_scal or match_col or match_vec or match_switch or match_comp
     
     @classmethod
     def meets_criteria_dynamic(self, material_data, index):
@@ -51,6 +53,12 @@ class SlotMapping:
         self.coords = coords
         self.default = default
         self.closure = closure
+
+
+class DefaultTexture:
+    def __init__(self, name, sRGB=True):
+        self.name = name
+        self.sRGB = sRGB
 
 
 class MappingRegistry:

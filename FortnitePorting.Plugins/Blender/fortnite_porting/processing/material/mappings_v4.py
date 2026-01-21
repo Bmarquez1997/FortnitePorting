@@ -12,7 +12,7 @@ class DefaultMappings(MappingCollection):
 
     @classmethod
     def meets_criteria(self, material_data):
-        return True
+        return False
 
 
     textures=(
@@ -100,7 +100,7 @@ class DefaultMappings(MappingCollection):
         SlotMapping("DayMult", "Emission Strength"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("TintColor", "Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
 
@@ -150,22 +150,24 @@ class BaseEyeMappings(MappingCollection):
 
     textures=(
         SlotMapping("Diffuse", closure=True),
-        SlotMapping("Normal", default="FlatNormal", closure=True),
+        SlotMapping("Normal", default=DefaultTexture("FlatNormal", False), closure=True),
         SlotMapping("SpecularMasks", closure=True),
-        SlotMapping("SRM", "SpecularMasks", closure=True), # TODO: Default SMR?
+        SlotMapping("SRM", "SpecularMasks", switch_slot="SwizzleRoughnessToGreen", closure=True), # TODO: Default SMR?
         SlotMapping("Emissive", closure=True),
     )
 
+    colors=(
+        SlotMapping("EyeTintColor"),
+    )
+
     vectors=(
-        SlotMapping("Eye Right UV Position"),
-        SlotMapping("Eye Left UV Position"),
+        SlotMapping("Eye Right UV Position", default=(0.94, 0.122, 0.0, 0.0)),
+        SlotMapping("Eye Left UV Position", default=(0.94, 0.35, 0.0, 0.0)),
         SlotMapping("Eye Right UV Position (UV0)", "Eye Right UV Position"),
         SlotMapping("Eye Left UV Position (UV0)", "Eye Left UV Position"),
 
-        SlotMapping("Eye Camera Light Vector"),
-        SlotMapping("Eye UV Highlight Pos"),
-
-        SlotMapping("EyeTintColor"),
+        SlotMapping("Eye Camera Light Vector", default=(-0.2, 0.075, -0.5, 0.0)),
+        SlotMapping("Eye UV Highlight Pos", default=(0.92, 0.12, 0.0, 0.0)),
     )
 
     scalars=(
@@ -231,7 +233,7 @@ class BaseToonMappings(MappingCollection):
         SlotMapping("PBR_Shading", "Use PBR Shading", value_func=lambda value: int(value))
     )
 
-    vectors=(
+    colors=(
         SlotMapping("InkLineColor", "InkLineColor_Texture"),
         SlotMapping("Color_Lit", "LitDiffuse"),
         SlotMapping("Color_Shaded", "ShadedDiffuse"),
@@ -278,7 +280,7 @@ class SkinMappings(MappingCollection):
     type=ENodeType.NT_Core_FX
     order=0
 
-    vectors=(
+    colors=(
         SlotMapping("Skin Boost Color And Exponent", "Skin Color", alpha_slot="Skin Boost"),
         SlotMapping("SkinTint", "Skin Color", alpha_slot="Skin Boost"),
         SlotMapping("SkinColor", "Skin Color", alpha_slot="Skin Boost"),
@@ -294,7 +296,7 @@ class ClothFuzzMappings(MappingCollection):
     node_spacing=700
 
     textures=(
-        SlotMapping("ClothFuzz Texture", default="T_Fuzz_MASK", closure=True),
+        SlotMapping("ClothFuzz Texture", default=DefaultTexture("T_Fuzz_MASK"), closure=True),
     )
 
     scalars=(
@@ -309,7 +311,7 @@ class ClothFuzzMappings(MappingCollection):
         SlotMapping("Cloth_Roughness", "Cloth Roughness"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Cloth Channel"),
         SlotMapping("ClothFuzzMaskChannel", "Cloth Channel"),
 
@@ -344,7 +346,7 @@ class SilkMappings(MappingCollection):
         SlotMapping("SilkBaseColorBrightness"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("SilkMaskChannel"),
         SlotMapping("Silk_Channel", "SilkMaskChannel"),
 
@@ -357,8 +359,8 @@ class SilkMappings(MappingCollection):
     )
 
     component_masks=(
-        SlotMapping("Use Silk"),
-        SlotMapping("UseSilk", "Use Silk"),
+        SlotMapping("SilkMaskChannel"),
+        SlotMapping("Silk_Channel", "SilkMaskChannel"),
     )
 
 
@@ -370,9 +372,9 @@ class ThinFilmMappings(MappingCollection):
     node_spacing=700
 
     textures=(
-        SlotMapping("ThinFilm_Texture", default="T_ThinFilm_Spectrum_COLOR", closure=True),
-        SlotMapping("ThinFilmTexture", "ThinFilm_Texture", default="T_ThinFilm_Spectrum_COLOR", closure=True),
-        SlotMapping("Thin Film Texture", "ThinFilm_Texture", default="T_ThinFilm_Spectrum_COLOR", closure=True),
+        SlotMapping("ThinFilm_Texture", default=DefaultTexture("T_ThinFilm_Spectrum_COLOR"), closure=True),
+        SlotMapping("ThinFilmTexture", "ThinFilm_Texture", closure=True),
+        SlotMapping("Thin Film Texture", "ThinFilm_Texture", closure=True),
     )
 
     scalars=(
@@ -391,7 +393,7 @@ class ThinFilmMappings(MappingCollection):
         SlotMapping("ThinFilmWarp", "ThinFilm_Warp"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("ThinFilmMaskChannel"),
         SlotMapping("ThinFilm_Channel", "ThinFilmMaskChannel"),
     )
@@ -421,7 +423,7 @@ class ClearcoatMappings(MappingCollection):
         SlotMapping("Roughness Map Now affects Clearcoat roughness", "Use Roughness Map"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("ClearCoatMaskChannel"),
         SlotMapping("Clear Coat Channel", "ClearCoatMaskChannel"),
         SlotMapping("ClearCoatChannel", "ClearCoatMaskChannel"),
@@ -452,7 +454,7 @@ class MetalLUTMappings(MappingCollection):
         SlotMapping("MetalLutIntensity"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("MetalLUTMaskChannel"),
         SlotMapping("MetalLUT_Channel", "MetalLUTMaskChannel"),
 
@@ -465,8 +467,10 @@ class MetalLUTMappings(MappingCollection):
     )
 
     component_masks=(
-        SlotMapping("Use MetalLUT"),
-        SlotMapping("UseMetalLUT", "Use MetalLUT"),
+        SlotMapping("MetalLUTMaskChannel"),
+        SlotMapping("MetalLUT_Channel", "MetalLUTMaskChannel"),
+
+        SlotMapping("LUTChannel"),
     )
 
 # TODO: Additional basic groups
@@ -538,7 +542,7 @@ class GlassMappings(MappingCollection):
         SlotMapping("Alpha Channel Mask Opacity", "Mask Opacity"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("GlassDiffuse"),
         SlotMapping("ColorFront", "GlassDiffuse"),
         SlotMapping("Base Color", "GlassDiffuse"),
@@ -568,7 +572,7 @@ class CompositeMappings(MappingCollection):
         SlotMapping("UV2Composite_AlphaStrength"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("UV2Composite_AlphaChannel"),
     )
 
@@ -603,7 +607,7 @@ class DetailMappings(MappingCollection):
         SlotMapping("Detail Metallic - Strength"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Detail Texture - Channel Mask"),
     )
 
@@ -644,7 +648,7 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("Bump Height"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("FlipbookTint"),
     )
 
@@ -674,7 +678,7 @@ class EyelashMappings(MappingCollection):
         SlotMapping("EyelashSpec"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("EyelashColor"),
         SlotMapping("EyelashVertexColorMaskChannel"),
     )
@@ -693,7 +697,7 @@ class GradientMappings(MappingCollection):
     
     @classmethod
     def meets_criteria(self, material_data):
-        return False
+        return get_param(material_data.get("Switches"), "useGmapGradientLayers")
 
 
     textures=(
@@ -723,7 +727,7 @@ class CustomColorMappings(MappingCollection):
 
     @classmethod
     def meets_criteria(self, material_data):
-        return False
+        return get_param_multiple(material_data.get("Switches"), ["UseCustomColors", "Use Color Customization"])
 
 
     textures=(
@@ -735,7 +739,7 @@ class CustomColorMappings(MappingCollection):
         SlotMapping("CustomColor_mask", "Pattern Mask"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Base Color"),
         SlotMapping("PrimaryColor", "Base Color"),
         SlotMapping("TieDye_Color_1", "Base Color"),
@@ -800,7 +804,7 @@ class SkratchMappings(MappingCollection):
         SlotMapping("BannerTex", closure=True),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Zone1Color"),
         SlotMapping("Zone2Color"),
         SlotMapping("Zone3Color"),
@@ -837,18 +841,13 @@ class SequinMappings(MappingCollection):
     type=ENodeType.NT_Advanced_FX
     node_spacing=700
 
-    @classmethod
-    def meets_criteria(self, material_data):
-        return False
-
-
     textures=(
-        SlotMapping("SequinOffset", default="T_SequinTile", closure=True),
-        SlotMapping("SequinOffest", "SequinOffset", default="T_SequinTile", closure=True),
-        SlotMapping("SequinRoughness", default="T_SequinTile_roughness", closure=True),
-        SlotMapping("SequinNormal", default="T_SequinTile_N", closure=True),
-        SlotMapping("StripeMask", closure=True),
-        SlotMapping("SequinThinFilmColor", default="T_ThinFilm_Spectrum_COLOR", closure=True),
+        SlotMapping("SequinOffset", default=DefaultTexture("T_SequinTile"), closure=True),
+        SlotMapping("SequinOffest", "SequinOffset", closure=True),
+        SlotMapping("SequinRoughness", default=DefaultTexture("T_SequinTile_roughness"), closure=True),
+        SlotMapping("SequinNormal", default=DefaultTexture("T_SequinTile_N", False), closure=True),
+        SlotMapping("StripeMask", default=DefaultTexture("T_SequinTile_StripesMask", False), closure=True), # TODO: Only used if UseStripes is on
+        SlotMapping("SequinThinFilmColor", default=DefaultTexture("T_ThinFilm_Spectrum_COLOR"), closure=True), # TODO: Only used if UseThinFilmOnSequins is on
     )
 
     scalars=(
@@ -877,7 +876,7 @@ class SequinMappings(MappingCollection):
         SlotMapping("StripedNormalBlend"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("SequinMaskChannel"),
         SlotMapping("SequinFalloffColor01"),
         SlotMapping("SequinFalloffColor02"),
@@ -904,15 +903,15 @@ class SequinTrimMappings(SequinMappings):
     
     @classmethod
     def meets_criteria(self, material_data):
-        return False
+        return False # "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
 
 
     textures=SequinMappings.textures + (
-        SlotMapping("SequinOffset_Main", "SequinOffset", default="T_SequinTile", closure=True),
-        SlotMapping("SequinOffest_Main", "SequinOffset", default="T_SequinTile", closure=True),
-        SlotMapping("SequinRoughness_Main", "SequinRoughness", default="T_SequinTile_roughness", closure=True),
-        SlotMapping("SequinNormal_,Main", "SequinNormal", default="T_SequinTile_N", closure=True),
-        SlotMapping("SequinThinFilm_Trim", "SequinThinFilmColor", default="T_ThinFilm_Spectrum_COLOR", closure=True),
+        SlotMapping("SequinOffset_Main", "SequinOffset", closure=True),
+        SlotMapping("SequinOffest_Main", "SequinOffset", closure=True),
+        SlotMapping("SequinRoughness_Main", "SequinRoughness", closure=True),
+        SlotMapping("SequinNormal_,Main", "SequinNormal", closure=True),
+        SlotMapping("SequinThinFilm_Trim", "SequinThinFilmColor", closure=True),
     )
 
     scalars=SequinMappings.scalars + (
@@ -934,15 +933,15 @@ class SequinSecondaryMappings(SequinMappings):
     
     @classmethod
     def meets_criteria(self, material_data):
-        return False
+        return False # "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
 
 
     textures=SequinMappings.textures + (
-        SlotMapping("SequinOffset_Secondary", "SequinOffset", default="T_SequinTile", closure=True),
-        SlotMapping("SequinOffest_Secondary", "SequinOffset", default="T_SequinTile", closure=True),
-        SlotMapping("SequinRoughness_Secondary", "SequinRoughness", default="T_SequinTile_roughness", closure=True),
-        SlotMapping("SequinNormal_,Secondary", "SequinNormal", default="T_SequinTile_N", closure=True),
-        SlotMapping("SequinThinFilm_Secondary", "SequinThinFilmColor", default="T_ThinFilm_Spectrum_COLOR", closure=True),
+        SlotMapping("SequinOffset_Secondary", "SequinOffset", closure=True),
+        SlotMapping("SequinOffest_Secondary", "SequinOffset", closure=True),
+        SlotMapping("SequinRoughness_Secondary", "SequinRoughness", closure=True),
+        SlotMapping("SequinNormal_,Secondary", "SequinNormal", closure=True),
+        SlotMapping("SequinThinFilm_Secondary", "SequinThinFilmColor", closure=True),
     )
 
     scalars=SequinMappings.scalars + (
@@ -973,7 +972,7 @@ class GmapMappings(MappingCollection):
         SlotMapping("ColorVariety/Scratch/Dirt Mask"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Base Color: Color A"),
         SlotMapping("Base Color: Color B"),
         SlotMapping("Base Color: Color C"),
@@ -1044,7 +1043,7 @@ class HairMappings(MappingCollection):
         SlotMapping("Strands Normal"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Hair_Color_Variation"),
         SlotMapping("Paint_Hair_Color_Darkness"),
         SlotMapping("Paint_Hair_Color_Brightness"),
@@ -1105,7 +1104,7 @@ class FurMappings(MappingCollection):
         SlotMapping("Strands Normal"),
     )
 
-    vectors=(
+    colors=(
         SlotMapping("Fur_Color_Darkness"),
         SlotMapping("Paint_Hair_Color_Darkness", "Fur_Color_Darkness"),
         SlotMapping("Fur_Color_Brightness"),

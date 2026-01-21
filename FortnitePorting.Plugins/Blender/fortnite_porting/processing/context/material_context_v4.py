@@ -125,6 +125,7 @@ class MaterialImportContextNew:
         shader_node = nodes.new(type="ShaderNodeGroup")
         shader_node.node_tree = bpy.data.node_groups.get("FPv4 Material Build")
 
+        # TODO: Leaving this in for alternate build node support
         def replace_shader_node(name):
             nonlocal shader_node
             nodes.remove(shader_node)
@@ -167,13 +168,13 @@ class MaterialImportContextNew:
                 node.image.alpha_mode = 'CHANNEL_PACKED'
                 node.image.colorspace_settings.name = "sRGB" if data.get("Texture").get("sRGB") else "Non-Color"
                 node.interpolation = "Smart"
+                node.label = name
                 node.hide = True
 
                 mappings = first(target_mappings.textures, lambda x: x.name.casefold() == name.casefold())
                 if mappings is None or texture_name in texture_ignore_names:
                     if add_unused_params:
                         nonlocal unused_parameter_height
-                        node.label = name
                         node.location = 400, unused_parameter_height
                         unused_parameter_height -= 50
                     else:
@@ -187,15 +188,16 @@ class MaterialImportContextNew:
                     node.location = x - 300, y
                     links.new(node.outputs[0], target_node.inputs[mappings.slot])
 
-                if mappings.alpha_slot:
-                    links.new(node.outputs[1], target_node.inputs[mappings.alpha_slot])
-                if mappings.switch_slot:  # Set based on lambda?
+                    if mappings.alpha_slot:
+                        links.new(node.outputs[1], target_node.inputs[mappings.alpha_slot])
+                    if mappings.coords != "UV0":
+                        uv = nodes.new(type="ShaderNodeUVMap")
+                        uv.location = node.location.x - 250, node.location.y
+                        uv.uv_map = mappings.coords
+                        links.new(uv.outputs[0], node.inputs[0])
+                
+                if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 
-                if mappings.coords != "UV0":
-                    uv = nodes.new(type="ShaderNodeUVMap")
-                    uv.location = node.location.x - 250, node.location.y
-                    uv.uv_map = mappings.coords
-                    links.new(uv.outputs[0], node.inputs[0])
             except KeyError:
                 nodes.remove(node)
                 pass
@@ -225,17 +227,6 @@ class MaterialImportContextNew:
                     else:
                         nodes.remove(node)
                     return
-
-                # value = mappings.value_func(value) if mappings.value_func else value
-                # target_socket = target_node.inputs[mappings.slot]
-                # 
-                # match target_socket.type:
-                #     case "INT":
-                #         target_socket.default_value = int(value)
-                #     case "BOOLEAN":
-                #         target_socket.default_value = int(value) == 1
-                #     case _:
-                #         target_socket.default_value = value
                     
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
@@ -248,13 +239,32 @@ class MaterialImportContextNew:
             try:
                 name = data.get("Name")
                 value = data.get("Value")
+
+                mappings = first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold())
+                is_vector = mappings is not None
                 
-                node = nodes.new(type="ShaderNodeRGB")
-                node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
+                if not is_vector:
+                    mappings = first(target_mappings.colors, lambda x: x.name.casefold() == name.casefold())
+
+                if mappings is None:
+                    is_vector = any(vector_param_names, lambda x: x.casefold() in name.casefold()) or any(list(value.values())[0:4], lambda v: v < 0)
+
+                node = None
+                if is_vector:
+                    node = nodes.new(type="ShaderNodeGroup")
+                    node.node_tree = bpy.data.node_groups.get("FPv4 Vector4")
+                    node.inputs[0].default_value = value["R"]
+                    node.inputs[1].default_value = value["G"]
+                    node.inputs[2].default_value = value["B"]
+                    node.inputs[3].default_value = value["A"]
+                else:
+                    node = nodes.new(type="ShaderNodeRGB")
+                    node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
+
                 node.label = name
                 node.width = 250
                 
-                if mappings := first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold()):
+                if mappings is not None:
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -268,11 +278,6 @@ class MaterialImportContextNew:
                         nodes.remove(node)
                     return
 
-                # value = mappings.value_func(value) if mappings.value_func else value
-                # if isinstance(target_node.inputs[mappings.slot], bpy.types.NodeSocketColor):
-                #     target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"], 1.0)
-                # else:
-                #     target_node.inputs[mappings.slot].default_value = (value["R"], value["G"], value["B"])
                 if mappings.alpha_slot: # TODO: How to handle this with connected nodes?
                     target_node.inputs[mappings.alpha_slot].default_value = value["A"]
                 if mappings.switch_slot:
@@ -287,10 +292,20 @@ class MaterialImportContextNew:
                 name = data.get("Name")
                 value = data.get("Value")
 
-                node = nodes.new(type="ShaderNodeRGB")
-                node.outputs[0].default_value = (value["R"], value["G"], value["B"], value["A"])
+                # TODO: Move masks from vectors to component masks in mappings?
+                node = nodes.new(type="ShaderNodeGroup")
+                node.node_tree = bpy.data.node_groups.get("FPv4 ComponentMask")
+                node.inputs[0].default_value = int(value["R"])
+                node.inputs[1].default_value = int(value["G"])
+                node.inputs[2].default_value = int(value["B"])
+                node.inputs[3].default_value = int(value["A"])
                 node.label = name
                 node.width = 250
+                
+                # Dev logging to find component mask params
+                Log.error(f"COMPONENT MASK: {name}")
+                Log.error(f"COMPONENT MASK: {name}")
+                Log.error(f"COMPONENT MASK: {name}")
                 
                 if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
@@ -336,75 +351,112 @@ class MaterialImportContextNew:
                         nodes.remove(node)
                     return
 
-                # value = mappings.value_func(value) if mappings.value_func else value
-                # target_socket = target_node.inputs[mappings.slot]
-                # match target_socket.type:
-                #     case "INT":
-                #         target_socket.default_value = 1 if value else 0
-                #     case "BOOLEAN":
-                #         target_socket.default_value = value
             except KeyError:
                 pass
             except Exception:
                 traceback.print_exc()
+        
+        # TODO: Refactor, break out node creation to utils and use here and in parameter handlers
+        def handle_default_params(mappings, target_node):
+            for texture in mappings.textures:
+                if texture.default is not None and get_node(target_node, texture.slot) is None:
+                    node = nodes.new(type="ShaderNodeTexImage")
+                    node.image = bpy.data.images.get(texture.default.name)
+                    node.image.alpha_mode = 'CHANNEL_PACKED'
+                    node.image.colorspace_settings.name = "sRGB" if texture.default.sRGB else "Non-Color"
+                    node.interpolation = "Smart"
+                    node.label = texture.slot
+                    node.hide = True
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(texture.slot))
+                    if texture.closure:
+                        setup_closure(node, x, y, texture.slot, target_node, nodes, links)
+                    else:
+                        node.location = x - 300, y
+                        links.new(node.outputs[0], target_node.inputs[texture.slot])
 
-        # TODO: Add all params, and connect param nodes to groups instead of just values
+                        if texture.alpha_slot:
+                            links.new(node.outputs[1], target_node.inputs[texture.alpha_slot])
+                        if texture.coords != "UV0":
+                            uv = nodes.new(type="ShaderNodeUVMap")
+                            uv.location = node.location.x - 250, node.location.y
+                            uv.uv_map = texture.coords
+                            links.new(uv.outputs[0], node.inputs[0])
+                    
+                    if mappings.switch_slot:
+                        target_node.inputs[mappings.switch_slot].default_value = 1 
+
+            for scalar in mappings.scalars:
+                if scalar.default is not None and get_node(target_node, scalar.slot) is None:
+                    node = nodes.new(type="ShaderNodeValue")
+                    node.outputs[0].default_value = scalar.default
+                    node.label = scalar.slot
+                    node.width = 250
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(scalar.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[scalar.slot])
+
+            for vector in mappings.vectors:
+                if vector.default is not None and get_node(target_node, vector.slot) is None:
+                    node = nodes.new(type="ShaderNodeGroup")
+                    node.node_tree = bpy.data.node_groups.get("FPv4 Vector4")
+                    node.inputs[0].default_value = vector.default[0]
+                    node.inputs[1].default_value = vector.default[1]
+                    node.inputs[2].default_value = vector.default[2]
+                    node.inputs[3].default_value = vector.default[3]
+                    node.label = vector.slot
+                    node.width = 250
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(vector.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[vector.slot])
+
+            for component_mask in mappings.component_masks:
+                if component_mask.default is not None and get_node(target_node, component_mask.slot) is None:
+                    target_node.inputs[component_mask.slot].default_value = component_mask.default
+
+            for switch in mappings.switches:
+                if switch.default is not None and get_node(target_node, switch.slot) is None:
+                    node = nodes.new("ShaderNodeGroup")
+                    node.node_tree = bpy.data.node_groups.get("FPv4 Switch")
+                    node.inputs[0].default_value = switch.default
+                    node.label = switch.slot
+                    node.width = 250
+                    x, y = get_socket_pos(target_node, target_node.inputs.find(switch.slot))
+                    node.location = x - 300, y
+                    node.hide = True
+                    links.new(node.outputs[0], target_node.inputs[switch.slot])
+
+
         def setup_params(mappings, target_node, add_unused_params=False):
             for texture in textures:
-                texture_param(texture, mappings, target_node, add_unused_params) # TODO: need to account for default textures
+                texture_param(texture, mappings, target_node, add_unused_params)
 
             for scalar in scalars:
                 scalar_param(scalar, mappings, target_node, add_unused_params)
 
             for vector in vectors:
-                vector_param(vector, mappings, target_node, add_unused_params) # TODO: use Combine XYZ node instead of Color when value has negatives?
+                vector_param(vector, mappings, target_node, add_unused_params)
 
             for component_mask in component_masks:
                 component_mask_param(component_mask, mappings, target_node, add_unused_params)
 
             for switch in switches:
                 switch_param(switch, mappings, target_node, add_unused_params)
+            
+            handle_default_params(mappings, target_node)
 
-        def move_texture_node(target_node, slot_name, source_node=None):
-            source = shader_node if source_node is None else source_node
-            if texture_node := get_node(source, slot_name):
-                x, y = get_socket_pos(target_node, target_node.inputs.find(slot_name))
-                texture_node.location = x - 300, y
-                links.new(texture_node.outputs[0], target_node.inputs[slot_name])
-                
-            links.new(target_node.outputs[slot_name], source.inputs[slot_name])
-
-        def connect_or_add_default_texture(target_node, target_slot, texture_name, sRGB=True, pre_node_link=None):
-            texture_node = get_node(target_node, target_slot)
-            if texture_node is None:
-                texture_node = nodes.new(type="ShaderNodeTexImage")
-                texture_node.image = bpy.data.images.get(texture_name)
-                texture_node.image.alpha_mode = 'CHANNEL_PACKED'
-                texture_node.image.colorspace_settings.name = "sRGB" if sRGB else "Non-Color"
-                texture_node.interpolation = "Smart"
-                texture_node.hide = True
-    
-                x, y = get_socket_pos(target_node, target_node.inputs.find(target_slot))
-                texture_node.location = x - 300, y
-                links.new(texture_node.outputs[0], target_node.inputs[target_slot])
-                
-            if pre_node_link is not None:
-                links.new(pre_node_link, texture_node.inputs[0])
-
-        def connect_texture_uvs(target_node, slot_name, uv_output):
-            if texture_node := get_node(target_node, slot_name):
-                links.new(uv_output, texture_node.inputs[0])
 
         # TODO: Handle individually or as one group?
         all_mappings = find_all_matching_mappings(material_data)
+
+        # Separated for debugging purposes
         base_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Base)
         base_fx_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Core_FX)
         advanced_fx_mappings = find_all_matching_mappings(material_data, type=ENodeType.NT_Advanced_FX)
 
         # TODO
         # Separate handling for layered
-        # Ensure only one base node
-        # Set SwizzleRoughness
 
         # TODO: Move to mappings to allow for other build nodes?
         set_param("AO", self.options.get("AmbientOcclusion"))
@@ -414,16 +466,19 @@ class MaterialImportContextNew:
         node_position = -200
         previous_node = shader_node
 
-        if len(all_mappings) > 0:
-            for mapping in all_mappings:
-                Log.info(f"Adding node: {mapping.node_name}")
-                new_node = nodes.new(type="ShaderNodeGroup")
-                new_node.node_tree = bpy.data.node_groups.get(mapping.node_name)
-                new_node.location = (node_position, 0)
-                setup_params(mapping, new_node, False)
-                links.new(new_node.outputs[0], previous_node.inputs[0])
-                previous_node = new_node
-                node_position -= mapping.node_spacing 
+        if len(all_mappings) == 0 or all_mappings[-1].type != ENodeType.NT_Base:
+            all_mappings.append(DefaultMappings)
+
+
+        for mapping in all_mappings:
+            Log.info(f"Adding node: {mapping.node_name}")
+            new_node = nodes.new(type="ShaderNodeGroup")
+            new_node.node_tree = bpy.data.node_groups.get(mapping.node_name)
+            new_node.location = (node_position, 0)
+            setup_params(mapping, new_node, False)
+            links.new(new_node.outputs[0], previous_node.inputs[0])
+            previous_node = new_node
+            node_position -= mapping.node_spacing 
 
 
         # Temp to add all params for debugging
