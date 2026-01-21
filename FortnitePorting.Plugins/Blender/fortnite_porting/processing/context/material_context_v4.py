@@ -27,11 +27,11 @@ class MaterialImportContextNew:
             temp_material = material_slot.material
             material_slot.link = 'OBJECT' if self.type in [EExportType.WORLD, EExportType.PREFAB] else 'DATA'
             material_slot.material = temp_material
-    
+
         material_name = material_data.get("Name")
         material_hash = material_data.get("Hash")
         additional_hash = 0
-   
+
         texture_data = meta.get("TextureData")
         if texture_data is not None:
             override_material_data = None
@@ -40,20 +40,20 @@ class MaterialImportContextNew:
                 if td_override_material := data.get("OverrideMaterial"):
                     override_material_data = td_override_material
                     break
-            
+
             if override_material_data:
                 material_data = override_material_data
                 material_name = override_material_data.get("Name")
                 material_hash = override_material_data.get("Hash")
-        
+
         textures = material_data.get("Textures")
         scalars = material_data.get("Scalars")
         vectors = material_data.get("Vectors")
         switches = material_data.get("Switches")
         component_masks = material_data.get("ComponentMasks")
-        
+
         if texture_data is not None:
-            
+
             for data in texture_data:
                 index = data.get("Index")
 
@@ -66,17 +66,17 @@ class MaterialImportContextNew:
                     replace_or_add_parameter_from_texture(textures, f"Normals{texture_suffix}", normal)
                 if specular := data.get("Specular"):
                     replace_or_add_parameter_from_texture(textures, f"SpecularMasks{spec_suffix}", specular)
-        
+
         override_parameters = where(self.override_parameters, lambda param: param.get("MaterialNameToAlter") in [material_name, "Global"])
         if override_parameters is not None:
             for parameters in override_parameters:
                 additional_hash += parameters.get("Hash")
-    
+
         if additional_hash != 0:
             material_hash += additional_hash
             material_name += f"_{hash_code(material_hash)}"
-                
-            
+
+
         if existing_material := first(bpy.data.materials, lambda mat: mat.get("Hash") == hash_code(material_hash)):
             if not as_material_data:
                 material_slot.material = existing_material
@@ -85,7 +85,7 @@ class MaterialImportContextNew:
         # same name but different hash
         if (name_existing := first(bpy.data.materials, lambda mat: mat.name == material_name)) and name_existing.get("Hash") != material_hash:
             material_name += f"_{hash_code(material_hash)}"
-            
+
         if not as_material_data and material_slot.material.name.casefold() != material_name.casefold():
             material_slot.material = bpy.data.materials.new(material_name)
 
@@ -101,21 +101,21 @@ class MaterialImportContextNew:
         nodes.clear()
         links = material.node_tree.links
         links.clear()
-        
+
         textures = material_data.get("Textures")
         scalars = material_data.get("Scalars")
         vectors = material_data.get("Vectors")
         switches = material_data.get("Switches")
         component_masks = material_data.get("ComponentMasks")
-        
+
         if override_parameters is not None:
             for parameters in override_parameters:
                 for texture in parameters.get("Textures"):
                     replace_or_add_parameter(textures, texture)
-    
+
                 for scalar in parameters.get("Scalars"):
                     replace_or_add_parameter(scalars, scalar)
-    
+
                 for vector in parameters.get("Vectors"):
                     replace_or_add_parameter(vectors, vector)
 
@@ -131,10 +131,10 @@ class MaterialImportContextNew:
             nodes.remove(shader_node)
             shader_node = nodes.new(type="ShaderNodeGroup")
             shader_node.node_tree = bpy.data.node_groups.get(name)
-            
+
         # for cleaner code sometimes bc stuff gets repetitive
         def set_param(name, value, override_shader=None):
-            
+
             nonlocal shader_node
             target_node = override_shader or shader_node
             target_node.inputs[name].default_value = value
@@ -143,7 +143,7 @@ class MaterialImportContextNew:
             node_links = target_node.inputs[slot].links
             if node_links is None or len(node_links) == 0:
                 return None
-            
+
             return node_links[0].from_node
 
         def get_first_node(target_node, slots):
@@ -151,7 +151,7 @@ class MaterialImportContextNew:
                 node_links = target_node.inputs[slot].links
                 if len(node_links) > 0:
                     return node_links[0].from_node
-                
+
             return None
 
         unused_parameter_height = 0
@@ -195,9 +195,9 @@ class MaterialImportContextNew:
                         uv.location = node.location.x - 250, node.location.y
                         uv.uv_map = mappings.coords
                         links.new(uv.outputs[0], node.inputs[0])
-                
+
                 if mappings.switch_slot:
-                    target_node.inputs[mappings.switch_slot].default_value = 1 
+                    target_node.inputs[mappings.switch_slot].default_value = 1
             except KeyError:
                 nodes.remove(node)
                 pass
@@ -213,7 +213,7 @@ class MaterialImportContextNew:
                 node.outputs[0].default_value = value
                 node.label = name
                 node.width = 250
-                
+
                 if mappings := first(target_mappings.scalars, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
@@ -227,7 +227,7 @@ class MaterialImportContextNew:
                     else:
                         nodes.remove(node)
                     return
-                    
+
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
             except KeyError as e:
@@ -242,7 +242,7 @@ class MaterialImportContextNew:
 
                 mappings = first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold())
                 is_vector = mappings is not None
-                
+
                 if not is_vector:
                     mappings = first(target_mappings.colors, lambda x: x.name.casefold() == name.casefold())
 
@@ -263,7 +263,7 @@ class MaterialImportContextNew:
 
                 node.label = name
                 node.width = 250
-                
+
                 if mappings is not None:
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
@@ -301,12 +301,12 @@ class MaterialImportContextNew:
                 node.inputs[3].default_value = int(value["A"])
                 node.label = name
                 node.width = 250
-                
+
                 # Dev logging to find component mask params
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
-                
+
                 if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
@@ -336,7 +336,7 @@ class MaterialImportContextNew:
                 node.inputs[0].default_value = 1 if value else 0
                 node.label = name
                 node.width = 250
-                
+
                 if mappings := first(target_mappings.switches, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
@@ -355,7 +355,7 @@ class MaterialImportContextNew:
                 pass
             except Exception:
                 traceback.print_exc()
-        
+
         # TODO: Refactor, break out node creation to utils and use here and in parameter handlers
         def handle_default_params(mappings, target_node):
             for texture in mappings.textures:
@@ -381,9 +381,9 @@ class MaterialImportContextNew:
                             uv.location = node.location.x - 250, node.location.y
                             uv.uv_map = texture.coords
                             links.new(uv.outputs[0], node.inputs[0])
-                    
+
                     if mappings.switch_slot:
-                        target_node.inputs[mappings.switch_slot].default_value = 1 
+                        target_node.inputs[mappings.switch_slot].default_value = 1
 
             for scalar in mappings.scalars:
                 if scalar.default is not None and get_node(target_node, scalar.slot) is None:
@@ -443,7 +443,7 @@ class MaterialImportContextNew:
 
             for switch in switches:
                 switch_param(switch, mappings, target_node, add_unused_params)
-            
+
             handle_default_params(mappings, target_node)
 
 
@@ -466,19 +466,37 @@ class MaterialImportContextNew:
         node_position = -200
         previous_node = shader_node
 
+        # Add default base layer if no base layer was matched
         if len(all_mappings) == 0 or all_mappings[-1].type != ENodeType.NT_Base:
             all_mappings.append(DefaultMappings)
 
 
-        for mapping in all_mappings:
+        def add_shader_module(mapping):
+            nonlocal node_position
+            nonlocal previous_node
             Log.info(f"Adding node: {mapping.node_name}")
             new_node = nodes.new(type="ShaderNodeGroup")
             new_node.node_tree = bpy.data.node_groups.get(mapping.node_name)
             new_node.location = (node_position, 0)
-            setup_params(mapping, new_node, False)
             links.new(new_node.outputs[0], previous_node.inputs[0])
+            setup_params(mapping, new_node, False)
             previous_node = new_node
-            node_position -= mapping.node_spacing 
+            node_position -= mapping.node_spacing
+            return new_node
+
+
+        match all_mappings[-1].node_name:
+            case BaseLayerMappings.node_name:
+                for layer in range(6, 1, -1):
+                    if LayerMappings.meets_criteria_dynamic(material_data, layer):
+                        layer_node = add_shader_module(LayerMappings) # TODO: Pass index to setup_params method?
+                        set_param("Layer", layer, layer_node)
+
+                add_shader_module(BaseLayerMappings)
+            case _:
+                for mapping in all_mappings:
+                    add_shader_module(mapping)
+
 
 
         # Temp to add all params for debugging
@@ -487,11 +505,11 @@ class MaterialImportContextNew:
         links.new(shader_node.outputs[0], output_node.inputs[0])
 
         # post parameter handling
-        
+
         if material_name in vertex_crunch_names or get_param(scalars, "HT_CrunchVerts") == 1 or any(toon_outline_names, lambda x: x in material_name):
             self.full_vertex_crunch_materials.append(material)
             return
-        
+
         if get_param(switches, "Use Vertex Colors for Mask"):
             elements = {}
             for scalar in scalars:
@@ -500,20 +518,20 @@ class MaterialImportContextNew:
                     continue
 
                 elements[name] = scalar.get("Value")
-            
+
             self.partial_vertex_crunch_materials[material] = elements
 
-                    
+
     def import_material_standalone_new(self, data):
         is_object_import = EMaterialImportMethod.OBJECT == EMaterialImportMethod(self.options.get("MaterialImportMethod"))
         materials = data.get("Materials")
 
         if materials is None:
             return
-        
+
         if is_object_import:
             self.collection = create_or_get_collection("Materials") if self.options.get("ImportIntoCollection") else bpy.context.scene.collection
-            
+
         for material in materials:
             name = material.get("Name")
             Log.info(f"Importing Material: {name}")
