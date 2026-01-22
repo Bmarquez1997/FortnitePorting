@@ -157,7 +157,7 @@ class MaterialImportContextNew:
         unused_parameter_height = 0
 
         # parameter handlers
-        def texture_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
+        def texture_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
             try:
                 name = data.get("Name")
                 path = data.get("Texture").get("Path")
@@ -171,7 +171,7 @@ class MaterialImportContextNew:
                 node.label = name
                 node.hide = True
 
-                mappings = first(target_mappings.textures, lambda x: x.name.casefold().replace("#", param_index) == name.casefold())
+                mappings = first(target_mappings.textures, lambda x: x.name.casefold() == name.casefold())
                 if mappings is None or texture_name in texture_ignore_names:
                     if add_unused_params:
                         nonlocal unused_parameter_height
@@ -204,7 +204,7 @@ class MaterialImportContextNew:
             except Exception:
                 traceback.print_exc()
 
-        def scalar_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
+        def scalar_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
@@ -214,7 +214,7 @@ class MaterialImportContextNew:
                 node.label = name
                 node.width = 250
 
-                if mappings := first(target_mappings.scalars, lambda x: x.name.casefold().replace("#", param_index) == name.casefold()):
+                if mappings := first(target_mappings.scalars, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -236,16 +236,16 @@ class MaterialImportContextNew:
             except Exception:
                 traceback.print_exc()
 
-        def vector_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
+        def vector_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
 
-                mappings = first(target_mappings.vectors, lambda x: x.name.casefold().replace("#", param_index) == name.casefold())
+                mappings = first(target_mappings.vectors, lambda x: x.name.casefold() == name.casefold())
                 is_vector = mappings is not None
 
                 if not is_vector:
-                    mappings = first(target_mappings.colors, lambda x: x.name.casefold().replace("#", param_index) == name.casefold())
+                    mappings = first(target_mappings.colors, lambda x: x.name.casefold() == name.casefold())
 
                 if mappings is None:
                     is_vector = any(vector_param_names, lambda x: x.casefold() in name.casefold()) or any(list(value.values())[0:4], lambda v: v < 0)
@@ -289,7 +289,7 @@ class MaterialImportContextNew:
             except Exception:
                 traceback.print_exc()
 
-        def component_mask_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
+        def component_mask_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
@@ -312,7 +312,7 @@ class MaterialImportContextNew:
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
 
-                if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold().replace("#", param_index) == name.casefold()):
+                if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -332,7 +332,7 @@ class MaterialImportContextNew:
             except Exception:
                 traceback.print_exc()
 
-        def switch_param(data, target_mappings, target_node=shader_node, add_unused_params=False, param_index=""):
+        def switch_param(data, target_mappings, target_node=shader_node, add_unused_params=False):
             try:
                 name = data.get("Name")
                 value = data.get("Value")
@@ -343,7 +343,7 @@ class MaterialImportContextNew:
                 node.label = name
                 node.width = 250
 
-                if mappings := first(target_mappings.switches, lambda x: x.name.casefold().replace("#", param_index) == name.casefold()):
+                if mappings := first(target_mappings.switches, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
@@ -435,21 +435,21 @@ class MaterialImportContextNew:
                     links.new(node.outputs[0], target_node.inputs[switch.slot])
 
 
-        def setup_params(mappings, target_node, add_unused_params=False, param_index=""):
+        def setup_params(mappings, target_node, add_unused_params=False):
             for texture in textures:
-                texture_param(texture, mappings, target_node, add_unused_params, param_index)
+                texture_param(texture, mappings, target_node, add_unused_params)
 
             for scalar in scalars:
-                scalar_param(scalar, mappings, target_node, add_unused_params, param_index)
+                scalar_param(scalar, mappings, target_node, add_unused_params)
 
             for vector in vectors:
-                vector_param(vector, mappings, target_node, add_unused_params, param_index)
+                vector_param(vector, mappings, target_node, add_unused_params)
 
             for component_mask in component_masks:
-                component_mask_param(component_mask, mappings, target_node, add_unused_params, param_index)
+                component_mask_param(component_mask, mappings, target_node, add_unused_params)
 
             for switch in switches:
-                switch_param(switch, mappings, target_node, add_unused_params, param_index)
+                switch_param(switch, mappings, target_node, add_unused_params)
 
             handle_default_params(mappings, target_node)
 
@@ -475,7 +475,7 @@ class MaterialImportContextNew:
             all_mappings.append(DefaultMappings)
 
 
-        def add_shader_module(mapping, param_index=""):
+        def add_shader_module(mapping):
             nonlocal node_position
             nonlocal previous_node
             Log.info(f"Adding node: {mapping.node_name}")
@@ -483,24 +483,14 @@ class MaterialImportContextNew:
             new_node.node_tree = bpy.data.node_groups.get(mapping.node_name)
             new_node.location = (node_position, 0)
             links.new(new_node.outputs[0], previous_node.inputs[0])
-            setup_params(mapping, new_node, False, param_index)
+            setup_params(mapping, new_node, False)
             previous_node = new_node
             node_position -= mapping.node_spacing
             return new_node
 
 
-        match all_mappings[-1].node_name:
-            case BaseLayerMappings.node_name:
-                for layer in range(6, 1, -1):
-                    if LayerMappings.meets_criteria_dynamic(material_data, layer):
-                        layer_node = add_shader_module(LayerMappings, str(layer))
-                        set_param("Layer", layer, layer_node)
-
-                add_shader_module(BaseLayerMappings)
-            case _:
-                for mapping in all_mappings:
-                    add_shader_module(mapping)
-
+        for mapping in all_mappings:
+            add_shader_module(mapping)
 
 
         # Temp to add all params for debugging

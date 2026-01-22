@@ -88,6 +88,25 @@ class MappingRegistry:
                 matches.append(mappings)
         return sorted(matches, key=lambda mapping: (mapping.type, mapping.order), reverse=True)
 
+# Factory function to create slots from templates
+def create_layer_slots(templates, layer_num):
+    result = []
+    for template in templates:
+        def replace_hash(s):
+            return s.replace("#", str(layer_num)) if s and "#" in s else s
+        
+        result.append(SlotMapping(
+            name=replace_hash(template.name),
+            slot=replace_hash(template.slot),
+            alpha_slot=replace_hash(template.alpha_slot),
+            switch_slot=replace_hash(template.switch_slot),
+            value_func=template.value_func,
+            coords=template.coords,
+            default=template.default,
+            closure=template.closure
+        ))
+    return tuple(result)
+
 
 # Global registry instance
 registry = MappingRegistry()

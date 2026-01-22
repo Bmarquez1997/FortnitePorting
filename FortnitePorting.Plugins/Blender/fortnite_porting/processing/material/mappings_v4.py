@@ -77,6 +77,7 @@ class DefaultMappings(MappingCollection):
 
         SlotMapping("MaskTexture"),
         SlotMapping("OpacityMask", "MaskTexture"),
+        SlotMapping("MessHairMask", "MaskTexture"),
 
         SlotMapping("FX Mask"),
         SlotMapping("SkinFX_Mask", "FX Mask"),
@@ -101,7 +102,7 @@ class DefaultMappings(MappingCollection):
     )
 
     colors=(
-        SlotMapping("TintColor", "Diffuse"),
+        SlotMapping("TintColor", "Background Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
 
         SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
@@ -134,6 +135,10 @@ class BaseLayerMappings(MappingCollection):
         SlotMapping("EmissiveTexture"),
         SlotMapping("MaskTexture"),
         SlotMapping("Background Diffuse", alpha_slot="Background Diffuse Alpha"),
+    )
+
+    colors=(
+        SlotMapping("TintColor", "Background Diffuse"),
     )
 
 
@@ -246,21 +251,17 @@ class BaseToonMappings(MappingCollection):
     )
 # End base groups
 
-# Dynamic layer numbers, replace # with number when mapping values (setup_params() extra parameter, loop until "Use i Layers" == false?)
-# Only used when using FPv4 Base Layer
-@registry.register
-class LayerMappings(MappingCollection):
+# Start Layer groups
+class ParentLayerMappings(MappingCollection):
     node_name="FPv4 Layer"
     type=ENodeType.NT_Layer
 
     @classmethod
     def meets_criteria_dynamic(self, material_data, index):
-        return get_param(material_data.get("Switches"), f"Use {index} Layers")
+        return get_param_multiple(material_data.get("Switches"), [f"Use {index} Layers", f"Use {index} Materials"])
 
 
-    # TODO: get_slots_dynamic() method to replace # with index?
-
-    textures=(
+    LAYER_TEXTURE_TEMPLATES = (
         SlotMapping("Diffuse_Texture_#", "Diffuse", alpha_slot="MaskTexture"),
         SlotMapping("SpecularMasks_#", "SpecularMasks"),
         SlotMapping("Normals_Texture_#", "Normals"),
@@ -269,11 +270,94 @@ class LayerMappings(MappingCollection):
         SlotMapping("Background Diffuse #", "Background Diffuse", alpha_slot="Background Diffuse Alpha"),
     )
 
-    switches=(
-        SlotMapping("Is Transparent"), # "Is Transparent" = override_blend_mode is not EBlendMode.BLEND_Opaque
+    LAYER_SWITCH_TEMPLATES = (
         SlotMapping("Use # Layers", "Use Layer"),
+        SlotMapping("Use # Materials", "Use Layer"),
     )
 
+    @classmethod
+    def textures(self, index):
+        return create_layer_slots(self.LAYER_TEXTURE_TEMPLATES, index)
+
+    @classmethod
+    def switches(self, index):
+        return create_layer_slots(self.LAYER_SWITCH_TEMPLATES, index)
+
+    @classmethod
+    def scalars(self, index):
+        return (SlotMapping("Layer", default=index),)
+
+
+@registry.register
+class Layer2Mappings(MappingCollection):
+    node_name=ParentLayerMappings.node_name
+    type=ParentLayerMappings.type
+    order=2
+    textures=ParentLayerMappings.textures(order)
+    switches=ParentLayerMappings.switches(order)
+    scalars=ParentLayerMappings.scalars(order)
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
+
+
+
+@registry.register
+class Layer3Mappings(MappingCollection):
+    node_name=ParentLayerMappings.node_name
+    type=ParentLayerMappings.type
+    order=3
+    textures=ParentLayerMappings.textures(order)
+    switches=ParentLayerMappings.switches(order)
+    scalars=ParentLayerMappings.scalars(order)
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
+
+
+@registry.register
+class Layer4Mappings(MappingCollection):
+    node_name=ParentLayerMappings.node_name
+    type=ParentLayerMappings.type
+    order=4
+    textures=ParentLayerMappings.textures(order)
+    switches=ParentLayerMappings.switches(order)
+    scalars=ParentLayerMappings.scalars(order)
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
+
+
+@registry.register
+class Layer5Mappings(MappingCollection):
+    node_name=ParentLayerMappings.node_name
+    type=ParentLayerMappings.type
+    order=5
+    textures=ParentLayerMappings.textures(order)
+    switches=ParentLayerMappings.switches(order)
+    scalars=ParentLayerMappings.scalars(order)
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
+
+
+@registry.register
+class Layer6Mappings(MappingCollection):
+    node_name=ParentLayerMappings.node_name
+    type=ParentLayerMappings.type
+    order=6
+    textures=ParentLayerMappings.textures(order)
+    switches=ParentLayerMappings.switches(order)
+    scalars=ParentLayerMappings.scalars(order)
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
+# End Layer groups
 
 # Start basic FX groups
 @registry.register
@@ -412,8 +496,8 @@ class ThinFilmMappings(MappingCollection):
 
 
 @registry.register
-class ClearcoatMappings(MappingCollection):
-    node_name="FPv4 Clearcoat"
+class ClearCoatMappings(MappingCollection):
+    node_name="FPv4 ClearCoat"
     type=ENodeType.NT_Core_FX
     order=5
 
