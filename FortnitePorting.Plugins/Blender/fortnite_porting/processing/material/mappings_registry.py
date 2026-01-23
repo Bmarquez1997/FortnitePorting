@@ -13,9 +13,9 @@ class MappingCollection:
     switches = ()
     component_masks = ()
     build_node = "FPv4 Material Build"
-    surface_render_method = "DITHERED"
+    surface_render_method = None
     show_transparent_back = True
-    
+
 
     @classmethod
     def meets_criteria(self, material_data):
@@ -33,14 +33,51 @@ class MappingCollection:
 
 
         return match_tex or match_scal or match_col or match_vec or match_switch or match_comp
-    
+
     @classmethod
     def meets_criteria_dynamic(self, material_data, index):
         # Placeholder for dynamic criteria checking logic
         return False
 
-    # TODO: get_slots_dynamic(slot_collection, index)?
-    # TODO: get_default_textures()?
+
+class LayerMappingsTemplate():
+    node_name=""
+    type=ENodeType.NT_Layer
+
+    @classmethod
+    def meets_criteria_dynamic(self, material_data, index):
+        return False
+
+    LAYER_TEXTURE_TEMPLATES = ()
+    LAYER_SCALARS_TEMPLATES = ()
+    LAYER_COLORS_TEMPLATES = ()
+    LAYER_VECTORS_TEMPLATES = ()
+    LAYER_SWITCH_TEMPLATES = ()
+    LAYER_COMPONENT_MASKS_TEMPLATES = ()
+
+    @classmethod
+    def textures(self, index):
+        return create_layer_slots(self.LAYER_TEXTURE_TEMPLATES, index)
+
+    @classmethod
+    def scalars(self, index):
+        return create_layer_slots(self.LAYER_SWITCH_TEMPLATES, index)
+
+    @classmethod
+    def colors(self, index):
+        return create_layer_slots(self.LAYER_COLORS_TEMPLATES, index)
+
+    @classmethod
+    def vectors(self, index):
+        return create_layer_slots(self.LAYER_VECTORS_TEMPLATES, index)
+
+    @classmethod
+    def switches(self, index):
+        return create_layer_slots(self.LAYER_SWITCH_TEMPLATES, index)
+
+    @classmethod
+    def component_masks(self, index):
+        return create_layer_slots(self.LAYER_COMPONENT_MASKS_TEMPLATES, index)
 
 
 class SlotMapping:
@@ -78,7 +115,7 @@ class MappingRegistry:
     def get_mappings_for_type(self, node_type):
         mappings = [m for m in self.get_all_mappings() if m.type == node_type]
         return sorted(mappings, key=lambda mapping: mapping.order)
-    
+
 
     def find_all_matching_mappings(self, material_data, type):
         matches = []
@@ -87,25 +124,6 @@ class MappingRegistry:
             if mappings.meets_criteria(material_data):
                 matches.append(mappings)
         return sorted(matches, key=lambda mapping: (mapping.type, mapping.order), reverse=True)
-
-# Factory function to create slots from templates
-def create_layer_slots(templates, layer_num):
-    result = []
-    for template in templates:
-        def replace_hash(s):
-            return s.replace("#", str(layer_num)) if s and "#" in s else s
-        
-        result.append(SlotMapping(
-            name=replace_hash(template.name),
-            slot=replace_hash(template.slot),
-            alpha_slot=replace_hash(template.alpha_slot),
-            switch_slot=replace_hash(template.switch_slot),
-            value_func=template.value_func,
-            coords=template.coords,
-            default=template.default,
-            closure=template.closure
-        ))
-    return tuple(result)
 
 
 # Global registry instance
@@ -122,3 +140,48 @@ def get_mappings_for_type(node_type):
 
 def find_all_matching_mappings(material_data, type=None):
     return registry.find_all_matching_mappings(material_data, type=type)
+
+
+# Factory function to create slots from templates
+def create_layer_slots(templates, layer_num):
+    result = []
+    for template in templates:
+        def replace_hash(s):
+            return s.replace("#", str(layer_num)) if s and "#" in s else s
+
+        result.append(SlotMapping(
+            name=replace_hash(template.name),
+            slot=replace_hash(template.slot),
+            alpha_slot=replace_hash(template.alpha_slot),
+            switch_slot=replace_hash(template.switch_slot),
+            value_func=template.value_func,
+            coords=template.coords,
+            default=template.default,
+            closure=template.closure
+        ))
+    return tuple(result)
+
+
+# Factory function to create dynamic layer mappings from parent class
+def create_layer_mappings(parent_class, class_name_prefix, min_layer=2, max_layer=6):
+    for layer_index in range(min_layer, max_layer + 1):
+        layer_class = type(
+            f'{class_name_prefix}Layer{layer_index}Mappings',
+            (MappingCollection,),
+            {
+                'node_name': parent_class.node_name,
+                'type': parent_class.type,
+                'order': layer_index,
+                'textures': parent_class.textures(layer_index),
+                'scalars': parent_class.scalars(layer_index),
+                'colors': parent_class.colors(layer_index),
+                'vectors': parent_class.vectors(layer_index),
+                'switches': parent_class.switches(layer_index),
+                'component_masks': parent_class.component_masks(layer_index),
+                'meets_criteria': classmethod(
+                    lambda cls, material_data, num=layer_index:
+                        parent_class.meets_criteria_dynamic(material_data, num)
+                )
+            }
+        )
+        registry.register(layer_class)

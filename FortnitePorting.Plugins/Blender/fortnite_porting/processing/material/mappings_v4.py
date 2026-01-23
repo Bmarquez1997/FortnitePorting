@@ -252,7 +252,7 @@ class BaseToonMappings(MappingCollection):
 # End base groups
 
 # Start Layer groups
-class ParentLayerMappings(MappingCollection):
+class ParentLayerMappings(LayerMappingsTemplate):
     node_name="FPv4 Layer"
     type=ENodeType.NT_Layer
 
@@ -276,87 +276,11 @@ class ParentLayerMappings(MappingCollection):
     )
 
     @classmethod
-    def textures(self, index):
-        return create_layer_slots(self.LAYER_TEXTURE_TEMPLATES, index)
-
-    @classmethod
-    def switches(self, index):
-        return create_layer_slots(self.LAYER_SWITCH_TEMPLATES, index)
-
-    @classmethod
     def scalars(self, index):
         return (SlotMapping("Layer", default=index),)
 
 
-@registry.register
-class Layer2Mappings(MappingCollection):
-    node_name=ParentLayerMappings.node_name
-    type=ParentLayerMappings.type
-    order=2
-    textures=ParentLayerMappings.textures(order)
-    switches=ParentLayerMappings.switches(order)
-    scalars=ParentLayerMappings.scalars(order)
-
-    @classmethod
-    def meets_criteria(self, material_data):
-        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
-
-
-
-@registry.register
-class Layer3Mappings(MappingCollection):
-    node_name=ParentLayerMappings.node_name
-    type=ParentLayerMappings.type
-    order=3
-    textures=ParentLayerMappings.textures(order)
-    switches=ParentLayerMappings.switches(order)
-    scalars=ParentLayerMappings.scalars(order)
-
-    @classmethod
-    def meets_criteria(self, material_data):
-        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
-
-
-@registry.register
-class Layer4Mappings(MappingCollection):
-    node_name=ParentLayerMappings.node_name
-    type=ParentLayerMappings.type
-    order=4
-    textures=ParentLayerMappings.textures(order)
-    switches=ParentLayerMappings.switches(order)
-    scalars=ParentLayerMappings.scalars(order)
-
-    @classmethod
-    def meets_criteria(self, material_data):
-        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
-
-
-@registry.register
-class Layer5Mappings(MappingCollection):
-    node_name=ParentLayerMappings.node_name
-    type=ParentLayerMappings.type
-    order=5
-    textures=ParentLayerMappings.textures(order)
-    switches=ParentLayerMappings.switches(order)
-    scalars=ParentLayerMappings.scalars(order)
-
-    @classmethod
-    def meets_criteria(self, material_data):
-        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
-
-
-@registry.register
-class Layer6Mappings(MappingCollection):
-    node_name=ParentLayerMappings.node_name
-    type=ParentLayerMappings.type
-    order=6
-    textures=ParentLayerMappings.textures(order)
-    switches=ParentLayerMappings.switches(order)
-    scalars=ParentLayerMappings.scalars(order)
-
-    @classmethod
-    def meets_criteria(self, material_data):
-        return ParentLayerMappings.meets_criteria_dynamic(material_data, self.order)
+create_layer_mappings(ParentLayerMappings, "")
 # End Layer groups
 
 # Start basic FX groups

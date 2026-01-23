@@ -491,7 +491,19 @@ class MaterialImportContextNew:
 
         for mapping in all_mappings:
             add_shader_module(mapping)
+            if mapping.surface_render_method is not None:
+                material.surface_render_method = mapping.surface_render_method
+                material.show_transparent_back = mapping.show_transparent_back
 
+
+        # TODO: MappingCollection.material_changes()?
+        # That wouldn't give us the toon outline though because we couldn't call self.add_toon_outline
+        if all_mappings[-1].node_name == "FPv4 Base Toon":
+            set_param("Brightness", self.options.get("ToonShadingBrightness"), previous_node)
+            self.add_toon_outline = True
+
+
+        # TODO: Part modifier handling? (fur, new toon outline, etc)      
 
         # Temp to add all params for debugging
         setup_params(MappingCollection(), shader_node, True)
