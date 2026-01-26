@@ -55,6 +55,8 @@ public partial class InstallationProfile : ObservableValidator
     
     [ObservableProperty] private bool _sendExports = true;
 
+    [ObservableProperty] private bool _isSelected;
+
     [JsonIgnore] public bool IsCustom => FortniteVersion is EFortniteVersion.Custom;
     [JsonIgnore] public bool ArchiveDirectoryEnabled => FortniteVersion is not EFortniteVersion.LatestOnDemand;
     [JsonIgnore] public bool UnrealVersionEnabled => IsCustom;
