@@ -20,7 +20,7 @@
         <Brush x:Key="FPButtonBackgroundBright">#2E455B</Brush>
         <Brush x:Key="FPButtonBackgroundBrightPointerOver">#43A093</Brush>
 
-        <LinearGradientBrush x:Key="FPContentCardBackground" StartPoint="0%, 0%" EndPoint="0%, 100%">
+        <LinearGradientBrush x:Key="FPContentCardBackground" StartPoint="0%, 0%" EndPoint="0%, 100%" Opacity="0.75">
             <GradientStops>
                 <GradientStop Color="#122027 " Offset="0"/>
                 <GradientStop Color="#142027" Offset="1"/>
@@ -49,9 +49,12 @@
 
         <SolidColorBrush x:Key="TextFillTertiaryBrush" Color="#7EAAB0" />
         <SolidColorBrush x:Key="TextFillTertiaryDisabledBrush" Color="#807EAAB0" />
+        
+        <Bitmap x:Key="WorldGridBitmap">avares://FortnitePorting/Assets/BackgroundImage_WorldGrid.png</Bitmap>
+        <ImageBrush x:Key="ContentBorderBackgroundBrush" Opacity="0.25" Stretch="Fill" Source="{DynamicResource WorldGridBitmap}" />
 
         <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#0B1419" />
-        <SolidColorBrush x:Key="ContentBorderBackgroundBrush" Color="#01171F" />
+        <!-- <SolidColorBrush x:Key="ContentBorderBackgroundBrush" Color="#01171F" /> -->
         <SolidColorBrush x:Key="ContentBorderBorderBrush" Color="#243845" />
         
         <SolidColorBrush x:Key="ContentBorderLayer2BackgroundBrush" Color="#0A1216" />
