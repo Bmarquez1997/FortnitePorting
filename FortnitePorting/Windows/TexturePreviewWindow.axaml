@@ -29,7 +29,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
             
-                <ui:ImageIcon Grid.Column="0" Source="{DynamicResource LogoRebrand_Chip}" 
+                <ui:ImageIcon Grid.Column="0" Source="{DynamicResource FPLogoBitmap}" 
                               HorizontalAlignment="Right"
                               Width="20" Height="20" 
                               RenderOptions.BitmapInterpolationMode="HighQuality" RenderOptions.EdgeMode="Antialias"/>

@@ -113,7 +113,7 @@ public static class Exporter
             
                 var data = JsonConvert.SerializeObject(exportData);
 
-                if (AppSettings.Debug.WriteExportToJSONFile)
+                if (AppSettings.Developer.WriteExportToJSONFile)
                 {
                     var jsonPath = Path.Combine(metaData.AssetsRoot, "ExportJSON", $"Export_{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.json");
                     Directory.CreateDirectory(jsonPath.SubstringBeforeLast("/"));

@@ -39,7 +39,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <Image Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Source="{DynamicResource LogoRebrand_Chip}"
+                            <Image Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Source="{DynamicResource FPLogoBitmap}"
                                    Width="48" Height="48" RenderOptions.BitmapInterpolationMode="HighQuality" />
 
                             <TextBlock Grid.Row="0" Grid.Column="2"

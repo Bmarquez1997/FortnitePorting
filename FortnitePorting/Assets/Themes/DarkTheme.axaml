@@ -64,7 +64,7 @@
         <Color x:Key="FPAccentColor">#953bf8</Color>
         <SolidColorBrush x:Key="FPAccentBrush" Color="{DynamicResource FPAccentColor}" />
         
-        <Bitmap x:Key="FPLogoBitmap">avares://FortnitePorting/Assets/LogoRebrand.png</Bitmap>
+        <Bitmap x:Key="FPLogoBitmap">avares://FortnitePorting/Assets/LogoRebrand_Chip.png</Bitmap>
 
     </controls:FPStyles.Resources>
 

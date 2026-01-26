@@ -40,11 +40,11 @@
                 </controls:SettingsItem.Footer>
             </controls:SettingsItem>
             
-            <controls:SettingsItem Title="Show Map Grid Information" Description="Displays tools to modify and debug map grids in the map tab.">
-                <controls:SettingsItem.Footer>
-                    <ToggleSwitch IsChecked="{Binding ShowMapDebugInfo}"/>
-                </controls:SettingsItem.Footer>
-            </controls:SettingsItem>
+            <!-- <controls:SettingsItem Title="Show Map Grid Information" Description="Displays tools to modify and debug map grids in the map tab."> -->
+            <!--     <controls:SettingsItem.Footer> -->
+            <!--         <ToggleSwitch IsChecked="{Binding ShowMapDebugInfo}"/> -->
+            <!--     </controls:SettingsItem.Footer> -->
+            <!-- </controls:SettingsItem> -->
             
             <controls:SettingsItem Title="Show All Files in Files Tab" Description="Displays all files (including bulk, optional, and verse) in the Files tab.">
                 <controls:SettingsItem.Footer>

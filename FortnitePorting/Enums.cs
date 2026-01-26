@@ -354,4 +354,8 @@ public enum EThemeType
     [Description("Mica")]
     [Icon(MaterialIconKind.CircleOpacity)]
     Mica,
+    
+    [Description("ChippyCut")]
+    [Icon(MaterialIconKind.Terminal)]
+    ChippyCut,
 }

@@ -167,7 +167,7 @@
                 
                 <controls:SettingsItem Title="Post Exports" Description="Controls whether exports are sent for this profile.">
                     <controls:SettingsItem.Footer>
-                        <ToggleSwitch IsChecked="{Binding CurrentProfile.SendExports}"/>
+                        <ToggleSwitch IsChecked="{Binding SendExports}"/>
                     </controls:SettingsItem.Footer>
                 </controls:SettingsItem>
                 <controls:SettingsItem Title="On-Demand Texture Streaming"
@@ -181,7 +181,7 @@
                 <controls:SettingsItem Title="Load Nanite Data"
                                        Description="Enable the loading and exporting of Nanite geometry.">
                     <controls:SettingsItem.Footer>
-                        <ToggleSwitch IsChecked="{Binding CurrentProfile.LoadNaniteData}" />
+                        <ToggleSwitch IsChecked="{Binding LoadNaniteData}" />
                     </controls:SettingsItem.Footer>
                 </controls:SettingsItem>
 

@@ -18,6 +18,9 @@ public partial class DeveloperSettingsViewModel : SettingsViewModelBase
      
      [ObservableProperty] private int _chunkCacheLifetime = 1;
      [ObservableProperty] private int _requestTimeoutSeconds = 60;
+
+     [ObservableProperty] private bool _showAllFilesInFilesTab = false;
+     [ObservableProperty] private bool _writeExportToJSONFile = false;
      
      public async Task BrowsePortlePath()
      {
