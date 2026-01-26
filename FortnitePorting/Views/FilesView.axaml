@@ -270,7 +270,7 @@
                                                     </ContentControl.ContextMenu>
 
                                                     <controls:HighlightableTextBlock
-                                                        HighlightBackground="#A9953BF8"
+                                                        HighlightBackground="{DynamicResource FPAccentColor}"
                                                         HighlightForeground="White"
                                                         TextToHighlight="{Binding Path}"
                                                         HighlightText="{Binding $parent[views:FilesView].((viewModels:FilesViewModel)DataContext).FlatSearchFilter}"
