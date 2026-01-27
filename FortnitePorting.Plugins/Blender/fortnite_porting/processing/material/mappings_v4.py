@@ -80,6 +80,7 @@ class DefaultMappings(MappingCollection):
         SlotMapping("MessHairMask", "MaskTexture"),
 
         SlotMapping("FX Mask"),
+        SlotMapping("FX", "FX Mask"),
         SlotMapping("SkinFX_Mask", "FX Mask"),
         SlotMapping("SkinFX Mask", "FX Mask"),
         SlotMapping("TechArtMask", "FX Mask"),
@@ -105,10 +106,10 @@ class DefaultMappings(MappingCollection):
         SlotMapping("TintColor", "Background Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
 
+        SlotMapping("Emissive Color", "Emission Color", switch_slot="Use Emission Color"),
+        SlotMapping("EmissiveColor", "Emission Color", switch_slot="Use Emission Color"),
         SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
         SlotMapping("Emissive Multiplier", "Emission Multiplier"),
-        SlotMapping("Emissive Color", "Emission Multiplier"),
-        SlotMapping("EmissiveColor", "Emission Multiplier"),
         SlotMapping("Emissive", "Emission Multiplier"),
         SlotMapping("TN_Emissive Color", "Emission Multiplier"),
     )
@@ -304,6 +305,10 @@ class ClothFuzzMappings(MappingCollection):
     type=ENodeType.NT_Core_FX
     order=2
     node_spacing=700
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use Cloth Fuzz", "UseClothFuzz"])
 
     textures=(
         SlotMapping("ClothFuzz Texture", default=DefaultTexture("T_Fuzz_MASK"), closure=True),
@@ -623,12 +628,16 @@ class DetailMappings(MappingCollection):
 
     switches=(
         SlotMapping("Detail Texture - Use UV2"),
-        SlotMapping("Use Detail Diffuse?"),
-        SlotMapping("Use Detail Normal?"),
-        SlotMapping("Use Detail SRM?"),
+        SlotMapping("Use Detail Diffuse"),
+        SlotMapping("Use Detail Diffuse?", "Use Detail Diffuse"),
+        SlotMapping("Use Detail Normal"),
+        SlotMapping("Use Detail Normal?", "Use Detail Normal"),
+        SlotMapping("Use Detail SRM"),
+        SlotMapping("Use Detail SRM?", "Use Detail SRM"),
     )
 
 
+# TODO: Separate nodes for toon eye/mouth/brow?
 @registry.register
 class FlipbookMappings(MappingCollection):
     node_name="FPv4 Flipbook"
@@ -851,6 +860,10 @@ class SequinMappings(MappingCollection):
     type=ENodeType.NT_Advanced_FX
     node_spacing=700
 
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) and "M_DimeBlanket_Parent" not in material_data.get("BaseMaterialPath")
+
     textures=(
         SlotMapping("SequinOffset", default=DefaultTexture("T_SequinTile"), closure=True),
         SlotMapping("SequinOffest", "SequinOffset", closure=True),
@@ -913,7 +926,7 @@ class SequinTrimMappings(SequinMappings):
 
     @classmethod
     def meets_criteria(self, material_data):
-        return False # "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
+        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) and "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
 
 
     textures=SequinMappings.textures + (
@@ -943,7 +956,7 @@ class SequinSecondaryMappings(SequinMappings):
 
     @classmethod
     def meets_criteria(self, material_data):
-        return False # "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
+        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) and "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
 
 
     textures=SequinMappings.textures + (
@@ -972,7 +985,7 @@ class GmapMappings(MappingCollection):
 
     @classmethod
     def meets_criteria(self, material_data):
-        return False
+        return get_param(material_data.get("Switches"), "Use Engine Colorized GMap")
 
 
     textures=(
@@ -1031,6 +1044,106 @@ class GmapMappings(MappingCollection):
         SlotMapping("Uses 2+ Color Masks", "Mask 2"),
         SlotMapping("Uses 3 Color Masks", "Mask 3"),
         SlotMapping("Uses ColorVariety/Scratch/Dirt Mask", "ColorVariety/Scratch/Dirt Mask"),
+    )
+
+
+@registry.register
+class SuperheroMappings(MappingCollection):
+    node_name="FPv4 Superhero"
+    type=ENodeType.NT_Advanced_FX
+    node_spacing=700
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        base_material_path = material_data.get("BaseMaterialPath")
+        return "Elastic_Master" in base_material_path and "_Head_" not in base_material_path
+
+
+    textures=(
+        SlotMapping("Pattern"),
+        SlotMapping("PrimaryNormal", switch_slot="Use Primary Normal"),
+        SlotMapping("SecondaryNormal", switch_slot="Use Secondary Normal"),
+        SlotMapping("ZE_SecondaryNormal", "SecondaryNormal", switch_slot="Use Secondary Normal"),
+        SlotMapping("Sticker", switch_slot="Use Sticker", closure=True)
+    )
+
+    colors=(
+        SlotMapping("PrimaryColor"),
+        SlotMapping("SecondaryColor"),
+        SlotMapping("AccessoryColor"),
+        SlotMapping("PrimaryMaterial"),
+        SlotMapping("SecondaryMaterial"),
+        SlotMapping("AccessoryMaterial"),
+        SlotMapping("Sticker MSRE"),
+        SlotMapping("Cloth Fuzz Tint"),
+    )
+
+    vectors=(
+        SlotMapping("StickerPosition", default=(0.02, -0.21, 0.0, 0.0)),
+        SlotMapping("StickerScale", default=(-0.06, -0.06, 0.0, 0.0)),
+        SlotMapping("BackStickerPosition", default=(0.32, 0.4, 0.0, 0.0)),
+        SlotMapping("BackStickerScale", default=(0.07, 0.07, 0.0, 0.0)),
+    )
+
+    scalars=(
+        SlotMapping("PrimaryCloth"),
+        SlotMapping("SecondaryCloth"),
+        SlotMapping("ElasticStickerMult"),
+        SlotMapping("UseAccessoryMaterial"),
+        SlotMapping("Fuzz Tiling"),
+        SlotMapping("Fuzz Exponent"),
+        SlotMapping("Fuzz Fresnel Blend"),
+        SlotMapping("Cloth Base Color Intensity"),
+        SlotMapping("Cloth Roughness"),
+    )
+
+
+@registry.register
+class GalaxyMappings(MappingCollection):
+    node_name="FPv4 Galaxy"
+    type=ENodeType.NT_Advanced_FX
+    node_spacing=700
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param(material_data.get("Switches"), "Use Galaxy")
+
+
+    textures=(
+        SlotMapping("GalaxyTexture", default=DefaultTexture("T_FN_Nebula"), closure=True),
+        SlotMapping("Stars", default=DefaultTexture("Celestial_T_Stars", False), closure=True),
+    )
+
+    colors=(
+        SlotMapping("Galaxy Channel"),
+        SlotMapping("Star Brightness"),
+        SlotMapping("Star Brightness 1"),
+        SlotMapping("Galaxy Warp Mask Channel"),
+        SlotMapping("GalaxyEF"),
+        SlotMapping("EdgeFresnel"),
+    )
+
+    scalars=(
+        SlotMapping("Galaxy_GlobalBrightness"),
+        SlotMapping("Star Saturation"),
+        SlotMapping("Galaxy Roughness"),
+        SlotMapping("Galaxy Specular"),
+        SlotMapping("WarpIntensity"),
+        SlotMapping("Galaxy Tiling"),
+        SlotMapping("GalaxyAxisFade"),
+        SlotMapping("Galaxy Rotation Speed"),
+        SlotMapping("Galaxy Rotation Speed 1"),
+        SlotMapping("Galaxy Rotation Speed 2"),
+        SlotMapping("Small Star Tiling"),
+        SlotMapping("Small Star Rotation Speed"),
+        SlotMapping("Bright Star Tiling"),
+        SlotMapping("Galaxy_FresEx"),
+        SlotMapping("GalaxyFlameFresnel Intensite"),
+        SlotMapping("AccentRimBrightness"),
+    )
+
+    switches=(
+        SlotMapping("Use Galaxy"),
     )
 
 

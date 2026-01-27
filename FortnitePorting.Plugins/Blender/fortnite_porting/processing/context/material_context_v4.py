@@ -67,7 +67,7 @@ class MaterialImportContextNew:
                 if specular := data.get("Specular"):
                     replace_or_add_parameter_from_texture(textures, f"SpecularMasks{spec_suffix}", specular)
 
-        override_parameters = where(self.override_parameters, lambda param: param.get("MaterialNameToAlter") in [material_name, "Global"])
+        override_parameters = where(self.override_parameters, lambda param: param.get("MaterialNameToAlter").lower() in [material_name.lower(), "global"])
         if override_parameters is not None:
             for parameters in override_parameters:
                 additional_hash += parameters.get("Hash")
@@ -295,7 +295,7 @@ class MaterialImportContextNew:
                 value = data.get("Value")
 
                 # TODO: Move masks from vectors to component masks in mappings?
-                node = nodes.new(type="ShaderNodeGroup")
+                # node = nodes.new(type="ShaderNodeGroup")
                 # node.node_tree = bpy.data.node_groups.get("FPv4 ComponentMask")
                 # node.inputs[0].default_value = int(value["R"])
                 # node.inputs[1].default_value = int(value["G"])
@@ -308,6 +308,7 @@ class MaterialImportContextNew:
 
                 # Dev logging to find component mask params
                 # M_F_Tie_Dye_Fashion_Summer_Lime - ClothFuzz and ThinFilm channels
+                # M_Med_Soldier_04_Celestial - PanningEmissive and Galaxy channels
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
                 Log.error(f"COMPONENT MASK: {name}")
