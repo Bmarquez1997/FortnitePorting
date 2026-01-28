@@ -68,13 +68,6 @@ class DefaultMappings(MappingCollection):
         SlotMapping("Normal Map", "Normals"),
         SlotMapping("Baked Normal", "Normals"),
 
-        SlotMapping("Emissive", "Emission"),
-        SlotMapping("EmissiveColor", "Emission"),
-        SlotMapping("EmissiveTexture", "Emission"),
-        SlotMapping("L1_Emissive", "Emission", coords="UV2"),
-        SlotMapping("PM_Emissive", "Emission"),
-        SlotMapping("Visor_Emissive", "Emission"),
-
         SlotMapping("MaskTexture"),
         SlotMapping("OpacityMask", "MaskTexture"),
         SlotMapping("MessHairMask", "MaskTexture"),
@@ -97,21 +90,11 @@ class DefaultMappings(MappingCollection):
         SlotMapping("SpecRoughnessMax", "Roughness Max"),
         SlotMapping("RawRoughnessMax", "Roughness Max"),
         SlotMapping("Rough Max", "Roughness Max"),
-
-        SlotMapping("emissive mult", "Emission Strength"),
-        SlotMapping("DayMult", "Emission Strength"),
     )
 
     colors=(
         SlotMapping("TintColor", "Background Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
-
-        SlotMapping("Emissive Color", "Emission Color", switch_slot="Use Emission Color"),
-        SlotMapping("EmissiveColor", "Emission Color", switch_slot="Use Emission Color"),
-        SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
-        SlotMapping("Emissive Multiplier", "Emission Multiplier"),
-        SlotMapping("Emissive", "Emission Multiplier"),
-        SlotMapping("TN_Emissive Color", "Emission Multiplier"),
     )
 
     switches=(
@@ -297,7 +280,82 @@ class SkinMappings(MappingCollection):
         SlotMapping("SkinColor", "Skin Color", alpha_slot="Skin Boost"),
     )
 
-# TODO: Emissive Cropping - 1
+
+@registry.register
+class EmissiveCropMappings(MappingCollection):
+    node_name="FPv4 Emission"
+    type=ENodeType.NT_Core_FX
+    order=1
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return any(get_params(material_data.get("Switches"), emissive_toggle_names), lambda bool: bool is True)
+
+    textures=(
+        SlotMapping("Emissive", closure=True),
+        SlotMapping("Emission", "Emissive", closure=True),
+        SlotMapping("EmissiveColor", "Emissive", closure=True),
+        SlotMapping("EmissiveTexture", "Emissive", closure=True),
+        SlotMapping("L1_Emissive", "Emissive", closure=True),
+        SlotMapping("PM_Emissive", "Emissive", closure=True),
+        # SlotMapping("Visor_Emissive", "Emission", closure=True), # TODO: Should be moved to visor emissive handling
+    )
+
+    scalars=(
+        SlotMapping("EmissiveBrightness", "Emission Strength"),
+        SlotMapping("emissive mult", "Emission Strength"),
+        SlotMapping("DayMult", "Emission Strength"),
+
+        SlotMapping("CameraFacing_Inverted", "InvertEmissiveFresnel"),
+        SlotMapping("EmissiveFresnelPower"),
+        SlotMapping("Emissive Fres EX", "EmissiveFresnelPower"),
+        SlotMapping("Invert Emissive Fresnel", "InvertEmissiveFresnel"),
+    )
+
+    colors=(
+        SlotMapping("Emissive Color", switch_slot="Use Emission Color"),
+        SlotMapping("EmissiveColor", "Emissive Color", switch_slot="Use Emission Color"),
+        SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
+        SlotMapping("Emissive Multiplier", "Emission Multiplier"),
+        SlotMapping("Emissive", "Emission Multiplier"),
+        SlotMapping("TN_Emissive Color", "Emission Multiplier"), # TODO: Should be moved to visor emissive handling
+
+        SlotMapping("EmissiveFXMaskChannel"),
+    )
+
+    vectors=(
+        SlotMapping("CroppedEmissiveUVs", default=(0.0, 0.0, 1.0, 1.0)),
+        SlotMapping("EmissiveUVs_RG_UpperLeftCorner_BA_LowerRightCorner", "CroppedEmissiveUVs"),
+        SlotMapping("Emissive Texture UVs RG_TopLeft BA_BottomRight", "CroppedEmissiveUVs"),
+        SlotMapping("Emissive 2 UV Positioning (RG)UpperLeft (BA)LowerRight", "CroppedEmissiveUVs"),
+        SlotMapping("EmissiveUVPositioning (RG)UpperLeft (BA)LowerRight", "CroppedEmissiveUVs"),
+    )
+
+    switches=(
+        SlotMapping("Emissive", "Use Emission"),
+        SlotMapping("Use Emissive", "Use Emission"),
+        SlotMapping("UseBasicEmissive", "Use Emission"),
+        SlotMapping("UseAdvancedEmissive", "Use Emission"), # TODO: Remove once AdvancedEmissive node is added
+        SlotMapping("UseAnimatedEmissive", "Use Emission"),
+
+        SlotMapping("Use Emissive Fresnel"),
+        SlotMapping("UseEmissiveFresnel", "Use Emissive Fresnel"),
+        SlotMapping("InvertEmissiveFresnel"),
+
+        SlotMapping("UseFXMaskForEmissive"),
+
+        SlotMapping("CroppedEmissive", "Use Cropped Emission"),
+        SlotMapping("UseCroppedEmissive", "Use Cropped Emission"),
+        SlotMapping("Manipulate Emissive Uvs", "Use Cropped Emission"),
+
+        SlotMapping("Use Emissive Component Mask"),
+    )
+
+    component_masks=(
+        SlotMapping("EmissiveComponentMask", default=(1, 1, 1, 0)),
+        SlotMapping("Emissive Component Mask", "EmissiveComponentMask"),
+    )
+
 
 @registry.register
 class ClothFuzzMappings(MappingCollection):
@@ -646,6 +704,8 @@ class FlipbookMappings(MappingCollection):
 
     textures=(
         SlotMapping("Flipbook", closure=True),
+        SlotMapping("MouthFlipbook", closure=True),
+        SlotMapping("FB_MouthFlipbookTexture", closure=True),
     )
 
     scalars=(
@@ -658,6 +718,7 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("Flipbook Y"),
         SlotMapping("FB_MouthUVOffsetY", "Flipbook Y"),
         SlotMapping("Flipbook Scale"),
+        SlotMapping("MouthScale", "Flipbook Scale"),
         SlotMapping("Use Second UV Channel", "Use Second UV"),
 
         SlotMapping("Affects Base Color"),
@@ -676,9 +737,11 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("Use Sub UV texture", "Use Flipbook"),
         SlotMapping("FB_UseMouth", "Use Flipbook"),
         SlotMapping("Use Second UV"),
+        SlotMapping("UseUV2forMouth", "Use Second UV"),
         SlotMapping("FB_MouthUseUV2", "Use Second UV"),
         SlotMapping("Affects Base Color"),
         SlotMapping("Multiply Flipbook Emissive"),
+        SlotMapping("useEmissiveforMouth", "Multiply Flipbook Emissive"),
     )
 
 
