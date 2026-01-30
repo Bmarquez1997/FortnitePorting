@@ -218,6 +218,7 @@ class MaterialImportContextNew:
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))
                     node.location = x - 300, y
                     node.hide = True
+                    node.outputs[0].default_value = mappings.value_func(value) if mappings.value_func else value
                     links.new(node.outputs[0], target_node.inputs[mappings.slot])
                 else:
                     if add_unused_params:
@@ -309,9 +310,8 @@ class MaterialImportContextNew:
                 # Dev logging to find component mask params
                 # M_F_Tie_Dye_Fashion_Summer_Lime - ClothFuzz and ThinFilm channels
                 # M_Med_Soldier_04_Celestial - PanningEmissive and Galaxy channels
-                Log.error(f"COMPONENT MASK: {name}")
-                Log.error(f"COMPONENT MASK: {name}")
-                Log.error(f"COMPONENT MASK: {name}")
+                # Pretty much anyone from the seven
+                # Log.error(f"COMPONENT MASK: {name}")
 
                 if mappings := first(target_mappings.component_masks, lambda x: x.name.casefold() == name.casefold()):
                     x, y = get_socket_pos(target_node, target_node.inputs.find(mappings.slot))

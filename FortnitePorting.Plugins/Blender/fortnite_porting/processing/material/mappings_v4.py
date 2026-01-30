@@ -68,6 +68,13 @@ class DefaultMappings(MappingCollection):
         SlotMapping("Normal Map", "Normals"),
         SlotMapping("Baked Normal", "Normals"),
 
+        SlotMapping("Emission"),
+        SlotMapping("Emissive", "Emission"),
+        SlotMapping("EmissiveColor", "Emission"),
+        SlotMapping("EmissiveTexture", "Emission"),
+        SlotMapping("L1_Emissive", "Emission"),
+        SlotMapping("PM_Emissive", "Emission"),
+
         SlotMapping("MaskTexture"),
         SlotMapping("OpacityMask", "MaskTexture"),
         SlotMapping("MessHairMask", "MaskTexture"),
@@ -90,11 +97,22 @@ class DefaultMappings(MappingCollection):
         SlotMapping("SpecRoughnessMax", "Roughness Max"),
         SlotMapping("RawRoughnessMax", "Roughness Max"),
         SlotMapping("Rough Max", "Roughness Max"),
+
+        SlotMapping("EmissiveBrightness", "Emission Strength"),
+        SlotMapping("emissive mult", "Emission Strength"),
+        SlotMapping("DayMult", "Emission Strength"),
     )
 
     colors=(
         SlotMapping("TintColor", "Background Diffuse"),
         SlotMapping("BaseColorFactor", "Background Diffuse"),
+
+        SlotMapping("Emissive", "Emission Multiplier"),
+        SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
+        SlotMapping("Emissive Multiplier", "Emission Multiplier"),
+
+        SlotMapping("Emissive Color", "Emission Color", switch_slot="Use Emission Color"),
+        SlotMapping("EmissiveColor", "Emission Color", switch_slot="Use Emission Color"),
     )
 
     switches=(
@@ -282,45 +300,35 @@ class SkinMappings(MappingCollection):
 
 
 @registry.register
-class EmissiveCropMappings(MappingCollection):
-    node_name="FPv4 Emission"
+class CroppedEmissiveMappings(MappingCollection):
+    node_name="FPv4 Cropped Emissive"
     type=ENodeType.NT_Core_FX
     order=1
+    node_spacing=700
 
     @classmethod
     def meets_criteria(self, material_data):
-        return any(get_params(material_data.get("Switches"), emissive_toggle_names), lambda bool: bool is True)
+        return any(get_params(material_data.get("Switches"), emissive_crop_switch_names), lambda bool: bool is True) \
+            and get_param_multiple(material_data.get("Vectors"), emissive_crop_vector_names) is not None \
+            and get_param_multiple(material_data.get("Textures"), ["Emissive", "CroppedEmissive"]) is not None
 
     textures=(
         SlotMapping("Emissive", closure=True),
-        SlotMapping("Emission", "Emissive", closure=True),
-        SlotMapping("EmissiveColor", "Emissive", closure=True),
-        SlotMapping("EmissiveTexture", "Emissive", closure=True),
-        SlotMapping("L1_Emissive", "Emissive", closure=True),
-        SlotMapping("PM_Emissive", "Emissive", closure=True),
-        # SlotMapping("Visor_Emissive", "Emission", closure=True), # TODO: Should be moved to visor emissive handling
+        SlotMapping("CroppedEmissive", "Emissive", closure=True),
     )
 
     scalars=(
         SlotMapping("EmissiveBrightness", "Emission Strength"),
         SlotMapping("emissive mult", "Emission Strength"),
         SlotMapping("DayMult", "Emission Strength"),
-
-        SlotMapping("CameraFacing_Inverted", "InvertEmissiveFresnel"),
-        SlotMapping("EmissiveFresnelPower"),
-        SlotMapping("Emissive Fres EX", "EmissiveFresnelPower"),
-        SlotMapping("Invert Emissive Fresnel", "InvertEmissiveFresnel"),
     )
 
     colors=(
-        SlotMapping("Emissive Color", switch_slot="Use Emission Color"),
-        SlotMapping("EmissiveColor", "Emissive Color", switch_slot="Use Emission Color"),
+        SlotMapping("Emissive Color", "Emission Multiplier"),
+        SlotMapping("EmissiveColor", "Emission Multiplier"),
         SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
         SlotMapping("Emissive Multiplier", "Emission Multiplier"),
         SlotMapping("Emissive", "Emission Multiplier"),
-        SlotMapping("TN_Emissive Color", "Emission Multiplier"), # TODO: Should be moved to visor emissive handling
-
-        SlotMapping("EmissiveFXMaskChannel"),
     )
 
     vectors=(
@@ -332,28 +340,164 @@ class EmissiveCropMappings(MappingCollection):
     )
 
     switches=(
-        SlotMapping("Emissive", "Use Emission"),
-        SlotMapping("Use Emissive", "Use Emission"),
-        SlotMapping("UseBasicEmissive", "Use Emission"),
-        SlotMapping("UseAdvancedEmissive", "Use Emission"), # TODO: Remove once AdvancedEmissive node is added
-        SlotMapping("UseAnimatedEmissive", "Use Emission"),
-
-        SlotMapping("Use Emissive Fresnel"),
-        SlotMapping("UseEmissiveFresnel", "Use Emissive Fresnel"),
-        SlotMapping("InvertEmissiveFresnel"),
-
-        SlotMapping("UseFXMaskForEmissive"),
-
         SlotMapping("CroppedEmissive", "Use Cropped Emission"),
         SlotMapping("UseCroppedEmissive", "Use Cropped Emission"),
         SlotMapping("Manipulate Emissive Uvs", "Use Cropped Emission"),
+    )
 
-        SlotMapping("Use Emissive Component Mask"),
+
+@registry.register
+class EmissiveComponentMappings(MappingCollection):
+    node_name="FPv4 EmissiveComponent"
+    type=ENodeType.NT_Core_FX
+    order=1.1
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("ComponentMasks"), ["EmissiveComponentMask", "Emissive Component Mask"]) is not None
+
+    textures=(
+        SlotMapping("Emissive"),
+        SlotMapping("Emission", "Emissive"),
+        SlotMapping("EmissiveColor", "Emissive"),
+        SlotMapping("EmissiveTexture", "Emissive"),
+        SlotMapping("L1_Emissive", "Emissive"),
+        SlotMapping("PM_Emissive", "Emissive"),
+    )
+
+    scalars=(
+        SlotMapping("EmissiveBrightness", "Emission Strength"),
+        SlotMapping("emissive mult", "Emission Strength"),
+        SlotMapping("DayMult", "Emission Strength"),
+    )
+
+    colors=(
+        SlotMapping("Emissive Color", "Emission Multiplier"),
+        SlotMapping("EmissiveColor", "Emission Multiplier"),
+        SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
+        SlotMapping("Emissive Multiplier", "Emission Multiplier"),
+        SlotMapping("Emissive", "Emission Multiplier"),
     )
 
     component_masks=(
-        SlotMapping("EmissiveComponentMask", default=(1, 1, 1, 0)),
-        SlotMapping("Emissive Component Mask", "EmissiveComponentMask"),
+        SlotMapping("EmissiveComponentMask", switch_slot="Use Emissive Component Mask"),
+        SlotMapping("Emissive Component Mask", "EmissiveComponentMask", switch_slot="Use Emissive Component Mask"),
+    )
+
+
+@registry.register
+class DistanceFieldMappings(MappingCollection):
+    node_name="FPv4 DistanceField"
+    type=ENodeType.NT_Core_FX
+    order=1.2
+    node_spacing=700
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param(material_data.get("Switches"), "UseAnimatedEmissive") and get_param(material_data.get("Textures"), "EmissiveDistanceField") is not None
+
+    textures=(
+        SlotMapping("EmissiveDistanceField", closure=True),
+    )
+
+    scalars=(
+        SlotMapping("SubUV_Frames"),
+        SlotMapping("SubUV_Speed"),
+    )
+
+    switches=(
+        SlotMapping("UseAnimatedEmissive"),
+    )
+
+
+@registry.register
+class VisorMappings(MappingCollection):
+    node_name="FPv4 Visor"
+    type=ENodeType.NT_Core_FX
+    order=1.3
+    node_spacing=700
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return (get_param(material_data.get("Switches"), "UseAnimatedVisor") or "M_MED_Turtleneck_MaskFX_Master" in material_data.get("BaseMaterialPath")) \
+            and get_param_multiple(material_data.get("Textures"), ["Visor_Emissive", "EmissiveGradient"]) is not None \
+            and get_param_multiple(material_data.get("Textures"), ["Visor_EmissiveDistanceField", "DF Texture"]) is not None
+
+    textures=(
+        SlotMapping("Visor_Emissive", closure=True),
+        SlotMapping("EmissiveGradient", "Visor_Emissive", closure=True),
+        SlotMapping("Visor_EmissiveDistanceField", closure=True),
+        SlotMapping("DF Texture", "Visor_EmissiveDistanceField", switch_slot="UseAnimatedVisor", closure=True),
+    )
+
+    scalars=(
+        SlotMapping("Visor_SubUV_Frames"),
+        SlotMapping("SubUV_Frames", "Visor_SubUV_Frames"),
+        SlotMapping("Visor_SubUV_Speed"),
+        SlotMapping("SubUV_Speed", "Visor_SubUV_Speed"),
+        SlotMapping("Visor_LineThick"),
+        SlotMapping("TN_SurfaceDistanceOffset", "Visor_LineThick"),
+        SlotMapping("VisorHeight"),
+        SlotMapping("TN_Ly1Depth", "VisorHeight"),
+        SlotMapping("VisorLayerHeightRatio"),
+        SlotMapping("Visor_Layer1_Strength"),
+        SlotMapping("Visor_Layer2_Strength"),
+        SlotMapping("TN_Ly2Depth_SideMult", "Visor_Layer2_Strength"),
+    )
+
+    colors=(
+        SlotMapping("Emissive Color"),
+        SlotMapping("TN_Emissive Color", "Emissive Color"),
+    )
+
+    switches=(
+        SlotMapping("UseAnimatedVisor"),
+    )
+
+
+@registry.register
+class EmissiveFresnelMappings(MappingCollection):
+    node_name="FPv4 EmissiveFresnel"
+    type=ENodeType.NT_Core_FX
+    order=1.4
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use Emissive Fresnel", "UseEmissiveFresnel", "CameraFacing"])
+
+    scalars=(
+        SlotMapping("Invert Emissive Fresnel", "InvertEmissiveFresnel"),
+        SlotMapping("CameraFacing_Inverted", "InvertEmissiveFresnel", value_func=lambda value: int(1 - value)),
+
+        SlotMapping("EmissiveFresnelPower"),
+        SlotMapping("Fresnel_Power", "EmissiveFresnelPower"),
+        SlotMapping("Emissive Fres EX", "EmissiveFresnelPower"),
+    )
+
+    switches=(
+        SlotMapping("Use Emissive Fresnel"),
+        SlotMapping("UseEmissiveFresnel", "Use Emissive Fresnel"),
+        SlotMapping("CameraFacing", "Use Emissive Fresnel"),
+        SlotMapping("InvertEmissiveFresnel"),
+    )
+
+
+@registry.register
+class EmissiveFXMaskMappings(MappingCollection):
+    node_name="FPv4 EmissiveFXMask"
+    type=ENodeType.NT_Core_FX
+    order=1.5
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param(material_data.get("Switches"), "UseFXMaskForEmissive")
+
+    colors=(
+        SlotMapping("EmissiveFXMaskChannel")
+    )
+
+    switches=(
+        SlotMapping("UseFXMaskForEmissive"),
     )
 
 
@@ -451,19 +595,19 @@ class ThinFilmMappings(MappingCollection):
     )
 
     scalars=(
+        SlotMapping("ThinFilm_Warp"),
+        SlotMapping("ThinFilmWarp", "ThinFilm_Warp"),
+        SlotMapping("ThinFilm_Scale"),
+        SlotMapping("ThinFilmScale", "ThinFilm_Scale"),
+        SlotMapping("ThinFilm_Offset"),
+        SlotMapping("ThinFilmOffset", "ThinFilm_Offset"),
         SlotMapping("ThinFilm_Intensity"),
         SlotMapping("ThinFilmIntensity", "ThinFilm_Intensity"),
+        SlotMapping("ThinFilm_Exponent"),
+        SlotMapping("ThinFilmExponent", "ThinFilm_Exponent"),
         SlotMapping("RoughnessInfluence"),
         SlotMapping("ThinFilm_RoughnessScale", "RoughnessInfluence"),
         SlotMapping("ThinFilmRoughnessScale", "RoughnessInfluence"),
-        SlotMapping("ThinFilm_Exponent"),
-        SlotMapping("ThinFilmExponent", "ThinFilm_Exponent"),
-        SlotMapping("ThinFilm_Offset"),
-        SlotMapping("ThinFilmOffset", "ThinFilm_Offset"),
-        SlotMapping("ThinFilm_Scale"),
-        SlotMapping("ThinFilmScale", "ThinFilm_Scale"),
-        SlotMapping("ThinFilm_Warp"),
-        SlotMapping("ThinFilmWarp", "ThinFilm_Warp"),
     )
 
     colors=(
@@ -479,6 +623,39 @@ class ThinFilmMappings(MappingCollection):
     component_masks=(
         SlotMapping("ThinFilmMaskChannel"),
         SlotMapping("ThinFilm_Channel", "ThinFilmMaskChannel"),
+    )
+
+
+@registry.register
+class ThinFilm2Mappings(MappingCollection):
+    node_name="FPv4 ThinFilm"
+    type=ENodeType.NT_Core_FX
+    order=4.1
+    node_spacing=700
+
+    textures=(
+        SlotMapping("ThinFilmTexture2", "ThinFilm_Texture", default=DefaultTexture("T_ThinFilm_Spectrum_COLOR"), closure=True),
+    )
+
+    scalars=(
+        SlotMapping("ThinFilmWarp2", "ThinFilm_Warp"),
+        SlotMapping("ThinFilmScale2", "ThinFilm_Scale"),
+        SlotMapping("ThinFilmOffset2", "ThinFilm_Offset"),
+        SlotMapping("ThinFilm_Intensity2", "ThinFilm_Intensity"),
+        SlotMapping("ThinFilmExponent2", "ThinFilm_Exponent"),
+        SlotMapping("RoughnessInfluence2", "RoughnessInfluence"),
+    )
+
+    colors=(
+        SlotMapping("ThinFilm2MaskChannel", "ThinFilmMaskChannel"),
+    )
+
+    switches=(
+        SlotMapping("UseThinFilm2", "Use Thin Film"),
+    )
+
+    component_masks=(
+        SlotMapping("ThinFilm2MaskChannel", "ThinFilmMaskChannel"),
     )
 
 
@@ -542,6 +719,7 @@ class MetalLUTMappings(MappingCollection):
     component_masks=(
         SlotMapping("MetalLUTMaskChannel"),
         SlotMapping("MetalLUT_Channel", "MetalLUTMaskChannel"),
+        SlotMapping("MetalMaskChannel", "MetalLUTMaskChannel"),
 
         SlotMapping("LUTChannel"),
     )
@@ -585,12 +763,13 @@ class GlassMappings(MappingCollection):
 
         SlotMapping("GlassSpecular"),
         SlotMapping("Specular", "GlassSpecular"),
-        SlotMapping("SpecularTextureBlend"),
         SlotMapping("GlassRoughness"),
         SlotMapping("Roughness", "GlassRoughness"),
-        SlotMapping("RoughnessTextureBlend"),
         SlotMapping("GlassMetallic"),
         SlotMapping("Metallic", "GlassMetallic"),
+
+        SlotMapping("SpecularTextureBlend"),
+        SlotMapping("RoughnessTextureBlend"),
         SlotMapping("MetallicTextureBlend"),
 
         SlotMapping("Thickness"),
@@ -624,6 +803,8 @@ class GlassMappings(MappingCollection):
     )
 
     switches=(
+        SlotMapping("useDiffuseMap", "Diffuse"),
+        SlotMapping("useSRM", "Use SRM"),
         SlotMapping("UseTextureOpacity", "Texture Opacity"),
     )
 
@@ -704,8 +885,8 @@ class FlipbookMappings(MappingCollection):
 
     textures=(
         SlotMapping("Flipbook", closure=True),
-        SlotMapping("MouthFlipbook", closure=True),
-        SlotMapping("FB_MouthFlipbookTexture", closure=True),
+        SlotMapping("MouthFlipbook", "Flipbook", closure=True),
+        SlotMapping("FB_MouthFlipbookTexture", "Flipbook", switch_slot="Use Second UV", closure=True),
     )
 
     scalars=(
@@ -719,6 +900,9 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("FB_MouthUVOffsetY", "Flipbook Y"),
         SlotMapping("Flipbook Scale"),
         SlotMapping("MouthScale", "Flipbook Scale"),
+        SlotMapping("FB_MouthUVScale", "Flipbook Scale"), # TODO: Add support for non-uniform scale
+        SlotMapping("FB_MouthUVScaleX", "Flipbook Scale"),
+        SlotMapping("FB_MouthUVScaleY", "Flipbook Scale"),
         SlotMapping("Use Second UV Channel", "Use Second UV"),
 
         SlotMapping("Affects Base Color"),
@@ -927,7 +1111,7 @@ class SequinMappings(MappingCollection):
     def meets_criteria(self, material_data):
         return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) and "M_DimeBlanket_Parent" not in material_data.get("BaseMaterialPath")
 
-    textures=(
+    textures=( # TODO: Santa 'Brina mappings
         SlotMapping("SequinOffset", default=DefaultTexture("T_SequinTile"), closure=True),
         SlotMapping("SequinOffest", "SequinOffset", closure=True),
         SlotMapping("SequinRoughness", default=DefaultTexture("T_SequinTile_roughness"), closure=True),
@@ -970,7 +1154,8 @@ class SequinMappings(MappingCollection):
     )
 
     switches=(
-        SlotMapping("UseSequins"),
+        SlotMapping("Use Sequins"),
+        SlotMapping("UseSequins", "Use Sequins"),
         SlotMapping("MFSequin_UseThinFilmOnSequins", "UseThinFilmOnSequins"),
         SlotMapping("MFSequin_UseBaseColor"),
         SlotMapping("UseBaseRoughness"),
@@ -985,11 +1170,13 @@ class SequinMappings(MappingCollection):
 class SequinTrimMappings(SequinMappings):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
+    order=20
     node_spacing=700
 
     @classmethod
     def meets_criteria(self, material_data):
-        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) and "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
+        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) \
+            and "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
 
 
     textures=SequinMappings.textures + (
@@ -1004,7 +1191,7 @@ class SequinTrimMappings(SequinMappings):
         SlotMapping("SequinRotationAngle_Main", "SequinRotationAngle"),
     )
 
-    vectors=SequinMappings.vectors + (
+    colors=SequinMappings.colors + (
         SlotMapping("Sequin_SecondaryChannel", "SequinMaskChannel"),
         SlotMapping("SequinFalloffColor01_Main", "SequinFalloffColor01"),
         SlotMapping("SequinFalloffColor02_Main", "SequinFalloffColor02"),
@@ -1015,11 +1202,15 @@ class SequinTrimMappings(SequinMappings):
 class SequinSecondaryMappings(SequinMappings):
     node_name="FPv4 Sequin"
     type=ENodeType.NT_Advanced_FX
+    order=20.1
     node_spacing=700
 
     @classmethod
     def meets_criteria(self, material_data):
-        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) and "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath")
+        secondary_sequins = get_param(material_data.get("Switches"), "UseSecondarySequin")
+        return get_param_multiple(material_data.get("Switches"), ["UseSequins", "UseSequin"]) \
+            and "M_DimeBlanket_Parent" in material_data.get("BaseMaterialPath") \
+            and (secondary_sequins is None or secondary_sequins is True)
 
 
     textures=SequinMappings.textures + (
@@ -1034,7 +1225,7 @@ class SequinSecondaryMappings(SequinMappings):
         SlotMapping("SequinRotationAngle_Secondary", "SequinRotationAngle"),
     )
 
-    vectors=SequinMappings.vectors + (
+    colors=SequinMappings.colors + (
         SlotMapping("Sequin_TrimChannel", "SequinMaskChannel"),
         SlotMapping("SequinFalloffColor01_Secondary", "SequinFalloffColor01"),
         SlotMapping("SequinFalloffColor02_Secondary", "SequinFalloffColor02"),
