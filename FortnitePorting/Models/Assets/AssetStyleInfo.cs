@@ -35,9 +35,14 @@ public partial class AssetStyleInfo : ObservableObject
     public BaseStyleData SelectedStyle => StyleDatas[SelectedStyleIndex];
     
     
-    public AssetStyleInfo(string channelName, FStructFallback[] styles, Bitmap fallbackPreviewImage)
+    public AssetStyleInfo(string channelName, FStructFallback[] styles, Bitmap fallbackPreviewImage, bool addDefault = false)
     {
         ChannelName = channelName;
+        if (addDefault)
+        {
+            var noneIcon = UEParse.Provider.LoadPackageObject<UTexture2D>("/Game/UI/Foundation/Textures/Icons/Locker/T_Ui_Elastic_NoColor");
+            StyleDatas.Add(new AssetStyleData("Universal", new FStructFallback(), noneIcon.Decode()!.ToWriteableBitmap()));
+        }
         
         foreach (var style in styles)
         {
@@ -47,6 +52,8 @@ public partial class AssetStyleInfo : ObservableObject
                 continue;
             }
 
+            // TODO: If addDefault and variantNameText = "", use RequiredCondition value as name?
+            
             var previewBitmap = fallbackPreviewImage;
             if (style.TryGetValue(out UTexture2D previewTexture, "PreviewImage"))
             {

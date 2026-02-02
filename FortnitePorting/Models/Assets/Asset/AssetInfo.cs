@@ -39,6 +39,7 @@ public partial class AssetInfo : Base.BaseAssetInfo
                 "FortCosmeticRichColorVariant" => "InlineVariant",
                 "FortCosmeticMaterialParameterSetVariant" => "MaterialParameterSetChoices",
                 "FortCosmeticMorphTargetVariant" => "MorphTargetOptions",
+                "FortCosmeticLoadoutTagDrivenVariant" => "Variants",
                 _ => null
             };
 
@@ -53,7 +54,7 @@ public partial class AssetInfo : Base.BaseAssetInfo
             {
                 var options = style.Get<FStructFallback[]>(optionsName);
                 if (options.Length == 0) continue;
-                styleInfo = new AssetStyleInfo(channel, options, Asset.IconDisplayImage);
+                styleInfo = new AssetStyleInfo(channel, options, Asset.IconDisplayImage, "FortCosmeticLoadoutTagDrivenVariant".Equals(style.ExportType));
             }
             
             if (styleInfo.StyleDatas.Count > 0) StyleInfos.Add(styleInfo);
