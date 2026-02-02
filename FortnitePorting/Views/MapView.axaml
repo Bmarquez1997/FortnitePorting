@@ -28,17 +28,17 @@
                     <sidebar:SidebarItemsSource ItemsSource="{Binding Maps}">
                         <sidebar:SidebarItemsSource.ItemTemplate>
                             <DataTemplate x:DataType="map:WorldPartitionMap">
-                                <sidebar:SidebarItemButton Text="{Binding MapInfo.Id}" IconBitmap="{Binding MapBitmap}" Icon="Map" Tag="{Binding}"/>
+                                <sidebar:SidebarItemButton Text="{Binding MapInfo.Name}" IconBitmap="{Binding MapBitmap}" Icon="Map" Tag="{Binding}"/>
                             </DataTemplate>
                         </sidebar:SidebarItemsSource.ItemTemplate>
                     </sidebar:SidebarItemsSource>
                     <sidebar:SidebarItemButton Text="Add Map" Icon="Plus" ItemPressed="OnAddMapPressed" IsSelectable="False"
-                                               IsVisible="{Binding SupaBase.UserInfo.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
+                                               IsVisible="{Binding SupaBase.Permissions.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
                 </sidebar:Sidebar.Items>
                 <sidebar:Sidebar.Footer>
                     <ToggleButton HorizontalAlignment="Stretch" Content="{controls:IconText 'Map Creator', Paintbrush}"
                                   IsChecked="{Binding UseMapInfoCreator}"
-                                  IsVisible="{Binding SupaBase.UserInfo.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
+                                  IsVisible="{Binding SupaBase.Permissions.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
                 </sidebar:Sidebar.Footer>
             </sidebar:Sidebar>
             
@@ -244,8 +244,8 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             
                             <StackPanel Spacing="{ext:Space 1}">
-                                <TextBlock Text="Map ID" Classes="BodyStrongTextBlockStyle"/>
-                                <TextBox Text="{Binding SelectedMap.MapInfo.Id, Mode=TwoWay}" 
+                                <TextBlock Text="Map Name" Classes="BodyStrongTextBlockStyle"/>
+                                <TextBox Text="{Binding SelectedMap.MapInfo.Name, Mode=TwoWay}" 
                                          Watermark="Ex. Athena"/>
                             </StackPanel>
                             

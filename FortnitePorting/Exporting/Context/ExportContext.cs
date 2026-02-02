@@ -17,6 +17,7 @@ using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
+using CUE4Parse.UE4.Assets.Exports.Nanite;
 using CUE4Parse.UE4.Assets.Exports.Rig;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
@@ -119,7 +120,7 @@ public partial class ExportContext
             try
             {
                 Log.Information("Exporting {ExportType}: {Path}", asset.ExportType, path);
-                Export(asset, path);
+                Export(asset, path, isNanite);
             }
             catch (IOException e)
             {
@@ -150,7 +151,7 @@ public partial class ExportContext
         return ExportAsync(asset, returnRealPath, synchronousExport, embeddedAsset, isNanite).GetAwaiter().GetResult();
     }
 
-    private void Export(UObject asset, string path)
+    private void Export(UObject asset, string path, bool isNanite = false)
     {
         switch (asset)
         {
@@ -170,10 +171,19 @@ public partial class ExportContext
             }
             case UStaticMesh staticMesh:
             {
+                // TODO refactor system to allow nanite adding if exists here rather than needing to pre-detect
                 var exporter = new MeshExporter(staticMesh, FileExportOptions);
-                foreach (var mesh in exporter.MeshLods)
+
+                if (isNanite && exporter.NaniteMesh is not null)
                 {
-                    File.WriteAllBytes(path, mesh.FileData);
+                    File.WriteAllBytes(path, exporter.NaniteMesh.FileData);
+                }
+                else
+                {
+                    foreach (var mesh in exporter.MeshLods)
+                    {
+                        File.WriteAllBytes(path, mesh.FileData);
+                    }
                 }
                 break;
             }
@@ -349,8 +359,6 @@ public partial class ExportContext
 
         return BuildExportPath(path, ext, isNanite, obj);
     }
-    
-    
     
     public string BuildExportPath(string path, string ext, bool isNanite = false, UObject? obj = null)
     {

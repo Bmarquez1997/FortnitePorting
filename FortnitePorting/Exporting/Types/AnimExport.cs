@@ -54,6 +54,18 @@ public class AnimExport : BaseExport
             }
             case EExportType.Emote:
             {
+                if (styles.Length > 0)
+                {
+                    foreach (var style in styles.OfType<AnimStyleData>())
+                    {
+                        if (style.StyleData is not UAnimMontage styleMontage) continue;
+                        
+                        AnimMontage(styleMontage);
+                    }
+                    
+                    break;
+                }
+                
                 var montage = asset.GetOrDefault<UAnimMontage?>("Animation");
                 montage ??= asset.GetOrDefault<UAnimMontage?>("FrontEndAnimation");
                 if (montage is null) break;
@@ -157,14 +169,15 @@ public class AnimExport : BaseExport
                 
                 var animSections = new List<ExportAnimSection>();
                 
-                if (propNotify.SkeletalMeshPropMontage is { } montage) HandleSectionTree(animSections, montage, montage.CompositeSections.First());
+                if (propNotify.SkeletalMeshPropMontage is { } montage) 
+                    HandleSectionTree(animSections, montage, montage.CompositeSections.First());
+                
                 if (animSections.Count == 0 && propNotify.SkeletalMeshPropAnimationMontage is { } secondMontage)
-                {
-                    var propExport = new AnimExport(secondMontage.Name, secondMontage, [], EExportType.Animation,
-                        Exporter.Meta);
+                    HandleSectionTree(animSections, secondMontage, secondMontage.CompositeSections.First());
 
-                    animSections = propExport.Sections;
-                }
+                if (animSections.Count == 0 && propNotify.SkeletalMeshPropAnimation is { } animSequence &&
+                    Exporter.AnimSequence(animSequence) is { } exportedSequenceSection)
+                    animSections = [exportedSequenceSection];
                 
                 var prop = new ExportProp
                 {

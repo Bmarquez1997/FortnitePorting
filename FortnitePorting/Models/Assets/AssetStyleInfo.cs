@@ -135,6 +135,19 @@ public partial class AssetStyleInfo : ObservableObject
         return colorStyles;
     }
     
+    public AssetStyleInfo(string channelName, IEnumerable<BaseStyleData> styles, bool multiSelect = false)
+    {
+        MultiSelect = multiSelect;
+        ChannelName = channelName;
+        
+        foreach (var style in styles)
+        {
+            StyleDatas.Add(style);
+        }
+
+        SelectedStyleIndex = 0;
+    }
+    
     public SKBitmap CreateDisplayImage(SKBitmap iconBitmap, EFortRarity rarity = EFortRarity.Uncommon)
     {
         var bitmap = new SKBitmap(64, 64, iconBitmap.ColorType, SKAlphaType.Opaque);

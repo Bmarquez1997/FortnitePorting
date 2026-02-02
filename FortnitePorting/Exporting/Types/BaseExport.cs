@@ -28,7 +28,7 @@ public class BaseExport
 #if DEBUG
             await task.WaitAsync(TimeSpan.FromSeconds(60));
 #else
-            await task.WaitAsync(TimeSpan.FromSeconds(5));
+            await task.WaitAsync(TimeSpan.FromSeconds(15));
 #endif
         }
     }
