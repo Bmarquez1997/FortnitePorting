@@ -555,6 +555,10 @@ class SilkMappings(MappingCollection):
     type=ENodeType.NT_Core_FX
     order=3
 
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use Silk", "UseSilk"])
+
     scalars=(
         SlotMapping("Silk Fresnel"),
         SlotMapping("SilkFresnelMin"),
@@ -587,6 +591,10 @@ class ThinFilmMappings(MappingCollection):
     type=ENodeType.NT_Core_FX
     order=4
     node_spacing=700
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use Thin Film", "UseThinFilm"])
 
     textures=(
         SlotMapping("ThinFilm_Texture", default=DefaultTexture("T_ThinFilm_Spectrum_COLOR"), closure=True),
@@ -633,6 +641,10 @@ class ThinFilm2Mappings(MappingCollection):
     order=4.1
     node_spacing=700
 
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param(material_data.get("Switches"), "UseThinFilm2")
+
     textures=(
         SlotMapping("ThinFilmTexture2", "ThinFilm_Texture", default=DefaultTexture("T_ThinFilm_Spectrum_COLOR"), closure=True),
     )
@@ -664,6 +676,10 @@ class ClearCoatMappings(MappingCollection):
     node_name="FPv4 ClearCoat"
     type=ENodeType.NT_Core_FX
     order=5
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use Clear Coat", "UseClearCoat"])
 
     scalars=(
         SlotMapping("UnderCoatRoughness"),
@@ -699,6 +715,10 @@ class MetalLUTMappings(MappingCollection):
     type=ENodeType.NT_Core_FX
     order=6
 
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use MetalLUT", "UseMetalLUT"])
+
     scalars=(
         SlotMapping("Metal LUT Curve"),
         SlotMapping("MetalLutIntensity"),
@@ -728,7 +748,31 @@ class MetalLUTMappings(MappingCollection):
 # Gem - 7
 # Subsurface - 8
 # Advanced Emission - 9
-# Anisotropic - 10
+
+
+@registry.register
+class AnisotropicMappings(MappingCollection):
+    node_name="FPv4 Anisotropic"
+    type=ENodeType.NT_Core_FX
+    order=10
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return get_param_multiple(material_data.get("Switches"), ["Use AnisotropicShading", "UseAnisotropicShading"])
+
+    textures=(
+        SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
+        SlotMapping("AnisotropigTangentWeight", "AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
+    )
+
+    scalars=(
+        SlotMapping("AnisotropyMaxWeight"),
+    )
+
+    switches=(
+        SlotMapping("Use AnisotropicShading"),
+        SlotMapping("UseAnisotropicShading", "Use AnisotropicShading"),
+    )
 
 # End basic FX groups
 
@@ -885,7 +929,7 @@ class FlipbookMappings(MappingCollection):
 
     textures=(
         SlotMapping("Flipbook", closure=True),
-        SlotMapping("MouthFlipbook", "Flipbook", closure=True),
+        SlotMapping("MouthFlipbook", "Flipbook", switch_slot="Use Flipbook", closure=True),
         SlotMapping("FB_MouthFlipbookTexture", "Flipbook", switch_slot="Use Second UV", closure=True),
     )
 
@@ -899,7 +943,7 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("Flipbook Y"),
         SlotMapping("FB_MouthUVOffsetY", "Flipbook Y"),
         SlotMapping("Flipbook Scale"),
-        SlotMapping("MouthScale", "Flipbook Scale"),
+        SlotMapping("MouthScale", "Flipbook Scale", value_func=lambda value: 1 / value),
         SlotMapping("FB_MouthUVScale", "Flipbook Scale"), # TODO: Add support for non-uniform scale
         SlotMapping("FB_MouthUVScaleX", "Flipbook Scale"),
         SlotMapping("FB_MouthUVScaleY", "Flipbook Scale"),

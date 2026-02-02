@@ -169,6 +169,7 @@ class MaterialImportContextNew:
                 node.image.colorspace_settings.name = "sRGB" if data.get("Texture").get("sRGB") else "Non-Color"
                 node.interpolation = "Smart"
                 node.label = name
+                node.width = 250
                 node.hide = True
 
                 mappings = first(target_mappings.textures, lambda x: x.name.casefold() == name.casefold())
