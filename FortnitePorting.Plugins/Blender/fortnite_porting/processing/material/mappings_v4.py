@@ -251,6 +251,77 @@ class BaseToonMappings(MappingCollection):
     switches=(
         SlotMapping("UseFakePBR", "Use PBR Shading"),
     )
+
+
+@registry.register
+class BaseBeanMappings(MappingCollection):
+    node_name="FPv4 Base Bean"
+    type=ENodeType.NT_Base
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return "MM_BeanCharacter_Body" in material_data.get("BaseMaterialPath")
+
+
+    textures=(
+        SlotMapping("Body_Pattern", closure=True),
+    )
+
+    colors=(
+        SlotMapping("Body_EyesColor"),
+        SlotMapping("Body_MainColor"),
+        SlotMapping("Body_SecondaryColor"),
+        SlotMapping("Body_FacePlateColor"),
+        SlotMapping("Body_Eyes_MaterialProps"),
+        SlotMapping("Body_Faceplate_MaterialProps"),
+        SlotMapping("Body_GlassesEyeLashes"),
+        SlotMapping("Body_MaterialProps"),
+        SlotMapping("Body_Secondary_MaterialProps"),
+        SlotMapping("Eyelashes_Color"),
+        SlotMapping("Eyelashes_MaterialProps"),
+        SlotMapping("Glasses_Frame_Color"),
+        SlotMapping("Glasses_Frame_MaterialProps"),
+        SlotMapping("Body_EyesColor"),
+        SlotMapping("Glasses_Lense_Color"),
+        SlotMapping("Glasses_Lense_MaterialProps"),
+    )
+
+
+@registry.register
+class BaseBeanCostumeMappings(MappingCollection):
+    node_name="FPv4 Base Bean Costume"
+    type=ENodeType.NT_Base
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return "MM_BeanCharacter_Costume" in material_data.get("BaseMaterialPath")
+
+
+    textures=(
+        SlotMapping("Metalness/Roughness/Specular/Albedo", "Metalness/Roughness/Specular", alpha_slot="Albedo"),
+        SlotMapping("MaterialMasking", closure=True),
+        SlotMapping("NormalMap"),
+    )
+
+    colors=(
+        SlotMapping("Costume_MainColor"),
+        SlotMapping("Head_Costume_MainColor", "Costume_MainColor"),
+        SlotMapping("Costume_MainMaterialProps"),
+        SlotMapping("Head_Costume_MainMaterialProps", "Costume_MainMaterialProps"),
+        SlotMapping("Costume_Secondary_Color"),
+        SlotMapping("Head_Costume_Secondary_Color", "Costume_Secondary_Color"),
+        SlotMapping("Costume_SecondaryMaterialProps"),
+        SlotMapping("Head_Costume_SecondaryMaterialProps", "Costume_SecondaryMaterialProps"),
+        SlotMapping("Costume_AccentColor"),
+        SlotMapping("Head_Costume_AccentColor", "Costume_AccentColor"),
+        SlotMapping("Costume_AccentMaterialProps"),
+        SlotMapping("Head_Costume_AccentMaterialProps", "Costume_AccentMaterialProps"),
+    )
+
+    vectors=(
+        SlotMapping("Costume_UVPatternPosition"),
+        SlotMapping("Head_Costume_UVPatternPosition", "Costume_UVPatternPosition"),
+    )
 # End base groups
 
 # Start Layer groups
@@ -301,7 +372,7 @@ class SkinMappings(MappingCollection):
 
 @registry.register
 class CroppedEmissiveMappings(MappingCollection):
-    node_name="FPv4 Cropped Emissive"
+    node_name="FPv4 CroppedEmissive"
     type=ENodeType.NT_Core_FX
     order=1
     node_spacing=700
