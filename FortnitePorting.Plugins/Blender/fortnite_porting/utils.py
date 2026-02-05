@@ -3,7 +3,12 @@ import os
 from math import radians
 from mathutils import Matrix, Vector, Euler, Quaternion
 
+def should_update_group(existing, new):
+    new_version = int(new.description)
+    return existing.description is None or int(existing.description) < new_version
 
+
+# Override with path as param?
 def ensure_blend_data():
     addon_dir = os.path.dirname(os.path.splitext(__file__)[0])
     with bpy.data.libraries.load(os.path.join(addon_dir, "data", "fortnite_porting_data.blend")) as (data_from, data_to):
@@ -26,12 +31,18 @@ def ensure_blend_data():
         for font in data_from.fonts:
             if not bpy.data.fonts.get(font):
                 data_to.fonts.append(font)
-    
+
     # Load new node groups along with current ones
     with bpy.data.libraries.load(os.path.join(addon_dir, "data", "fortnite_porting_data_v4.blend")) as (data_from, data_to):
         for node_group in data_from.node_groups:
             if not bpy.data.node_groups.get(node_group):
                 data_to.node_groups.append(node_group)
+            # TODO: figure out how to get description from new node group
+            # NOTE: data.from.node_groups = List<string>
+            # elif existing := bpy.data.node_groups.get(node_group):
+            #     if should_update_group(existing, node_group):
+            #         existing.name = existing.name + "_Old"
+            #         data_to.node_groups.append(node_group)
 
         for mat in data_from.materials:
             if not bpy.data.materials.get(mat):
