@@ -946,7 +946,9 @@ class CompositeMappings(MappingCollection):
     )
 
     switches=(
+        SlotMapping("UseUV2Composite"),
         SlotMapping("UV2Composite_AlphaTextureUseUV1"),
+        SlotMapping("UseTechArtMaskAsAlpha"),
         SlotMapping("UseDiffuseAlphaChannel"),
         SlotMapping("UseUV2Diffuse"),
         SlotMapping("UseUV2Normals"),
@@ -1263,6 +1265,7 @@ class SequinMappings(MappingCollection):
 
     colors=(
         SlotMapping("SequinMaskChannel"),
+        SlotMapping("SequinChannel", "SequinMaskChannel"),
         SlotMapping("SequinFalloffColor01"),
         SlotMapping("SequinFalloffColor02"),
         SlotMapping("SparkleColor"),
