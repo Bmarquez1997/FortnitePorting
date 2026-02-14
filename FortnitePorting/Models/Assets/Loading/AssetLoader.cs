@@ -191,9 +191,10 @@ public partial class AssetLoader : ObservableObject
             .Select(CreateAssetSort);
         
         Source.Connect()
-            .ObserveOn(RxApp.MainThreadScheduler)
+            .ObserveOn(RxApp.TaskpoolScheduler)
             .Filter(AssetFilter)
             .Sort(AssetSort)
+            .ObserveOn(RxApp.MainThreadScheduler)
             .Bind(out Filtered)
             .Subscribe();
     }
@@ -224,7 +225,7 @@ public partial class AssetLoader : ObservableObject
         var manuallyDefinedAssets = ManuallyDefinedAssets.Value;
         TotalAssets = Assets.Count + manuallyDefinedAssets.Length + CustomAssets.Length;
         
-        await Parallel.ForEachAsync(Assets, new ParallelOptions { MaxDegreeOfParallelism = int.Clamp(Environment.ProcessorCount * 2, 4, 64) }, 
+        await Parallel.ForEachAsync(Assets, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, 
             async (asset, ct) =>
             {
                 await WaitIfPausedAsync();
@@ -349,7 +350,7 @@ public partial class AssetLoader : ObservableObject
     
     public static UTexture2D? GetIcon(UObject asset)
     {
-        return asset.GetDataListItem<UTexture2D?>( "Icon", "LargeIcon")
+        return asset.GetDataListItem<UTexture2D?>("Icon", "LargeIcon")
                ?? asset.GetAnyOrDefault<UTexture2D?>("Icon", "SmallPreviewImage", "LargeIcon", "LargePreviewImage");
     }
     
