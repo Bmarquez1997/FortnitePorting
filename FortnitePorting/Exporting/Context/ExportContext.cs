@@ -214,12 +214,6 @@ public partial class ExportContext
                 }
                 break;
             }
-            case UPoseAsset poseAsset:
-            {
-                var exporter = new PoseAssetExporter(poseAsset, FileExportOptions);
-                File.WriteAllBytes(path, exporter.PoseAsset.FileData);
-                break;
-            }
             case UDNAAsset dnaAsset:
             {
                 var exporter = new DNAExporter(dnaAsset, FileExportOptions);
@@ -229,6 +223,13 @@ public partial class ExportContext
                     return;
                 }
                 File.WriteAllBytes(path, poseAsset.FileData);
+                
+                break;
+            }
+            case UPoseAsset poseAsset:
+            {
+                var exporter = new PoseAssetExporter(poseAsset, FileExportOptions);
+                File.WriteAllBytes(path, exporter.PoseAsset.FileData);
                 break;
             }
             case UTexture2DArray textureArray:

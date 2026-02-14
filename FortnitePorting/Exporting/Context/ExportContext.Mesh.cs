@@ -178,8 +178,6 @@ public partial class ExportContext
         
         SetMeshComponentTransforms(exportMesh, instanceComponent);
                 
-        SetMeshComponentTransforms(exportMesh, instanceComponent);
-
         foreach (var instance in instanceComponent.PerInstanceSMData ?? [])
         {
             exportMesh.Instances.Add(new ExportTransform(instance.TransformData));

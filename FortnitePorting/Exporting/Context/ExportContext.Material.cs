@@ -77,17 +77,17 @@ public partial class ExportContext
         };
     }
 
-    public List<ExportOverrideParameters>? OverrideParameters(FStructFallback overrideData)
+    public List<ExportOverrideParameters> OverrideParameters(FStructFallback overrideData)
     {
         var materialsToAlter = new List<FSoftObjectPath>();
-        if (overrideData.TryGetValue<FSoftObjectPath>(out var alterMat, "MaterialToAlter"))
-            materialsToAlter.AddIfNotNull(alterMat);
+        if (overrideData.TryGetValue<FSoftObjectPath>(out var alterMaterial, "MaterialToAlter"))
+            materialsToAlter.AddIfNotNull(alterMaterial);
         
-        if (overrideData.TryGetValue<FSoftObjectPath[]>(out var alterMats, "MaterialsToAlter"))
-            materialsToAlter.AddRangeIfNotNull(alterMats);
+        if (overrideData.TryGetValue<FSoftObjectPath[]>(out var alterMaterials, "MaterialsToAlter"))
+            materialsToAlter.AddRangeIfNotNull(alterMaterials);
 
         materialsToAlter.RemoveAll(mat => 
-            mat.AssetPathName.IsNone || "".Equals(mat.AssetPathName.Text));
+            mat.AssetPathName.IsNone || string.IsNullOrWhiteSpace(mat.AssetPathName.Text));
 
         var exportParametersSet = new List<ExportOverrideParameters>();
         foreach (var materialToAlter in materialsToAlter)
