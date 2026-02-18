@@ -88,60 +88,6 @@ public partial class AssetStyleInfo : ObservableObject
 
         SelectedStyleIndex = 0;
     }
-
-    public AssetStyleInfo(string channelName, UObject colorVariant, bool isParamSet = false)
-    {
-        ChannelName = channelName;
-
-        StyleDatas.AddRange(isParamSet ? ParseParamSetStyles(colorVariant) : ParseColorSwatchStyles(colorVariant));
-
-        SelectedStyleIndex = 0;
-    }
-    
-    private List<AssetColorStyleData> ParseColorSwatchStyles(UObject colorVariant)
-    {
-        List<AssetColorStyleData> colorStyles = [];
-        if (!colorVariant.TryGetValue(out FStructFallback inlineVar, "InlineVariant")
-            || !inlineVar.TryGetValue(out FStructFallback richColorVar, "RichColorVar")
-            || !richColorVar.TryGetValue(out FSoftObjectPath swatchPath, "ColorSwatchForChoices")
-            || !swatchPath.TryLoad(out UObject colorSwatch)
-            || !colorSwatch.TryGetValue(out FStructFallback[] colorPairs, "ColorPairs"))
-            return colorStyles;
-        
-        foreach (var color in colorPairs)
-        {
-            var colorValue = color.GetOrDefault<FLinearColor>("ColorValue");
-            var colorName = color.GetOrDefault("ColorName", new FName(colorValue.Hex));
-            var displayIcon = CreateColorDisplayImage(colorValue);
-            
-            colorStyles.Add(new AssetColorStyleData(colorName.PlainText, richColorVar, color, displayIcon.ToWriteableBitmap()));
-        }
-
-        return colorStyles;
-    }
-    
-    private List<AssetColorStyleData> ParseParamSetStyles(UObject colorVariant)
-    {
-        List<AssetColorStyleData> colorStyles = [];
-        if (!colorVariant.TryGetValue(out FStructFallback inlineVar, "InlineVariant")
-            || !inlineVar.TryGetValue(out UObject paramSet, "MaterialParameterSetChoices")
-            || !paramSet.TryGetValue(out FStructFallback[] choices, "Choices"))
-            return colorStyles;
-        
-        foreach (var color in choices)
-        {
-            if (!color.TryGetValue(out FInstancedStruct uiStruct, "UITileDisplayData")
-                || !uiStruct.NonConstStruct.TryGetValue(out FLinearColor colorValue, "Color"))
-                continue;
-            
-            var colorName = color.GetOrDefault("DisplayName", new FText(colorValue.Hex));
-            var displayIcon = CreateColorDisplayImage(colorValue);
-            
-            colorStyles.Add(new AssetColorStyleData(colorName.Text, inlineVar, color, displayIcon.ToWriteableBitmap(), true));
-        }
-
-        return colorStyles;
-    }
     
     public AssetStyleInfo(string channelName, UObject colorVariant, bool isParamSet = false)
     {
