@@ -240,17 +240,16 @@ public partial class CUE4ParseService : ObservableObject, IService
     
     private async Task InitializeOodle()
     {
-        if (!File.Exists(Dependencies.NoodleFile.FullName)) 
-            await OodleHelper.DownloadOodleDllAsync(Dependencies.NoodleFile.FullName);
-        
-        OodleHelper.Initialize(Dependencies.NoodleFile.FullName);
+        var noodleFileFullName = Dependencies.NoodleFile.FullName;
+        if (!File.Exists(noodleFileFullName)) await OodleHelper.DownloadOodleDllAsync(ref noodleFileFullName);
+        await OodleHelper.InitializeAsync(noodleFileFullName);
     }
     
     private async Task InitializeZlib()
     {
         var zlibPath = Path.Combine(App.DataFolder.FullName, ZlibHelper.DLL_NAME);
         if (!File.Exists(zlibPath)) await ZlibHelper.DownloadDllAsync(zlibPath);
-        ZlibHelper.Initialize(zlibPath);
+        await ZlibHelper.InitializeAsync(zlibPath);
     }
     
     private async Task InitializeDetex()
