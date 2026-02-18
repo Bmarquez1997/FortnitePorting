@@ -25,7 +25,6 @@ class BaseImportContext:
         self.full_vertex_crunch_materials = []
         self.partial_vertex_crunch_materials = {}
         self.add_toon_outline = False
-        self.use_new_materials = False # Temp variable to toggle new materials
 
         if bpy.context.mode != "OBJECT":
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -47,7 +46,7 @@ class BaseImportContext:
         elif import_type == EPrimitiveExportType.POSE_ASSET:
             self.import_pose_asset_data(data, get_selected_armature(), None)
         elif import_type == EPrimitiveExportType.MATERIAL:
-            self.import_material_standalone_new(data) if self.use_new_materials else self.import_material_standalone(data)
+            self.import_material_standalone(data)
         elif import_type == EPrimitiveExportType.TASTY_RIG:
             self.import_tasty_rig_standalone(data)
         elif import_type == EPrimitiveExportType.MUTABLE:
