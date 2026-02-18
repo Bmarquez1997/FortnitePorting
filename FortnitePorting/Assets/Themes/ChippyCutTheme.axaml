@@ -50,11 +50,17 @@
         <SolidColorBrush x:Key="TextFillTertiaryBrush" Color="#7EAAB0" />
         <SolidColorBrush x:Key="TextFillTertiaryDisabledBrush" Color="#807EAAB0" />
         
-        <Bitmap x:Key="WorldGridBitmap">avares://FortnitePorting/Assets/BackgroundImage_WorldGrid.png</Bitmap>
-        <ImageBrush x:Key="ContentBorderBackgroundBrush" Opacity="0.25" Stretch="Fill" Source="{DynamicResource WorldGridBitmap}" />
+        <!-- Single Image Uniform Fill -->
+        <!-- <Bitmap x:Key="WorldGridBitmap">avares://FortnitePorting/Assets/WorldGridTile.png</Bitmap> -->
+        <!-- <ImageBrush x:Key="ContentBorderBackgroundBrush" Opacity="0.25" Stretch="UniformToFill" Source="{DynamicResource WorldGridBitmap}" /> -->
+        
+        <!-- Tiled Image Fill -->
+        <controls:TiledImageBrush x:Key="ContentBorderBackgroundBrush" Opacity="0.25" Source="/Assets/WorldGridTile.png"/>
+        
+        <!-- Solid Color Background -->
+        <!-- <SolidColorBrush x:Key="ContentBorderBackgroundBrush" Color="#01171F" /> -->
 
         <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#0B1419" />
-        <!-- <SolidColorBrush x:Key="ContentBorderBackgroundBrush" Color="#01171F" /> -->
         <SolidColorBrush x:Key="ContentBorderBorderBrush" Color="#243845" />
         
         <SolidColorBrush x:Key="ContentBorderLayer2BackgroundBrush" Color="#0A1216" />
