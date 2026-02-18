@@ -340,22 +340,22 @@ public class MaterialNodeTree : NodeTree
                 node.Package = materialFunction;
                 node.Label = materialFunction?.ResolvedObject?.Name.Text ?? "Material Function";
                 
-                node.Inputs.Clear();
-                var inputs = expression.GetOrDefault<FStructFallback[]>("FunctionInputs", []);
-                foreach (var functionInput in inputs)
-                {
-                    var expressionInput = functionInput.Get<FExpressionInput>("Input");
-                    AddInput(ref node, expressionInput);
-                }
-                
                 node.Outputs.Clear();
                 var outputs = expression.GetOrDefault<FStructFallback[]>("FunctionOutputs", []);
                 foreach (var functionOutput in outputs)
                 {
                     var output = functionOutput.Get<FStructFallback>("Output");
                     var outputName = output.Get<FName>("OutputName");
-
+                
                     node.AddOutput(outputName.Text);
+                }
+                
+                node.Inputs.Clear();
+                var inputs = expression.GetOrDefault<FStructFallback[]>("FunctionInputs", []);
+                foreach (var functionInput in inputs)
+                {
+                    var expressionInput = functionInput.Get<FExpressionInput>("Input");
+                    AddInput(ref node, expressionInput);
                 }
                 
                 break;
@@ -745,7 +745,7 @@ public class MaterialNodeTree : NodeTree
     private void AddColorInputs(ref MaterialNode node, bool includeRGBA = false)
     {
         node.AddOutput(new NodeSocket("RGB"));
-        node.Outputs.Add(new NodeSocket("R")
+        node.AddOutput(new NodeSocket("R")
         {
             SocketColor = Colors.Red
         });
