@@ -709,6 +709,14 @@ public class MaterialNodeTree : NodeTree
                 }
                 break;
             }
+            case "MaterialExpressionPreSkinnedLocalBounds":
+            {
+                node.AddOutput("Half Extents");
+                node.AddOutput("Extents");
+                node.AddOutput("Min");
+                node.AddOutput("Max");
+                break;
+            }
         }
 
         if (node.HeaderColor is null)
