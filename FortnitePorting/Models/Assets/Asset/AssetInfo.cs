@@ -45,6 +45,7 @@ public partial class AssetInfo : Base.BaseAssetInfo
 
             if (optionsName is null) continue;
             
+            // TODO: MaterialsToAlterForAllVariantMaterialParams handling (example in Wonder Onesie color styles)
             AssetStyleInfo styleInfo;
             if ("FortCosmeticRichColorVariant".Equals(style.ExportType) || "FortCosmeticMaterialParameterSetVariant".Equals(style.ExportType))
             {
@@ -54,9 +55,9 @@ public partial class AssetInfo : Base.BaseAssetInfo
             {
                 var options = style.Get<FStructFallback[]>(optionsName);
                 if (options.Length == 0) continue;
-                styleInfo = new AssetStyleInfo(channel, options, Asset.IconDisplayImage, "FortCosmeticLoadoutTagDrivenVariant".Equals(style.ExportType));
+                    styleInfo = new AssetStyleInfo(channel, options, Asset.IconDisplayImage, "FortCosmeticLoadoutTagDrivenVariant".Equals(style.ExportType));
             }
-            
+
             if (styleInfo.StyleDatas.Count > 0) StyleInfos.Add(styleInfo);
         }
 

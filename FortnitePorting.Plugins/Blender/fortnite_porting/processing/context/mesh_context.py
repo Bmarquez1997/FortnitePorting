@@ -42,8 +42,8 @@ class MeshImportContext:
         if self.type in [EExportType.SIDEKICK]:
             master_mesh = self.imported_meshes[0]["Mesh"]
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Full Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Full Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Full Vertex Crunch")
                 set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
                 
         if self.type in [EExportType.OUTFIT]:
@@ -57,16 +57,16 @@ class MeshImportContext:
             self.update_preskinned_bounds(master_mesh)
             
             for material, elements in self.partial_vertex_crunch_materials.items():
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Vertex Crunch")
 
                 set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
                 for name, value in elements.items():
                     set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
                     
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Full Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Full Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Full Vertex Crunch")
                 set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
 
             if self.add_toon_outline:
@@ -89,13 +89,13 @@ class MeshImportContext:
         if self.type in [EExportType.SIDEKICK]:
             master_mesh = self.imported_meshes[0]["Mesh"]
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Full Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Full Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Full Vertex Crunch")
                 set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
 
             for material, elements in self.partial_vertex_crunch_materials.items():
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv3 Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv3 Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Vertex Crunch", type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Vertex Crunch")
                 set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
                 for name, value in elements.items():
                     set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
@@ -227,7 +227,7 @@ class MeshImportContext:
             if index >= len(imported_mesh.material_slots):
                 continue
 
-            self.import_material_new(imported_mesh.material_slots[index], material, meta) if self.use_new_materials else self.import_material(imported_mesh.material_slots[index], material, meta)
+            self.import_material(imported_mesh.material_slots[index], material, meta)
 
         for override_material in mesh.get("OverrideMaterials"):
             index = override_material.get("Slot")
@@ -238,7 +238,7 @@ class MeshImportContext:
             slots = where(imported_mesh.material_slots,
                           lambda slot: slot.name == overridden_material.name)
             for slot in slots:
-                self.import_material_new(slot, override_material, meta) if self.use_new_materials else self.import_material(slot, override_material, meta)
+                self.import_material(slot, override_material, meta)
 
         for variant_override_material in self.override_materials:
             material_name_to_swap = variant_override_material.get("MaterialNameToSwap")
@@ -246,7 +246,7 @@ class MeshImportContext:
             slots = where(imported_mesh.material_slots,
                           lambda slot: slot.material.get("OriginalName") == material_name_to_swap)
             for slot in slots:
-                self.import_material_new(slot, variant_override_material.get("Material"), meta) if self.use_new_materials else self.import_material(slot, variant_override_material.get("Material"), meta)
+                self.import_material(slot, variant_override_material.get("Material"), meta)
                 
         for texture_data in mesh.get("TextureData"):
             if not (td_override_material := texture_data.get("OverrideMaterial")):
@@ -262,7 +262,7 @@ class MeshImportContext:
             slots = where(imported_mesh.material_slots,
                           lambda slot: slot.name == overridden_material.name)
             for slot in slots:
-                self.import_material_new(slot, td_override_material, meta) if self.use_new_materials else self.import_material(slot, td_override_material, meta)
+                self.import_material(slot, td_override_material, meta)
                 
         self.import_light_data(mesh.get("Lights"), imported_object)
 
@@ -272,6 +272,11 @@ class MeshImportContext:
         instances = mesh.get("Instances")
         if len(instances) > 0:
             mesh_data = imported_mesh.data
+
+            instance_materials = []
+            for slot_mat in imported_mesh.material_slots:
+                instance_materials.append(slot_mat.material)
+
             imported_object.select_set(True)
             bpy.ops.object.delete()
             
@@ -295,6 +300,10 @@ class MeshImportContext:
                 instance_object.location = make_vector(instance_transform.get("Location"), unreal_coords_correction=True) * self.scale
                 instance_object.scale = make_vector(instance_transform.get("Scale"))
             
+                for i, slot_mat in enumerate(instance_materials):
+                    instance_object.material_slots[i].material = slot_mat
+
+
         return imported_object
     
 
@@ -341,7 +350,7 @@ class MeshImportContext:
                     break
     
         bpy.ops.object.mode_set(mode='OBJECT')
-
+    
     def import_light_data(self, lights, parent=None):
         if not lights:
             return

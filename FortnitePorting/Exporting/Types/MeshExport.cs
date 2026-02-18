@@ -369,7 +369,7 @@ public class MeshExport : BaseExport
                     // Eye
                     ColorIndex("BodyEyesColorIndex", "Body_EyesColor", bodyParams);
                     MaterialTypeIndex("BodyEyesMaterialTypeIndex", "Body_Eyes_MaterialProps", bodyParams);
-                    
+                        
                     // Main
                     ColorIndex("BodyMainColorIndex", "Body_MainColor", bodyParams);
                     MaterialTypeIndex("BodyMainMaterialTypeIndex", "Body_MaterialProps", bodyParams);
@@ -409,7 +409,7 @@ public class MeshExport : BaseExport
                         MaterialTypeIndex("CostumeAccentMaterialTypeIndex", "Costume_AccentMaterialProps", costumeParams);
                         AtlasTextureSlotIndex("CostumePatternAtlasTextureSlot", "Costume_UVPatternPosition", costumeParams);
                     }
-
+                    
                     if (headCostumeParams != null)
                     {
                         // Head Costume
@@ -421,7 +421,7 @@ public class MeshExport : BaseExport
                         MaterialTypeIndex("HeadCostumeAccentMaterialTypeIndex", "Head_Costume_AccentMaterialProps", headCostumeParams);
                         AtlasTextureSlotIndex("HeadCostumePatternAtlasTextureSlot", "Head_Costume_UVPatternPosition", headCostumeParams);
                     }
-
+                    
                     continue;
                     
                     void AtlasTextureSlotIndex(string propertyName, string shaderName, ExportOverrideParameters parameterSet)
@@ -449,37 +449,37 @@ public class MeshExport : BaseExport
                     void ColorIndex(string propertyName, string shaderName, ExportOverrideParameters parameterSet)
                     {
                         if (!field.TryGetValue(out int index, propertyName)) return;
-
+                    
                         var color = UEParse.BeanstalkColors[index];
                         parameterSet.Vectors.Add(new VectorParameter(shaderName, color.ToLinearColor()));
                     }
-
+                    
                     void MaterialTypeIndex(string propertyName, string shaderName, ExportOverrideParameters parameterSet)
                     {
                         if (!field.TryGetValue(out int index, propertyName)) return;
-
+                    
                         var color = UEParse.BeanstalkMaterialProps[index];
                         parameterSet.Vectors.Add(new VectorParameter(shaderName, color));
                     }
-
+                    
                     void Texture(string propertyName, string shaderName, ExportOverrideParameters parameterSet)
                     {
                         if (!field.TryGetValue(out UTexture2D texture, propertyName)) return;
-                        
+                    
                         parameterSet.Textures.AddUnique(new TextureParameter(shaderName, 
                             new ExportTexture(Exporter.Export(texture), texture.SRGB, texture.CompressionSettings)));
                     }
                 }
-
+                    
                 bodyParams.Hash = bodyParams.GetHashCode();
                 OverrideParameters.Add(bodyParams);
-                
+
                 if (costumeParams != null)
                 {
                     costumeParams.Hash = costumeParams.GetHashCode();
                     OverrideParameters.Add(costumeParams);
                 }
-                
+
                 if (headCostumeParams != null)
                 {
                     headCostumeParams.Hash = headCostumeParams.GetHashCode();

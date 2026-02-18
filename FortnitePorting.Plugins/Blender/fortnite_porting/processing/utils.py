@@ -2,8 +2,6 @@ import bpy
 import re
 
 from .enums import *
-from .mappings import *
-from ..logger import Log
 from ..utils import *
 from math import radians
 from mathutils import Matrix, Vector, Euler, Quaternion
@@ -96,7 +94,7 @@ def merge_armatures(parts):
             socket = "head"
 
         if socket == "Tail":
-            # Account for skins with lowercase tail socket bone
+        # Account for skins with lowercase tail socket bone
             if "tail" in master_skeleton.pose.bones:
                 socket = "tail"
 
@@ -265,10 +263,6 @@ def make_quat(data):
 def make_euler(data):
     return Euler((radians(data.get("Roll")), -radians(data.get("Pitch")), -radians(data.get("Yaw"))))
 
-def make_quat_from_euler(data):
-    euler_rotation = Euler((radians(data.get("Roll")), radians(data.get("Pitch")), radians(data.get("Yaw"))))
-    return euler_rotation.to_quaternion()
-
 def time_to_frame(time, fps = 30):
     return int(round(time * fps))
 
@@ -288,7 +282,7 @@ def clear_children_bone_transforms(skeleton, anim, bone_name):
             dispose_paths.append(f'pose.bones["{bone.name}"].location')
             dispose_paths.append(f'pose.bones["{bone.name}"].scale')
             pose_bones[bone.name].matrix_basis = Matrix()
-
+            
         if len(anim.slots) > 0:
             channelbag = anim_utils.action_ensure_channelbag_for_slot(anim, anim.slots[0])
             dispose_curves = [fcurve for fcurve in channelbag.fcurves if fcurve.data_path in dispose_paths]
