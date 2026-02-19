@@ -86,7 +86,7 @@ public partial class ExportContext
         if (overrideData.TryGetValue<FSoftObjectPath[]>(out var alterMaterials, "MaterialsToAlter"))
             materialsToAlter.AddRangeIfNotNull(alterMaterials);
 
-        materialsToAlter.RemoveAll(mat => 
+        materialsToAlter.RemoveAll(mat =>
             mat.AssetPathName.IsNone || string.IsNullOrWhiteSpace(mat.AssetPathName.Text));
 
         var exportParametersSet = new List<ExportOverrideParameters>();

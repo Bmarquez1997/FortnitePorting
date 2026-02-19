@@ -592,7 +592,7 @@ public partial class FilesViewModel : ViewModelBase
                         }
                     },
                 ]);
-                //await dialog.ShowAsync();
+                
                 break;
             }
             case UStaticMesh:

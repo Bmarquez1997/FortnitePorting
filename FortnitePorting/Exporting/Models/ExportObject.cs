@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
 using FortnitePorting.Models.Fortnite;
 using Newtonsoft.Json;
