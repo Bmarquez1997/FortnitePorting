@@ -38,18 +38,13 @@ public record ExportLight : ExportObject
     public float Intensity = 1.0f;
     public float AttenuationRadius = 1000;
     public float Radius = 0.0f;
+    public FQuat RotationQuat;
     public bool CastShadows;
 }
 
-public record ExportPointLight : ExportLight
-{
-    
-}
+public record ExportPointLight : ExportLight;
 
-public record ExportDirectionalLight : ExportLight
-{
-    
-}
+public record ExportDirectionalLight : ExportLight;
 
 public record ExportSpotLight : ExportLight
 {

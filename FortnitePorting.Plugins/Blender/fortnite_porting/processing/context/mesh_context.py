@@ -375,7 +375,7 @@ class MeshImportContext:
 
         light.parent = parent
         light.rotation_mode = "QUATERNION"
-        light_rotation = make_quat_from_euler(base_light.get("Rotation"))
+        light_rotation = make_quat(base_light.get("RotationQuat"))
         light_rotation.rotate(Euler((0, 90, 0))) # Rotate Y to account for UE light default rotation
         light.rotation_quaternion = light_rotation
         light.location = make_vector(base_light.get("Location"), unreal_coords_correction=True) * self.scale
