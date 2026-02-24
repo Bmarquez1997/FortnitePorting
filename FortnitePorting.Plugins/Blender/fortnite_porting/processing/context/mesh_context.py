@@ -1,6 +1,7 @@
 import os.path
 import bpy
 from math import radians
+from mathutils import Euler
 
 from ..mappings import *
 from ..enums import *
@@ -374,12 +375,15 @@ class MeshImportContext:
         self.collection.objects.link(light)
 
         light.parent = parent
-        light.rotation_mode = "QUATERNION"
-        light_rotation = make_quat(base_light.get("RotationQuat"))
-        light_rotation.rotate(Euler((0, 90, 0))) # Rotate Y to account for UE light default rotation
-        light.rotation_quaternion = light_rotation
         light.location = make_vector(base_light.get("Location"), unreal_coords_correction=True) * self.scale
         light.scale = make_vector(base_light.get("Scale"))
+
+        # Account for UE default light rotation when rotation is not zero
+        if not is_zero_transform(base_light.get("RotationQuat")):
+            correction = Euler((0, radians(-90), 0)).to_quaternion()
+            light.rotation_mode = "QUATERNION"
+            light_rotation = make_quat(base_light.get("RotationQuat"))
+            light.rotation_quaternion = light_rotation @ correction
 
         color = base_light.get("Color")
         light_data.color = (color["R"], color["G"], color["B"])

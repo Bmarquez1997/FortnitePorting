@@ -264,6 +264,10 @@ def make_euler(data):
     return Euler((radians(data.get("Roll")), -radians(data.get("Pitch")), -radians(data.get("Yaw"))))
 
 
+def is_zero_transform(data):
+    return data.get("X") == 0 and data.get("Y") == 0 and data.get("Z") == 0
+
+
 def time_to_frame(time, fps = 30):
     return int(round(time * fps))
 

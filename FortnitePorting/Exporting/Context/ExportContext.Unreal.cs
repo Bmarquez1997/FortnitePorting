@@ -360,13 +360,14 @@ public partial class ExportContext
 
     public ExportLight PointLightComponent(UPointLightComponent pointLightComponent)
     {
+        var transforms = pointLightComponent.GetAbsoluteTransform();
         return new ExportPointLight
         {
             Name = pointLightComponent.Name,
-            Location = pointLightComponent.RelativeLocation,
-            Rotation = pointLightComponent.RelativeRotation,
-            RotationQuat = pointLightComponent.RelativeRotation.Quaternion(),
-            Scale = pointLightComponent.RelativeScale3D,
+            Location = transforms.Translation,
+            Rotation = transforms.Rotation.Rotator(),
+            RotationQuat = transforms.Rotation,
+            Scale = transforms.Scale3D,
             Intensity = pointLightComponent.Intensity,
             Color = pointLightComponent.LightColor.ToLinearColor(),
             CastShadows = pointLightComponent.CastShadows == 1,
@@ -377,14 +378,15 @@ public partial class ExportContext
 
     public ExportLight SpotLightComponent(USpotLightComponent spotLightComponent)
     {
+        var transforms = spotLightComponent.GetAbsoluteTransform();
         var outerConeAngle = spotLightComponent.OuterConeAngle != 0 ? spotLightComponent.OuterConeAngle : 30f;
         return new ExportSpotLight
         {
             Name = spotLightComponent.Name,
-            Location = spotLightComponent.RelativeLocation,
-            Rotation = spotLightComponent.RelativeRotation,
-            RotationQuat = spotLightComponent.RelativeRotation.Quaternion(),
-            Scale = spotLightComponent.RelativeScale3D,
+            Location = transforms.Translation,
+            Rotation = transforms.Rotation.Rotator(),
+            RotationQuat = transforms.Rotation,
+            Scale = transforms.Scale3D,
             Intensity = spotLightComponent.Intensity,
             Color = spotLightComponent.LightColor.ToLinearColor(),
             CastShadows = spotLightComponent.CastShadows == 1,
@@ -397,13 +399,14 @@ public partial class ExportContext
     
     public ExportLight DirectionalLightComponent(UDirectionalLightComponent directional)
     {
+        var transforms = directional.GetAbsoluteTransform();
         return new ExportDirectionalLight
         {
             Name = directional.Name,
-            Location = directional.RelativeLocation,
-            Rotation = directional.RelativeRotation,
-            RotationQuat = directional.RelativeRotation.Quaternion(),
-            Scale = directional.RelativeScale3D,
+            Location = transforms.Translation,
+            Rotation = transforms.Rotation.Rotator(),
+            RotationQuat = transforms.Rotation,
+            Scale = transforms.Scale3D,
             Intensity = directional.Intensity,
             Color = directional.LightColor.ToLinearColor(),
             CastShadows = directional.CastShadows == 1,
