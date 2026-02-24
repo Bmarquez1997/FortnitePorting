@@ -1,10 +1,3 @@
-# Mappings for each sub-group
-# Add in order used in-game
-# Keep float/vector/switch param nodes instead of setting values
-# Switch RGB to CombineXYZ when any value is less than 0
-# When alpha is used for vector, create separate "Param Alpha" value node
-# Closure flag in mappings? Check socket for color vs closure?
-
 import traceback
 import bpy
 from mathutils import Vector
@@ -90,30 +83,35 @@ class MaterialImportContext:
         material_hash = material_data.get("Hash")
         additional_hash = 0
 
-        texture_data = meta.get("TextureData")
-        if texture_data is not None:
-            override_material_data = None
-            for data in texture_data:
-                additional_hash += data.get("Hash")
-                if td_override_material := data.get("OverrideMaterial"):
-                    override_material_data = td_override_material
-                    break
-
-            if override_material_data:
-                material_data = override_material_data
-                material_name = override_material_data.get("Name")
-                material_hash = override_material_data.get("Hash")
-
         textures = material_data.get("Textures")
         scalars = material_data.get("Scalars")
         vectors = material_data.get("Vectors")
         switches = material_data.get("Switches")
         component_masks = material_data.get("ComponentMasks")
 
-        if texture_data is not None:
+        if texture_data := meta.get("TextureData"):
+            # TextureData override material only applies to slot 0
+            if material_data.get("Slot") == 0:
+                override_material_data = None
+                for data in texture_data:
+                    if td_override_material := data.get("OverrideMaterial"):
+                        override_material_data = td_override_material
+                        break
+
+                if override_material_data:
+                    material_data = override_material_data
+                    material_name = override_material_data.get("Name")
+                    material_hash = override_material_data.get("Hash")
+
+                    textures = override_material_data.get("Textures")
+                    scalars = override_material_data.get("Scalars")
+                    vectors = override_material_data.get("Vectors")
+                    switches = override_material_data.get("Switches")
+                    component_masks = override_material_data.get("ComponentMasks")
 
             for data in texture_data:
                 index = data.get("Index")
+                additional_hash += data.get("Hash")
 
                 texture_suffix = f"_Texture_{index + 1}" if index > 0 else ""
                 spec_suffix = f"_{index + 1}" if index > 0 else ""
