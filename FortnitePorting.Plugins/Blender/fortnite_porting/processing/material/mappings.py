@@ -453,7 +453,10 @@ class ParentLayerMappings(LayerMappingsTemplate):
 
     @classmethod
     def meets_criteria_dynamic(self, material_data, index):
-        return get_param_multiple(material_data.get("Switches"), [f"Use {index} Layers", f"Use {index} Materials"])
+        for i in range(index, 11):
+            if get_param_multiple(material_data.get("Switches"), [f"Use {i} Layers", f"Use {i} Materials"]):
+                return True
+        return False
 
 
     LAYER_TEXTURE_TEMPLATES = (

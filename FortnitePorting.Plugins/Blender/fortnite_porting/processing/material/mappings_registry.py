@@ -12,15 +12,12 @@ class MappingCollection:
     vectors = ()
     switches = ()
     component_masks = ()
-    build_node = "FPv4 Material Build"
     surface_render_method = None
     show_transparent_back = True
 
 
     @classmethod
     def meets_criteria(self, material_data):
-        # Placeholder for criteria checking logic
-        # TODO: Default = any_slots_match()?
         def matches(name, slots):
             return any(slots, lambda x: x.name.casefold() == name.casefold())
 
@@ -33,11 +30,6 @@ class MappingCollection:
 
 
         return match_tex or match_scal or match_col or match_vec or match_switch or match_comp
-
-    @classmethod
-    def meets_criteria_dynamic(self, material_data, index):
-        # Placeholder for dynamic criteria checking logic
-        return False
 
 
 class LayerMappingsTemplate():
@@ -163,7 +155,7 @@ def create_layer_slots(templates, layer_num):
 
 
 # Factory function to create dynamic layer mappings from parent class
-def create_layer_mappings(parent_class, class_name_prefix, min_layer=2, max_layer=6):
+def create_layer_mappings(parent_class, class_name_prefix, min_layer=2, max_layer=10):
     for layer_index in range(min_layer, max_layer + 1):
         layer_class = type(
             f'{class_name_prefix}Layer{layer_index}Mappings',
