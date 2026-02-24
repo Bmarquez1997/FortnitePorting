@@ -533,6 +533,6 @@ class MaterialImportContext:
                 mat_mesh = bpy.context.active_object
                 mat_mesh.name = name
                 mat_mesh.data.materials.append(bpy.data.materials.new(name))
-                self.import_material_new(mat_mesh.material_slots[material.get("Slot")], material, {})
+                self.import_material(mat_mesh.material_slots[material.get("Slot")], material, {})
             else:
-                self.import_material_new(None, material, {}, True)
+                self.import_material(None, material, {}, True)
