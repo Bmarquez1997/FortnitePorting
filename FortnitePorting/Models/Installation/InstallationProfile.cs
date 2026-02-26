@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse.UE4.Versions;
 using CUE4Parse.Utils;
+using DynamicData;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Validators;
@@ -139,6 +140,12 @@ public partial class InstallationProfile : ObservableValidator
         var selectedIndexToRemove = SelectedExtraKeyIndex;
         ExtraKeys.RemoveAt(selectedIndexToRemove);
         SelectedExtraKeyIndex = selectedIndexToRemove == 0 ? 0 : selectedIndexToRemove - 1;
+    }
+    
+    public async Task RemoveEncryptionKeys(List<FileEncryptionKey> keysToRemove)
+    {
+        ExtraKeys.RemoveMany(keysToRemove);
+        SelectedExtraKeyIndex = 0;
     }
 
     public override string ToString()

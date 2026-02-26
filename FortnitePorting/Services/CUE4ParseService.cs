@@ -405,6 +405,7 @@ public partial class CUE4ParseService : ObservableObject, IService
     
     private async Task LoadLocalExtraKeys()
     {
+        var invalidKeys = AppSettings.Installation.CurrentProfile.ExtraKeys.ToList();
         foreach (var vfs in Provider.UnloadedVfs.ToArray())
         {
             foreach (var extraKey in AppSettings.Installation.CurrentProfile.ExtraKeys)
@@ -413,9 +414,12 @@ public partial class CUE4ParseService : ObservableObject, IService
                 if (!vfs.TestAesKey(extraKey.EncryptionKey)) continue;
                         
                 Log.Information("Submitting Local Extra Key {Key} with GUID {Guid} for {FileName}", extraKey.EncryptionKey, vfs.EncryptionKeyGuid, vfs.Name);
-                await Provider.SubmitKeyAsync(vfs.EncryptionKeyGuid, extraKey.EncryptionKey);
+                var paksMounted = await Provider.SubmitKeyAsync(vfs.EncryptionKeyGuid, extraKey.EncryptionKey);
+                if (paksMounted > 0) invalidKeys.Remove(extraKey);
             }
         }
+
+        await AppSettings.Installation.CurrentProfile.RemoveEncryptionKeys(invalidKeys.ToList());
     }
     
     private async Task LoadMappings()
