@@ -132,11 +132,9 @@ class MaterialImportContext:
             material_hash += additional_hash
             material_name += f"_{hash_code(material_hash)}"
 
-
         if existing_material := first(bpy.data.materials, lambda mat: mat.get("Hash") == hash_code(material_hash)):
             if not as_material_data:
                 material_slot.material = existing_material
-                return
 
         # same name but different hash
         if (name_existing := first(bpy.data.materials, lambda mat: mat.name == material_name)) and name_existing.get("Hash") != material_hash:
@@ -153,6 +151,10 @@ class MaterialImportContext:
         material.use_nodes = True
         material.surface_render_method = "DITHERED"
 
+        if any(vertex_crunch_names, lambda x: x in material_name) or get_param(scalars, "HT_CrunchVerts") == 1 or any(toon_outline_names, lambda x: x in material_name):
+            self.full_vertex_crunch_materials.append(material)
+            return
+
         nodes = material.node_tree.nodes
         nodes.clear()
         links = material.node_tree.links
@@ -162,7 +164,7 @@ class MaterialImportContext:
         base_blend_mode = EBlendMode(material_data.get("BaseBlendMode"))
         translucency_lighting_mode = ETranslucencyLightingMode(material_data.get("TranslucencyLightingMode"))
         shading_model = EMaterialShadingModel(material_data.get("ShadingModel"))
-        
+
         textures = material_data.get("Textures")
         scalars = material_data.get("Scalars")
         vectors = material_data.get("Vectors")
@@ -220,7 +222,7 @@ class MaterialImportContext:
         used_vectors = set()
         used_component_masks = set()
         used_switches = set()
-        
+
         def texture_param(data, target_mappings, target_node=shader_node):
             try:
                 name = data.get("Name")
@@ -315,7 +317,7 @@ class MaterialImportContext:
                 node.location = x - 300, y
                 node.hide = True
                 links.new(node.outputs[0], target_node.inputs[mappings.slot])
-                
+
                 if mappings.switch_slot:
                     target_node.inputs[mappings.switch_slot].default_value = 1 if value else 0
 
@@ -499,10 +501,6 @@ class MaterialImportContext:
         links.new(shader_node.outputs[0], output_node.inputs[0])
 
         # post parameter handling
-
-        if material_name in vertex_crunch_names or get_param(scalars, "HT_CrunchVerts") == 1 or any(toon_outline_names, lambda x: x in material_name):
-            self.full_vertex_crunch_materials.append(material)
-            return
 
         if get_param(switches, "Use Vertex Colors for Mask"):
             elements = {

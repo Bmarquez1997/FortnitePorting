@@ -39,13 +39,6 @@ class MeshImportContext:
             self.import_model(mesh, can_spawn_at_3d_cursor=True)
 
         self.import_light_data(data.get("Lights"))
-
-        if self.type in [EExportType.SIDEKICK]:
-            master_mesh = self.imported_meshes[0]["Mesh"]
-            for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Full Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
                 
         if self.type in [EExportType.OUTFIT]:
             for imported_mesh in self.imported_meshes:
