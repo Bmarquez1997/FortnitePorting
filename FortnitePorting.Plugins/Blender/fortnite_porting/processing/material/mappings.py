@@ -132,6 +132,16 @@ class DefaultMappings(MappingCollection):
 
 
 @registry.register
+class WorldGridMappings(MappingCollection):
+    node_name="FPv4 WorldGridMaterial"
+    type=ENodeType.NT_Base
+
+    @classmethod
+    def meets_criteria(self, material_data):
+        return "WorldGridMaterial" in material_data.get("BaseMaterialPath")
+
+
+@registry.register
 class BaseLayerMappings(MappingCollection):
     node_name="FPv4 Base Layer"
     type=ENodeType.NT_Base
@@ -1004,7 +1014,9 @@ class AnisotropicMappings(MappingCollection):
 
     @classmethod
     def meets_criteria(self, material_data):
-        return get_param_multiple(material_data.get("Switches"), ["Use AnisotropicShading", "UseAnisotropicShading"])
+        return get_param_multiple(material_data.get("Switches"), ["Use AnisotropicShading", "UseAnisotropicShading"]) \
+            and not HairMappings.meets_criteria(material_data) \
+            and not FurMappings.meets_criteria(material_data)
 
     textures=(
         SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
@@ -1384,6 +1396,7 @@ class GradientMappings(MappingCollection):
 class CustomColorMappings(MappingCollection):
     node_name="FPv4 CustomColor"
     type=ENodeType.NT_Advanced_FX
+    order=1
 
     @classmethod
     def meets_criteria(self, material_data):
@@ -1391,8 +1404,6 @@ class CustomColorMappings(MappingCollection):
 
 
     textures=(
-        SlotMapping("TechArtMask"),
-        SlotMapping("SkinFX_Mask", "TechArtMask"),
         SlotMapping("Custom Color Mask"),
         SlotMapping("TieDye_Pattern_Mask", "Custom Color Mask"),
         SlotMapping("Pattern Mask"),

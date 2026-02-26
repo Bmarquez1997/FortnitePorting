@@ -10,21 +10,15 @@ blend_files = ["fortnite_porting_data.blend", "fortnite_porting_materials.blend"
 
 def ensure_blend_data_for_file(file_name):
     addon_dir = os.path.dirname(os.path.splitext(__file__)[0])
-    
-    for node_group in bpy.data.node_groups:
-        if node_group.name.startswith("FPv4") and is_node_group_outdated(node_group):
-            old_version = node_group.get("addon_version", "Outdated")
-            new_name = f"{node_group.name} v{old_version}"
-            Log.info(f"Renaming outdated node group '{node_group.name}' to '{new_name}'")
-            node_group.name = new_name
-    
+
     with bpy.data.libraries.load(os.path.join(addon_dir, "data", file_name)) as (data_from, data_to):
-        for node_group in data_from.node_groups:
-            if not bpy.data.node_groups.get(node_group):
-                data_to.node_groups.append(node_group)
+        for node_group in sorted(data_from.node_groups, key=lambda x: (x.startswith('.'), x)):
+            if (group := bpy.data.node_groups.get(node_group)) and is_current_version_group(group):
+                continue
+            data_to.node_groups.append(node_group)
 
         for mat in data_from.materials:
-            if not bpy.data.materials.get(mat):
+            if not mat.startswith(".") and not bpy.data.materials.get(mat):
                 data_to.materials.append(mat)
 
         for image in data_from.images:
@@ -32,7 +26,7 @@ def ensure_blend_data_for_file(file_name):
                 data_to.images.append(image)
 
         for obj in data_from.objects:
-            if not bpy.data.objects.get(obj):
+            if not obj.startswith(".") and not bpy.data.objects.get(obj):
                 data_to.objects.append(obj)
 
         for font in data_from.fonts:
@@ -40,10 +34,10 @@ def ensure_blend_data_for_file(file_name):
                 data_to.fonts.append(font)
 
     for node_group in bpy.data.node_groups:
-        if node_group.name.startswith("FPv4") and not node_group.get("addon_version"):
+        if "FPv4" in node_group.name and not node_group.get("addon_version"):
             node_group["addon_version"] = version_string()
 
-    
+
 # TODO: Make dynamic from mappings_registry.blend_files list?
 def ensure_blend_data():
     for file_name in blend_files:
@@ -55,6 +49,15 @@ def is_node_group_outdated(node_group):
         return True
     version_tuple = tuple(int(x) for x in version_property.split("."))
     return version_tuple < addon_version()
+
+def is_current_version_group(node_group):
+    if is_node_group_outdated(node_group):
+        old_version = node_group.get("addon_version", "Outdated")
+        new_name = f"{node_group.name} v{old_version}"
+        Log.info(f"Renaming outdated node group '{node_group.name}' to '{new_name}'")
+        node_group.name = new_name
+        return False
+    return True
 
 def addon_version():
     return tuple(sys.modules["fortnite_porting"].bl_info["version"])
