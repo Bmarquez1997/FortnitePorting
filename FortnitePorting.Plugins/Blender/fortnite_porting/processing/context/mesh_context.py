@@ -427,10 +427,9 @@ class MeshImportContext:
         return mesh
 
     def import_mutable_data(self, data):
-        groups = data.get("Objects")
-        if groups is None:
-            return
-    
-        for i, group in enumerate(groups):
-            self.import_mesh_data(group)
-            Log.info(f"Completed {i+1} / {len(groups)} mutable objects")
+        if groups := data.get("Objects"):
+            for i, group in enumerate(groups):
+                self.import_mesh_data(group)
+                Log.info(f"Completed {i+1} / {len(groups)} mutable objects")
+
+        self.import_material_standalone(data)

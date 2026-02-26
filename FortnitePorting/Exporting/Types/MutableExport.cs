@@ -11,11 +11,13 @@ using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Objects;
+using CUE4Parse.UE4.Assets.Objects.Properties;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Export.Models;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Exporting.Types;
+using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets;
 using FortnitePorting.Models.Fortnite;
 using FortnitePorting.Shared.Extensions;
@@ -28,6 +30,7 @@ public class MutableExport : BaseExport
 {
     public readonly List<ExportMutable> Objects = [];
     public readonly List<string> Textures = [];
+    public readonly List<ExportMaterial> Materials = [];
     
     
     public MutableExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
@@ -77,11 +80,13 @@ public class MutableExport : BaseExport
                     characterPart = styleParts[0];
                 
                 var partDataList = characterPart.Get<UScriptArray>("CosmeticPartDataList");
+                // partDataList.AdditionalParameters(ParamName, ParamValue)
                 var customizableData = partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct
                     .Get<FSoftObjectPath>("CustomizableData").Load<UObject>();
                 customizableObject = customizableData.Get<UCustomizableObject>("CustomizableObject");
                 assetCodename = characterPart.Name.Replace("CP_Shoes_", "");
                 filterSkeletonName = assetCodename.SubstringBefore("_");
+                // 
                 break;
             case EExportType.Mutable:
                 customizableObject = (UCustomizableObject)asset;
@@ -103,6 +108,18 @@ public class MutableExport : BaseExport
        var index = 0;
        foreach (var image in mutableExporter.Images)
            ExportMutableImage(image, customizableObject, index++);
+       
+       if (!customizableObject.Private.TryLoad(out UCustomizableObjectPrivate coPrivate) 
+           || !coPrivate.ModelResources.TryLoad(out UModelResources modelResources)
+           || modelResources.PassthroughObjects == null)
+           return;
+       
+       foreach (var passObj in modelResources.PassthroughObjects.Properties.Values)
+       {
+           var material = passObj.GetValue<UMaterialInterface?>();
+           if (material == null) continue;
+           Materials.AddIfNotNull(Exporter.Material(material, 0));
+       }
     }
 
     public MutableExport(string name, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
