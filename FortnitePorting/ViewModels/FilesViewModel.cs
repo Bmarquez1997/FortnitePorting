@@ -18,6 +18,7 @@ using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Engine;
+using CUE4Parse.UE4.Objects.Engine.Curves;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using DynamicData;
@@ -550,6 +551,16 @@ public partial class FilesViewModel : ViewModelBase
         
         switch (asset)
         {
+            case UCurveLinearColor curve:
+            {
+                CurvePreviewWindow.Preview(name, curve);
+                break;
+            }
+            case UCurveLinearColorAtlas curveAtlas:
+            {
+                CurveAtlasPreviewWindow.Preview(name, curveAtlas);
+                break;
+            }
             case UTexture texture:
             {
                 TexturePreviewWindow.Preview(name, texture);
