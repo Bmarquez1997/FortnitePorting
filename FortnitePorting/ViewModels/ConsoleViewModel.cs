@@ -32,7 +32,7 @@ public partial class ConsoleViewModel : ViewModelBase
 
     public DynamicFadeScrollViewer Scroll;
     
-    private const double AutoScrollThreshold = 400;
+    private const double AutoScrollThreshold = 800;
 
     public ConsoleViewModel(InfoService infoService)
     {
@@ -72,11 +72,6 @@ public partial class ConsoleViewModel : ViewModelBase
             if (distanceFromBottom <= AutoScrollThreshold)
                 Scroll.ScrollToEnd();
         });
-    }
-
-    public override async Task OnViewOpened()
-    {
-        Scroll.ScrollToEnd();
     }
 
     private Func<FPLogEvent, bool> CreateFilter((string, ELogEventType) items)
