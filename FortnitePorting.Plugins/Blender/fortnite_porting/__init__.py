@@ -1,7 +1,8 @@
 import bpy
 import traceback
-from .server import Server
+from .ueformat import *
 from .logger import Log
+from .server import Server
 from .processing.importer import Importer
 from .operator.tasty_op import TASTY_PT_RigSettings
 
@@ -45,6 +46,7 @@ def register():
     bpy.app.timers.register(server_data_handler, persistent=True)
 
     bpy.utils.register_class(TASTY_PT_RigSettings)
+    ueformat.register()
 
 
 def unregister():
