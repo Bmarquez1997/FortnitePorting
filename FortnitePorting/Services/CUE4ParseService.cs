@@ -420,6 +420,11 @@ public partial class CUE4ParseService : ObservableObject, IService
             }
         }
 
+        if (AppSettings.Installation.CurrentProfile.FortniteVersion == EFortniteVersion.Custom || invalidKeys.Count == 0) return;
+        
+        Log.Information("Removing Unused Keys:");
+        invalidKeys.ForEach(key => Log.Information("{0}", key.KeyString));
+
         await AppSettings.Installation.CurrentProfile.RemoveEncryptionKeys(invalidKeys.ToList());
     }
     
