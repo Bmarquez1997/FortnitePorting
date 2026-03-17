@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.Utils;
 using FortnitePorting.Extensions;
 using FortnitePorting.Shared.Extensions;
@@ -17,13 +19,17 @@ public partial class UnrealInstallation : ObservableObject
     private string _projectFilePath;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(VersionString))] [field: JsonIgnore]
+    [property: JsonIgnore]
     private Version? _version;
 
+    [JsonIgnore]
     public string VersionString => Version is null ? string.Empty : $"v{Version}";
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(StatusBrush))]
+    [property: JsonIgnore]
     private EPluginStatusType _status = EPluginStatusType.Modifying;
 
+    [JsonIgnore]
     public SolidColorBrush StatusBrush => Status switch
     {
         EPluginStatusType.Newest => SolidColorBrush.Parse("#17854F"),
@@ -36,11 +42,19 @@ public partial class UnrealInstallation : ObservableObject
     public Bitmap Image { get; private set; } =
         ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/UnrealLogo.png");
 
+    [JsonIgnore]
     public string Name => ProjectFilePath.SubstringAfterLast("/").SubstringBeforeLast(".");
 
+    [JsonIgnore]
     public string PluginsFolder => Path.Combine(ProjectFilePath.SubstringBeforeLast("/"), "Plugins");
+    
+    [JsonIgnore]
     public string FortnitePortingFolder => Path.Combine(PluginsFolder, "FortnitePorting");
+    
+    [JsonIgnore]
     public string UEFormatFolder => Path.Combine(PluginsFolder, "UEFormat");
+    
+    [JsonIgnore]
     public string PluginPath => Path.Combine(FortnitePortingFolder, "FortnitePorting.uplugin");
 
     public static readonly DirectoryInfo PluginWorkingDirectory =
@@ -49,7 +63,6 @@ public partial class UnrealInstallation : ObservableObject
     public UnrealInstallation(string projectFilePath)
     {
         ProjectFilePath = projectFilePath;
-        SyncVersion();
     }
 
     public bool SyncVersion()
@@ -65,9 +78,10 @@ public partial class UnrealInstallation : ObservableObject
         var pluginInfo = JsonConvert.DeserializeObject<UPlugin>(File.ReadAllText(PluginPath));
         Version = new Version(pluginInfo!.VersionName);
 
-        var fpVersion = new FPVersion(Version.Major, Version.Minor, Version.Build);
-        if (!fpVersion.Equals(Globals.Version))
-            Status = EPluginStatusType.UpdateAvailable;
+        var fpPluginVersion = new FPVersion(Version.Major, Version.Minor, Version.Build);
+        Status = fpPluginVersion.Equals(Globals.Version)
+            ? EPluginStatusType.Newest
+            : EPluginStatusType.UpdateAvailable;
 
         return true;
     }
@@ -112,6 +126,11 @@ public partial class UnrealInstallation : ObservableObject
 
         Image = new Bitmap(imageFilePath);
         OnPropertyChanged(nameof(Image));
+    }
+    
+    public async Task Launch()
+    {
+        App.Launch(ProjectFilePath);
     }
 }
 

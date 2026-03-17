@@ -1,10 +1,12 @@
 import bpy
 import traceback
-from .ueformat import *
-from .logger import Log
 from .server import Server
+from .logger import Log
 from .processing.importer import Importer
 from .operator.tasty_op import TASTY_PT_RigSettings
+
+from .ueformat import register as ueformat_register, unregister as ueformat_unregister
+
 
 bl_info = {
     "name": "Fortnite Porting",
@@ -46,9 +48,11 @@ def register():
     bpy.app.timers.register(server_data_handler, persistent=True)
 
     bpy.utils.register_class(TASTY_PT_RigSettings)
-    ueformat.register()
+    ueformat_register()
+    
 
 
 def unregister():
     server.shutdown()
     bpy.utils.unregister_class(TASTY_PT_RigSettings)
+    ueformat_unregister()

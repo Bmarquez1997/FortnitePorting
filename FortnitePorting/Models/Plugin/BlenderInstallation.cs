@@ -1,8 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.ViewModels;
 using Newtonsoft.Json;
@@ -15,14 +17,17 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
     [ObservableProperty] private string _blenderPath = blenderExecutablePath;
     
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ExtensionVersionString))] 
-    [field: JsonIgnore]
+    [property: JsonIgnore]
     private Version? _extensionVersion = null;
 
+    [JsonIgnore]
     public string ExtensionVersionString => ExtensionVersion is null ? string.Empty : $"v{ExtensionVersion.ToString()}";
     
     [ObservableProperty, NotifyPropertyChangedFor(nameof(StatusBrush))]
-    private EPluginStatusType _status = EPluginStatusType.Modifying;
+    [property: JsonIgnore]
+    private EPluginStatusType _status = EPluginStatusType.Newest;
 
+    [JsonIgnore]
     public SolidColorBrush StatusBrush => Status switch
     {
         EPluginStatusType.Newest => SolidColorBrush.Parse("#17854F"),
@@ -30,7 +35,8 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
         EPluginStatusType.Failed => SolidColorBrush.Parse("#A61717"),
         EPluginStatusType.Modifying => SolidColorBrush.Parse("#6F6F75"),
     };
-
+    
+    [JsonIgnore]
     public Version BlenderVersion => GetVersion(BlenderPath);
 
     private string StartupPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -66,10 +72,9 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
         ExtensionVersion = new Version((string) manifestToml["version"]);
 
         var fpExtensionVersion = new FPVersion(ExtensionVersion.Major, ExtensionVersion.Minor, ExtensionVersion.Build);
-        if (!fpExtensionVersion.Equals(Globals.Version))
-        {
-            Status = EPluginStatusType.UpdateAvailable;
-        }
+        Status = fpExtensionVersion.Equals(Globals.Version)
+            ? EPluginStatusType.Newest
+            : EPluginStatusType.UpdateAvailable;
         
         return true;
     }
@@ -101,5 +106,10 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
         Status = EPluginStatusType.Modifying;
         
         Directory.Delete(Path.Combine(StartupPath, "fortnite_porting"), true);
+    }
+
+    public async Task Launch()
+    {
+        App.Launch(BlenderPath);
     }
 }
