@@ -8,6 +8,7 @@ using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
 using CUE4Parse.Utils;
 using EpicManifestParser.UE;
+using FortnitePorting.ViewModels.Settings;
 
 namespace FortnitePorting.Models.CUE4Parse;
 
@@ -53,6 +54,7 @@ public class HybridFileProvider : AbstractVfsFileProvider
 
     public void RegisterFiles(DirectoryInfo directory)
     {
+        var loadOnDemand = AppSettings.Installation.CurrentProfile.UseTextureStreaming;
         foreach (var file in directory.EnumerateFiles("*.*", EnumerationOptions))
         {
             var extension = file.Extension.SubstringAfter('.').ToLower();
@@ -61,7 +63,7 @@ public class HybridFileProvider : AbstractVfsFileProvider
                 RegisterVfs(file.FullName, [ file.OpenRead() ], it => new FStreamArchive(it, File.OpenRead(it), Versions));
             }
 
-            if (extension is "uondemandtoc")
+            if (loadOnDemand && extension is "uondemandtoc")
             {
                 var ioChunkToc = new IoChunkToc(file.FullName);
                 RegisterVfs(ioChunkToc, OnDemandOptions);
