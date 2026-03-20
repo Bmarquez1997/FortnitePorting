@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse.UE4.Versions;
@@ -44,6 +45,10 @@ public partial class InstallationProfile : ObservableValidator
     [ObservableProperty] private ObservableCollection<FileEncryptionKey> _extraKeys = [];
     [ObservableProperty] [property: JsonIgnore] private string _fetchKeysVersion = string.Empty;
     
+    [ObservableProperty]
+    [property: JsonIgnore] 
+    private string _fetchMapKeyCode = string.Empty;
+    
     [ObservableProperty] 
     [NotifyPropertyChangedFor(nameof(MappingsFileEnabled))]
     private bool _useMappingsFile;
@@ -64,6 +69,7 @@ public partial class InstallationProfile : ObservableValidator
     [JsonIgnore] public bool ArchiveDirectoryEnabled => FortniteVersion is not EFortniteVersion.LatestOnDemand;
     [JsonIgnore] public bool UnrealVersionEnabled => IsCustom;
     [JsonIgnore] public bool EncryptionKeyEnabled => IsCustom;
+    [JsonIgnore] public bool FetchMapKeyEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
     [JsonIgnore] public bool MappingsFileEnabled => IsCustom;
     [JsonIgnore] public bool TextureStreamingEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
     [JsonIgnore] public bool LoadInstalledBundlesEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
@@ -130,6 +136,21 @@ public partial class InstallationProfile : ObservableValidator
         File.SetCreationTime(mappingsFilePath, mappings.GetCreationTime());
         
         Info.Message("Fetch Mappings", $"Successfully fetched mappings for v{FetchMappingsVersion}", InfoBarSeverity.Success);
+    }
+
+    public async Task FetchAESForMapCode()
+    {
+        var mapKey = await Api.EpicGames.FetchAESForMapCode(FetchMapKeyCode);
+        if (mapKey is null or "")
+        {
+            Info.Message("Fetch Map Key", "Map not encrypted or no key found");
+            return;
+        }
+
+        if (!ExtraKeys.Any(key => key.EncryptionKey.KeyString.Equals(mapKey, StringComparison.OrdinalIgnoreCase)))
+            ExtraKeys.Add(new FileEncryptionKey(mapKey));
+        
+        Info.Message("Fetch Map Key", $"Successfully fetched key for map code: {FetchMapKeyCode}", InfoBarSeverity.Success);
     }
     
     public async Task AddEncryptionKey()

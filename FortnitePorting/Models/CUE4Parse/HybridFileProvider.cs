@@ -55,7 +55,6 @@ public class HybridFileProvider : AbstractVfsFileProvider
 
     public void RegisterFiles(DirectoryInfo directory)
     {
-        var loadOnDemand = AppSettings.Installation.CurrentProfile.UseTextureStreaming;
         foreach (var file in directory.EnumerateFiles("*.*", EnumerationOptions))
         {
             var extension = file.Extension.SubstringAfter('.').ToLower();
@@ -64,7 +63,7 @@ public class HybridFileProvider : AbstractVfsFileProvider
                 RegisterVfs(file.FullName, [ file.OpenRead() ], it => new FStreamArchive(it, File.OpenRead(it), Versions));
             }
 
-            if (loadOnDemand && extension is "uondemandtoc")
+            if (extension is "uondemandtoc")
             {
                 var archive = new FByteArchive(file.FullName, File.ReadAllBytes(file.FullName), Versions);
                 var ioChunkToc = new FOnDemandTocReader(archive);
