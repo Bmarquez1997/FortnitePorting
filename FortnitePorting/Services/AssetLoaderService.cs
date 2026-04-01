@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Engine;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
@@ -18,6 +19,7 @@ using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets.Base;
 using FortnitePorting.Models.Assets.Custom;
 using FortnitePorting.Models.Assets.Loading;
+using FortnitePorting.Shared.Extensions;
 using SkiaSharp;
 
 namespace FortnitePorting.Services;
@@ -167,7 +169,22 @@ public partial class AssetLoaderService : ObservableObject, IService
                 },
                 new AssetLoader(EExportType.Kicks)
                 {
-                    ClassNames = ["CosmeticShoesItemDefinition"]
+                    ClassNames = ["CosmeticShoesItemDefinition"],
+                    GameplayTagHandler = asset =>
+                    {
+                        var tags = AssetLoader.GetGameplayTags(asset);
+                        
+                        if (!(asset.TryGetValue<UObject[]>(out var characterPart, "CharacterParts")
+                            && characterPart[0].TryGetValue<UScriptArray>(out var partDataList, "CosmeticPartDataList")
+                            && partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct
+                                .TryGetValue<FSoftObjectPath>(out var customPath, "CustomizableData")))
+                            return tags;
+                        
+                        var newTags = new List<FGameplayTag> { new(new FName("Baked")) };
+                        newTags.AddRangeIfNotNull(tags?.GameplayTags);
+
+                        return new FGameplayTagContainer(newTags.ToArray());
+                    }
                 }
             ]
         },
@@ -461,6 +478,19 @@ public partial class AssetLoaderService : ObservableObject, IService
                      {
                          var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
                          return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
+                     },
+                     GameplayTagHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
+                         var tags = AssetLoader.GetGameplayTags(baseItemDefinition);
+
+                         if (!asset.TryGetValue(out UObject ams, "AssembledMeshSchema")
+                             || !ams.TryGetValue(out FSoftObjectPath[] meshes, "SkeletalMeshes")) return tags;
+                         
+                         var newTags = new List<FGameplayTag> { new(new FName("Baked")) };
+                         newTags.AddRangeIfNotNull(tags?.GameplayTags);
+
+                         return new FGameplayTagContainer(newTags.ToArray());
                      }
                  },
                  new AssetLoader(EExportType.LegoEmote)

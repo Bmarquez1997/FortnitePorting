@@ -111,7 +111,8 @@ public partial class AssetLoader : ObservableObject
                 EExportType.Emote,
                 EExportType.Emoticon,
                 EExportType.Spray,
-                EExportType.LoadingScreen
+                EExportType.LoadingScreen,
+                EExportType.LegoOutfit
             ]
         },
         new("EMOTE")
@@ -174,6 +175,32 @@ public partial class AssetLoader : ObservableObject
             AllowedTypes = 
             [
                 EExportType.Item
+            ]
+        },
+        new("MUTABLE")
+        {
+            Filters = 
+            [
+                new FilterItem("Baked", asset => asset.CreationData.GameplayTags.ContainsAny("Baked")),
+            ],
+            AllowedTypes = 
+            [
+                EExportType.LegoOutfit,
+                EExportType.Kicks,
+                EExportType.VehicleBody,
+                EExportType.VehicleWheel
+            ]
+        },
+        new("CARS")
+        {
+            Filters = 
+            [
+                new FilterItem("Sedan", asset => asset.CreationData.GameplayTags.ContainsAny("Archetype.SportsCar")),
+                new FilterItem("SUV", asset => asset.CreationData.GameplayTags.ContainsAny("Archetype.SUV")),
+            ],
+            AllowedTypes = 
+            [
+                EExportType.VehicleBody
             ]
         }
     ];

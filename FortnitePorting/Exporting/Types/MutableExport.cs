@@ -10,6 +10,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
 using CUE4Parse.UE4.Assets.Exports.Material;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Assets.Objects.Properties;
 using CUE4Parse.UE4.Objects.UObject;
@@ -62,13 +63,31 @@ public class MutableExport : BaseExport
                 customizableObject = itemDef.Get<FSoftObjectPath>("CustomizableObject").Load<UCustomizableObject>();
                 break;
             case EExportType.LegoOutfit:
-                if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema")
-                    && ams.TryGetValue(out UObject coi, "CustomizableObjectInstance")
-                    && coi.TryGetValue(out FStructFallback descriptor, "Descriptor"))
+                if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema"))
                 {
-                    customizableObject = descriptor.Get<UCustomizableObject>("CustomizableObject");
-                    assetCodename = coi.Name.Replace("COI_Figure_", "");
+                    if (ams.TryGetValue(out USkeletalMesh[] meshes, "SkeletalMeshes"))
+                    {
+                        var legoMeshList = new List<ExportMesh>();
+                        foreach (var mesh in meshes)
+                            legoMeshList.AddIfNotNull(Exporter.Mesh(mesh));
+
+                        Objects.Add(new ExportMutable
+                        {
+                            Name = name,
+                            Meshes = legoMeshList
+                        });
+
+                        return;
+                    }
+                    
+                    if (ams.TryGetValue(out UObject coi, "CustomizableObjectInstance")
+                        && coi.TryGetValue(out FStructFallback descriptor, "Descriptor"))
+                    {
+                        customizableObject = descriptor.Get<UCustomizableObject>("CustomizableObject");
+                        assetCodename = coi.Name.Replace("COI_Figure_", "");
+                    }
                 }
+
                 // Prompt to ask if user wants to continue if file is in CO_Figure (or Recipe)?
                 // https://github.com/h4lfheart/FortnitePorting/commit/69732c1360d4d8d9d6b85e02a37c6efc4ffb8487#diff-4e523351690223eb266eff00616d9206a43003c903a859ca8f3aeb9896df1a0aR15-R131
                 throw new NotImplementedException("Lego outfit export has not been implemented yet");
@@ -88,6 +107,36 @@ public class MutableExport : BaseExport
                 
                 var customizableData = partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct
                     .Get<FSoftObjectPath>("CustomizableData").Load<UObject>();
+                
+                var props = partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct;
+                
+                var materialParams = props.Get<FStructFallback[]>("MaterialParameters");
+                var matList = new List<ExportMaterial>();
+                for (var matIndex = 0; matIndex < materialParams.Length; matIndex++)
+                {
+                    if (materialParams[matIndex].TryGetValue(out UMaterialInterface material, "ParameterValue"))
+                        matList.AddIfNotNull(Exporter.Material(material, matIndex));
+                }
+
+                var meshParams = props.Get<FStructFallback[]>("SkeletalMeshParameters");
+                var meshList = new List<ExportMesh>();
+                foreach (var meshParam in meshParams)
+                {
+                    if (!meshParam.TryGetValue(out USkeletalMesh mesh, "ParameterValue")) continue;
+                    var exportMesh = Exporter.Mesh(mesh);
+                    exportMesh?.OverrideMaterials.AddRange(matList);
+                    meshList.AddIfNotNull(exportMesh);
+                }
+
+                Objects.Add(new ExportMutable
+                {
+                    Name = name,
+                    Meshes = meshList
+                });
+
+                return;
+                
+                
                 customizableObject = customizableData.Get<UCustomizableObject>("CustomizableObject");
                 assetCodename = characterPart.Name.Replace("CP_Shoes_", "");
                 filterSkeletonName = assetCodename.SubstringBefore("_");
