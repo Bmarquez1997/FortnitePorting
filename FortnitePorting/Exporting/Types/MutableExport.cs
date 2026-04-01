@@ -81,6 +81,11 @@ public class MutableExport : BaseExport
                 
                 var partDataList = characterPart.Get<UScriptArray>("CosmeticPartDataList");
                 // partDataList.AdditionalParameters(ParamName, ParamValue)
+                
+                // partDataList[SkeletalMeshParameters][ShoeMesh]
+                // partDataList[MaterialParameters][ShoeMaterial] slot 0
+                // partDataList[MaterialParameters][ShoeMaterial2] slot 1
+                
                 var customizableData = partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct
                     .Get<FSoftObjectPath>("CustomizableData").Load<UObject>();
                 customizableObject = customizableData.Get<UCustomizableObject>("CustomizableObject");
