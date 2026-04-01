@@ -320,7 +320,7 @@ public partial class CUE4ParseService : ObservableObject, IService
                 await Api.DownloadFileAsync($"https://download.epicgames.com/{tocPath}", onDemandFile.FullName);
             }
             
-            await Provider.RegisterVfsAsync(new FOnDemandTocReader(onDemandFile.FullName));
+            await Provider.RegisterVfsAsync(new IoChunkToc(onDemandFile.FullName, Provider.Versions));
             await Provider.MountAsync();
         }
         catch (Exception e)

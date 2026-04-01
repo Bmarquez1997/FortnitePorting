@@ -66,8 +66,8 @@ public class HybridFileProvider : AbstractVfsFileProvider
             if (extension is "uondemandtoc")
             {
                 var archive = new FByteArchive(file.FullName, File.ReadAllBytes(file.FullName), Versions);
-                var ioChunkToc = new FOnDemandTocReader(archive);
-                RegisterVfs(ioChunkToc);
+                var ioChunkToc = new IoChunkToc(archive);
+                RegisterVfs(ioChunkToc, OnDemandOptions);
             }
         }
     }
@@ -102,8 +102,8 @@ public class HybridFileProvider : AbstractVfsFileProvider
                 }
                 
                 var archive = new FByteArchive(targetPath, File.ReadAllBytes(targetPath), Versions);
-                var ioChunkToc = new FOnDemandTocReader(archive);
-                RegisterVfs(ioChunkToc);
+                var ioChunkToc = new IoChunkToc(archive);
+                RegisterVfs(ioChunkToc, OnDemandOptions);
             }
 
         }
