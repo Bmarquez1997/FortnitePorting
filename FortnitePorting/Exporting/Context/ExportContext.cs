@@ -100,8 +100,9 @@ public partial class ExportContext
 
         if (asset is UDNAAsset dnaAsset)
         {
-            var dnaName = dnaAsset.DnaFileName.SubstringAfterLast("/").SubstringAfterLast("\\").SubstringBeforeLast(".");
-            returnValue = returnRealPath ? dnaName : $"{dnaAsset.Owner.Name.SubstringBeforeLast('/')}/{dnaName}.{dnaName}";
+            var fileName = string.IsNullOrEmpty(dnaAsset.DnaFileName) ? asset.Owner.Name : dnaAsset.DnaFileName;
+            var dnaName = fileName.SubstringAfterLast("/").SubstringAfterLast("\\").SubstringBeforeLast(".");
+            returnValue = returnRealPath ? dnaName : $"{asset.Owner.Name.SubstringBeforeLast('/')}/{dnaName}.{dnaName}";
         }
         
         var shouldExport = asset switch
@@ -344,7 +345,8 @@ public partial class ExportContext
         string path;
         if (obj is UDNAAsset dnaAsset)
         {
-            var dnaName = dnaAsset.DnaFileName.SubstringAfterLast("/").SubstringAfterLast("\\");
+            var fileName = string.IsNullOrEmpty(dnaAsset.DnaFileName) ? obj.Owner.Name : dnaAsset.DnaFileName;
+            var dnaName = fileName.SubstringAfterLast("/").SubstringAfterLast("\\");
             path = excludeGamePath ? dnaName : $"{obj.Owner.Name.SubstringBeforeLast('/')}/{dnaName}";
         }
         else if (excludeGamePath || obj.Owner is null)
