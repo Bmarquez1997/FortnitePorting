@@ -157,8 +157,9 @@ class MaterialImportContext:
         material = bpy.data.materials.new(material_name) if as_material_data else material_slot.material
         material.use_nodes = True
         material.surface_render_method = "DITHERED"
-
-        if any(vertex_crunch_names, lambda x: x in material_name) or get_param(scalars, "HT_CrunchVerts") == 1 or any(toon_outline_names, lambda x: x in material_name and not x.startswith("MI_OutlineLove")):
+        if (any(vertex_crunch_names, lambda x: x in material_name) 
+                or get_param(scalars, "HT_CrunchVerts") == 1 
+                or (any(toon_outline_names, lambda x: x in material_name) and not any(toon_outline_disable_names, lambda x: x in material_name))):
             self.full_vertex_crunch_materials.append(material)
             return
 

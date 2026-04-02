@@ -9,7 +9,7 @@ namespace FortnitePorting;
 public static class Globals
 {
     public static string VersionString => Version.GetDisplayString();
-    public static readonly FPVersion Version = new(4, 0, 3, identifier: "ChippyCut");
+    public static readonly FPVersion Version = new(4, 0, 4, identifier: "ChippyCut");
     public const string ApplicationTag = "FortnitePorting";
     
     public static readonly FilePickerFileType MappingsFileType = new("Unreal Mappings") { Patterns = [ "*.usmap" ] };
@@ -34,7 +34,7 @@ public static class Globals
     
     public const string DISCORD_URL = "https://discord.gg/FortnitePorting";
     public const string TWITTER_URL = "https://twitter.com/FortnitePorting";
-    public const string GITHUB_URL = "https://github.com/h4lfheart/FortnitePorting";
+    public const string GITHUB_URL = "https://github.com/Bmarquez1997/FortnitePorting";
     public const string KOFI_URL = "https://ko-fi.com/h4lfheart";
     public const string WEBSITE_URL = "https://fortniteporting.app";
 }

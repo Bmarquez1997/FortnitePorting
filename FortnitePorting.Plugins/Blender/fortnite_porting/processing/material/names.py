@@ -44,6 +44,7 @@ texture_ignore_names = ["DefaultTexture"]
 vertex_crunch_names = ["MI_VertexCrunch", "M_VertexCrunch", "M_Invis", "Transparent"]
 
 toon_outline_names = ["Outline", "Toon_Lines"]
+toon_outline_disable_names = ["MI_OutlineLove"]
 
 glass_master_names = [
     "M_MED_Glass_Master", 
