@@ -5,6 +5,7 @@ import json
 from threading import Thread
 from collections import deque
 from .logger import Log
+from .utils import version_string
 
 COMMAND_MESSAGE = 0
 COMMAND_DATA = 1
@@ -27,7 +28,7 @@ class Server(Thread):
         return Server.instance
 
     def run(self):
-        Log.info(f"Running FP V4 Server at {self.host}:{self.port}")
+        Log.info(f"Running FP V{version_string()} Server at {self.host}:{self.port}")
         try:
             self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
