@@ -71,8 +71,8 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
         var manifestToml = Toml.ToModel(manifestContents);
         ExtensionVersion = new Version((string) manifestToml["version"]);
 
-        var fpExtensionVersion = new FPVersion(ExtensionVersion.Major, ExtensionVersion.Minor, ExtensionVersion.Build);
-        Status = fpExtensionVersion.Equals(Globals.Version)
+        var fpExtensionVersion = new Version(ExtensionVersion.Major, ExtensionVersion.Minor, ExtensionVersion.Build);
+        Status = fpExtensionVersion.Equals(Globals.Version.ToVersion())
             ? EPluginStatusType.Newest
             : EPluginStatusType.UpdateAvailable;
         
