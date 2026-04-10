@@ -338,6 +338,33 @@ public class MeshExport : BaseExport
 
                 break;
             }
+            case EExportType.Kicks:
+            {
+                var characterPart = asset.Get<UObject[]>("CharacterParts")?[0];
+
+                var partDataList = characterPart.Get<UScriptArray>("CosmeticPartDataList");
+
+                var props = partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct;
+
+                var materialParams = props.Get<FStructFallback[]>("MaterialParameters");
+                var matList = new List<ExportMaterial>();
+                for (var matIndex = 0; matIndex < materialParams.Length; matIndex++)
+                {
+                    if (materialParams[matIndex].TryGetValue(out UMaterialInterface material, "ParameterValue"))
+                        matList.AddIfNotNull(Exporter.Material(material, matIndex));
+                }
+
+                var meshParams = props.Get<FStructFallback[]>("SkeletalMeshParameters");
+                foreach (var meshParam in meshParams)
+                {
+                    if (!meshParam.TryGetValue(out USkeletalMesh mesh, "ParameterValue")) continue;
+                    var exportMesh = Exporter.Mesh(mesh);
+                    exportMesh?.OverrideMaterials.AddRange(matList);
+                    Meshes.AddIfNotNull(exportMesh);
+                }
+                
+                break;
+            }
             case EExportType.FallGuysOutfit:
             {
                 var parts = asset.GetOrDefault("BaseCharacterParts", Array.Empty<UObject>());

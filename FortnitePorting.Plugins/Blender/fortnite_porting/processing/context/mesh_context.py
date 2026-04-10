@@ -234,13 +234,14 @@ class MeshImportContext:
             for slot in slots:
                 self.import_material(slot, override_material, meta)
 
-        for variant_override_material in self.override_materials:
-            material_name_to_swap = variant_override_material.get("MaterialNameToSwap")
-            
-            slots = where(imported_mesh.material_slots,
-                          lambda slot: slot.material.get("OriginalName") == material_name_to_swap)
-            for slot in slots:
-                self.import_material(slot, variant_override_material.get("Material"), meta)
+        if imported_mesh is not None:
+            for variant_override_material in self.override_materials:
+                material_name_to_swap = variant_override_material.get("MaterialNameToSwap")
+                
+                slots = where(imported_mesh.material_slots,
+                              lambda slot: slot.material.get("OriginalName") == material_name_to_swap)
+                for slot in slots:
+                    self.import_material(slot, variant_override_material.get("Material"), meta)
                 
         for texture_data in mesh.get("TextureData"):
             if not (td_override_material := texture_data.get("OverrideMaterial")):
