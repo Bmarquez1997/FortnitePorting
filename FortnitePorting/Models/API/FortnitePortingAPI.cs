@@ -15,17 +15,18 @@ namespace FortnitePorting.Models.API;
 public class FortnitePortingAPI(RestClient client) : APIBase(client)
 {
     protected override string BaseURL => "https://api.fortniteporting.app";
-    
+
     private readonly ConcurrentDictionary<string, UserInfoResponse> _userInfoCache = [];
-    
+
     public async Task<AuthResponse?> Auth() => await ExecuteAsync<AuthResponse?>("v1/auth");
 
     public async Task<UserInfoResponse?> UserInfo(string? id)
     {
         if (id is null) return null;
         if (_userInfoCache.TryGetValue(id, out var existingUserInfo)) return existingUserInfo;
-        
-        var userInfo = await ExecuteAsync<UserInfoResponse>("v1/user", verbose: false, parameters: [
+
+        var userInfo = await ExecuteAsync<UserInfoResponse>("v1/user", verbose: false, parameters:
+        [
             new QueryParameter(nameof(id), id)
         ]);
 
@@ -34,47 +35,57 @@ public class FortnitePortingAPI(RestClient client) : APIBase(client)
 
         return userInfo;
     }
-    
+
     public async Task<NewsResponse[]> News() => await ExecuteAsync<NewsResponse[]>("v1/news") ?? [];
-    public async Task<FeaturedArtResponse[]> FeaturedArt() => await ExecuteAsync<FeaturedArtResponse[]>("v1/featured_art") ?? [];
+
+    public async Task<FeaturedArtResponse[]> FeaturedArt() =>
+        await ExecuteAsync<FeaturedArtResponse[]>("v1/featured_art") ?? [];
+
     public async Task<OnlineResponse?> Online() => await ExecuteAsync<OnlineResponse?>("v1/static/online");
     public async Task<RepositoryResponse?> Repository() => await ExecuteAsync<RepositoryResponse?>("v1/repository");
-    public async Task<BroadcastResponse[]> Broadcasts() => await ExecuteAsync<BroadcastResponse[]?>("v1/broadcast") ?? [];
+
+    public async Task<BroadcastResponse[]> Broadcasts() =>
+        await ExecuteAsync<BroadcastResponse[]?>("v1/broadcast") ?? [];
+
     public async Task<List<string>> GalleryImages() => await ExecuteAsync<List<string>>("v1/gallery") ?? [];
-    
+
     public async Task<MapResponse[]> Maps() => await ExecuteAsync<MapResponse[]>("v1/maps") ?? [];
 
     public async Task PostMap(MapInfo mapInfo) => await ExecuteAsync("v1/maps", Method.Post, verbose: false,
         body: mapInfo.Adapt<MapResponse>()
     );
-    
+
     public async Task DeleteMap(string id) => await ExecuteAsync("v1/maps", Method.Delete, verbose: false,
-        parameters: [
+        parameters:
+        [
             new QueryParameter("id", id)
         ]
     );
 
-    
-    public async Task PostExports(IEnumerable<string> objectPaths) => await ExecuteAsync("v1/exports", Method.Post, verbose: false, 
+
+    public async Task PostExports(IEnumerable<string> objectPaths) => await ExecuteAsync("v1/exports", Method.Post,
+        verbose: false,
         body: new
         {
             objectPaths = objectPaths,
         },
-        parameters: [
+        parameters:
+        [
             new HeaderParameter("token", SupaBase.Client.Auth.CurrentSession!.AccessToken!)
         ]
     );
-    
-    public async Task PostLogin() => await ExecuteAsync("v1/login", Method.Post, verbose: false, 
+
+    public async Task PostLogin() => await ExecuteAsync("v1/login", Method.Post, verbose: false,
         body: new
         {
             version = Globals.Version.GetDisplayString(),
         },
-        parameters: [
+        parameters:
+        [
             new HeaderParameter("token", SupaBase.Client.Auth.CurrentSession!.AccessToken!)
         ]
     );
-    
+
     public async Task PostError(Exception exception) => await ExecuteAsync("v1/error", Method.Post, verbose: false,
         body: new
         {
@@ -82,12 +93,14 @@ public class FortnitePortingAPI(RestClient client) : APIBase(client)
             message = $"{exception.GetType().FullName}: {exception.Message}",
             stackTrace = exception.StackTrace?.SubstringAfter("at ") ?? "None",
         },
-        parameters: [
+        parameters:
+        [
             new HeaderParameter("token", SupaBase.Client.Auth.CurrentSession!.AccessToken!)
         ]
     );
-    
-    public async Task PostMessage(string text, string? replyId = null, string? imagePath = null) => await ExecuteAsync("v1/chat/message", Method.Post, verbose: false,
+
+    public async Task PostMessage(string text, string? replyId = null, string? imagePath = null) => await ExecuteAsync(
+        "v1/chat/message", Method.Post, verbose: false, notifyRateLimit: true,
         body: new
         {
             text = text,
@@ -95,32 +108,37 @@ public class FortnitePortingAPI(RestClient client) : APIBase(client)
             replyId = replyId,
             imagePath = imagePath,
         },
-        parameters: [
+        parameters:
+        [
             new HeaderParameter("token", SupaBase.Client.Auth.CurrentSession!.AccessToken!)
         ]
     );
 
-    public async Task EditMessage(string text, string id) => await ExecuteAsync("v1/chat/message", Method.Patch, verbose: false,
+    public async Task EditMessage(string text, string id) => await ExecuteAsync("v1/chat/message", Method.Patch,
+        verbose: false, notifyRateLimit: true,
         body: new
         {
             id = id,
             text = text,
         },
-        parameters: [
+        parameters:
+        [
             new HeaderParameter("token", SupaBase.Client.Auth.CurrentSession!.AccessToken!)
         ]
     );
 
     public async Task DeleteMessage(string id) => await ExecuteAsync("v1/chat/message", Method.Delete, verbose: false,
+        notifyRateLimit: true,
         body: new
         {
             id = id,
         },
-        parameters: [
+        parameters:
+        [
             new HeaderParameter("token", SupaBase.Client.Auth.CurrentSession!.AccessToken!)
         ]
     );
-    
+
     public async Task<AesResponse?> Aes(string version = "")
     {
         Parameter[] parameters = !string.IsNullOrWhiteSpace(version) ? [new QueryParameter("version", version)] : [];

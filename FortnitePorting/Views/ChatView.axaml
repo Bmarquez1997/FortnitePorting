@@ -348,61 +348,59 @@
                                         </TextBlock.Text>
                                     </TextBlock>
 
-                                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Hidden">
-                                        <ItemsControl ItemsSource="{Binding Value}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="chat:ChatUser">
-                                                    <controls:ContentCard HorizontalAlignment="Stretch" Cursor="Hand"
-                                                                          PointerPressed="OnUserPressed"
-                                                                          Margin="{ext:Space 0, 0, 0, 1}">
-                                                        <FlyoutBase.AttachedFlyout>
-                                                            <MenuFlyout>
-                                                                <MenuItem Header="Copy User ID"
-                                                                          Command="{Binding CopyIDCommand}" />
-                                                                <MenuItem Header="Set Role"
-                                                                          Command="{Binding SetRoleCommand}"
-                                                                          IsVisible="{Binding CanChangeRole}" />
-                                                            </MenuFlyout>
-                                                        </FlyoutBase.AttachedFlyout>
-                                                        <Grid HorizontalAlignment="Left" Margin="{ext:Space 1}">
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition Height="Auto" />
-                                                                <RowDefinition Height="Auto" />
-                                                            </Grid.RowDefinitions>
+                                    <ItemsControl Grid.Row="2"  ItemsSource="{Binding Value}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="chat:ChatUser">
+                                                <controls:ContentCard HorizontalAlignment="Stretch" Cursor="Hand"
+                                                                      PointerPressed="OnUserPressed"
+                                                                      Margin="{ext:Space 0, 0, 0, 1}">
+                                                    <FlyoutBase.AttachedFlyout>
+                                                        <MenuFlyout>
+                                                            <MenuItem Header="Copy User ID"
+                                                                      Command="{Binding CopyIDCommand}" />
+                                                            <MenuItem Header="Set Role"
+                                                                      Command="{Binding SetRoleCommand}"
+                                                                      IsVisible="{Binding CanChangeRole}" />
+                                                        </MenuFlyout>
+                                                    </FlyoutBase.AttachedFlyout>
+                                                    <Grid HorizontalAlignment="Left" Margin="{ext:Space 1}">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
 
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="Auto" />
-                                                                <ColumnDefinition Width="{ext:Space 1}" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                            </Grid.ColumnDefinitions>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="{ext:Space 1}" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
 
-                                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                                                    CornerRadius="8" ClipToBounds="True">
-                                                                <Image
-                                                                    asyncImageLoader:ImageLoader.Source="{Binding AvatarUrl}"
-                                                                    RenderOptions.BitmapInterpolationMode="MediumQuality"
-                                                                    Width="32" Height="32"
-                                                                    Classes="BodyStrongTextBlockStyle"
-                                                                    VerticalAlignment="Center" />
-                                                            </Border>
+                                                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                                                CornerRadius="8" ClipToBounds="True">
+                                                            <Image
+                                                                asyncImageLoader:ImageLoader.Source="{Binding AvatarUrl}"
+                                                                RenderOptions.BitmapInterpolationMode="MediumQuality"
+                                                                Width="32" Height="32"
+                                                                Classes="BodyStrongTextBlockStyle"
+                                                                VerticalAlignment="Center" />
+                                                        </Border>
 
-                                                            <TextBlock Grid.Row="0" Grid.Column="2"
-                                                                       Text="{Binding DisplayName}"
-                                                                       Foreground="{Binding Brush}"
-                                                                       Classes="BodyStrongTextBlockStyle"
-                                                                       VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Row="0" Grid.Column="2"
+                                                                   Text="{Binding DisplayName}"
+                                                                   Foreground="{Binding Brush}"
+                                                                   Classes="BodyStrongTextBlockStyle"
+                                                                   VerticalAlignment="Center" />
 
-                                                            <TextBlock Grid.Row="1" Grid.Column="2"
-                                                                       Text="{Binding OnlineVersion}"
-                                                                       FontSize="12"
-                                                                       Classes="BodyTextBlockStyle TextFillColorTertiaryBrush"
-                                                                       VerticalAlignment="Center" />
-                                                        </Grid>
-                                                    </controls:ContentCard>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
+                                                        <TextBlock Grid.Row="1" Grid.Column="2"
+                                                                   Text="{Binding OnlineVersion}"
+                                                                   FontSize="12"
+                                                                   Classes="BodyTextBlockStyle TextFillColorTertiaryBrush"
+                                                                   VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </controls:ContentCard>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

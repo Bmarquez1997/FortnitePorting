@@ -369,7 +369,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
     {
         if (sender is not Control control) return;
         if (control.DataContext is not ChatMessage message) return;
-        TaskService.Run(async () => await Api.FortnitePorting.DeleteMessage(message.Id));
+        TaskService.Run(async () => await Chat.DeleteMessage(message));
     }
 
     private void OnMessageUserPressed(object? sender, PointerPressedEventArgs e)

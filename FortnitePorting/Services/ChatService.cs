@@ -455,4 +455,9 @@ public partial class ChatService : ObservableObject, IService
     {
         await Api.FortnitePorting.EditMessage(text, message.Id);
     }
+    
+    public async Task DeleteMessage(ChatMessage message)
+    {
+        await Api.FortnitePorting.DeleteMessage(message.Id);
+    }
 }
