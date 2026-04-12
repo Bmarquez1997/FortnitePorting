@@ -42,6 +42,7 @@ class MeshImportContext:
         if self.type in [EExportType.OUTFIT]:
             for imported_mesh in self.imported_meshes:
                 self.parent_deform_bones(imported_mesh["Skeleton"], ["dfrm_", "deform_"])
+                self.parent_bones(imported_mesh["Skeleton"], extra_deform_mappings)
             
         if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
             master_skeleton = merge_armatures(self.imported_meshes)
@@ -335,13 +336,30 @@ class MeshImportContext:
             for prefix in prefixes:
                 if bone.name.startswith(prefix):
                     parent_name = bone.name[len(prefix):]
-                    parent_bone = edit_bones.get(parent_name)
     
-                    if parent_bone:
+                    if parent_bone := edit_bones.get(parent_name):
                         bone.parent = parent_bone
                         bone.use_connect = False
                     break
     
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    def parent_bones(self, skeleton, mappings):
+        bpy.context.view_layer.objects.active = skeleton
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        edit_bones = skeleton.data.edit_bones
+
+        for target_name, parent_name in mappings.items():
+            if not (target_bone := edit_bones.get(target_name)):
+                continue
+                
+            if not (parent_bone := edit_bones.get(parent_name)):
+                continue
+
+            target_bone.parent = parent_bone
+            target_bone.use_connect = False
+
         bpy.ops.object.mode_set(mode='OBJECT')
     
     def import_light_data(self, lights, parent=None):
