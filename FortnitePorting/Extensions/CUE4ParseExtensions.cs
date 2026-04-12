@@ -275,6 +275,34 @@ public static class CUE4ParseExtensions
         }
     }
 
+    extension(FInstancedStruct[] structList)
+    {
+        public T? GetItem<T>(params string[] names)
+        {
+            foreach (var data in structList)
+            {
+                if (data.NonConstStruct is not null && data.NonConstStruct.TryGetValue(out T obj, names))
+                    return obj;
+            }
+
+            return default;
+        }
+        
+        public List<T> GetItems<T>(params string[] names)
+        {
+            var returnList = new List<T>();
+            
+            foreach (var data in structList)
+            {
+                if (data.NonConstStruct is not null && data.NonConstStruct.TryGetValue(out T obj, names))
+                {
+                    returnList.Add(obj);
+                }
+            }
+            
+            return returnList;
+        }
+    }
 
     extension(IPropertyHolder propertyHolder)
     {
@@ -301,33 +329,12 @@ public static class CUE4ParseExtensions
         
         public T? GetDataListItem<T>(params string[] names)
         {
-            T? returnValue = default;
-            if (propertyHolder.TryGetValue(out FInstancedStruct[] dataList, "DataList"))
-            {
-                foreach (var data in dataList)
-                {
-                    if (data.NonConstStruct is not null && data.NonConstStruct.TryGetValue(out returnValue, names)) break;
-                }
-            }
-
-            return returnValue;
+            return propertyHolder.TryGetValue(out FInstancedStruct[] dataList, "DataList") ? dataList.GetItem<T>(names) : default;
         }
 
         public List<T> GetDataListItems<T>(params string[] names)
         {
-            var returnList = new List<T>();
-            if (propertyHolder.TryGetValue(out FInstancedStruct[] dataList, "DataList"))
-            {
-                foreach (var data in dataList)
-                {
-                    if (data.NonConstStruct is not null && data.NonConstStruct.TryGetValue(out T obj, names))
-                    {
-                        returnList.Add(obj);
-                    }
-                }
-            }
-
-            return returnList;
+            return propertyHolder.TryGetValue(out FInstancedStruct[] dataList, "DataList") ? dataList.GetItems<T>(names) : [];
         }
     }
 

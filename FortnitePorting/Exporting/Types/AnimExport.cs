@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
@@ -68,6 +69,7 @@ public class AnimExport : BaseExport
                 
                 var montage = asset.GetOrDefault<UAnimMontage?>("Animation");
                 montage ??= asset.GetOrDefault<UAnimMontage?>("FrontEndAnimation");
+                montage ??= DataListMontage(asset);
                 if (montage is null) break;
                 
                 AnimMontage(montage);
@@ -254,6 +256,24 @@ public class AnimExport : BaseExport
         }
 
         return sounds;
+    }
+
+    private UAnimMontage? DataListMontage(UObject asset)
+    {
+        var groups = asset.GetDataListItem<FStructFallback[]>("Groups") ?? [];
+
+        foreach (var group in groups)
+        {
+            var entries = group.GetOrDefault<FInstancedStruct[]>("Entries");
+            var targetMontage = entries.GetItem<UAnimMontage?>("MaleMontage");
+            targetMontage ??= entries.GetItem<UAnimMontage?>("MaleMontage");
+            targetMontage ??= entries.GetItem<UAnimMontage?>("DefaultMontage");
+            
+            if (targetMontage is not null)
+                return targetMontage;
+        }
+
+        return null;
     }
     
 }

@@ -49,6 +49,10 @@ public class AssetItem : Base.BaseAssetItem
         IsFavorite = AppSettings.Application.FavoriteAssets.Contains(CreationData.Object.GetPathName());
 
         Rarity = CreationData.Object.GetOrDefault("Rarity", EFortRarity.Uncommon);
+        
+        if (CreationData.Object.GetDataListItem<FName?>("Rarity") is { } dataListRarityName
+            && Enum.TryParse(dataListRarityName.Text.SubstringAfter("::"), out EFortRarity dataListRarity))
+            Rarity = dataListRarity;
 
         if (CreationData.GameplayTags.GetValueOrDefault("Cosmetics.Set")?.Text is { } setTag &&
             UEParse.SetNames.TryGetValue(setTag, out var setName))
