@@ -421,60 +421,63 @@ class MaterialImportContext:
                 switch_param(switch, mappings, target_node)
             handle_default_params(mappings, target_node)
 
-    
         def add_unused_params():
-            y = 0
+            col_spacing = 400
 
-            for texture in textures:
-                name = texture.get("Name")
-                if name.casefold() in used_textures:
-                    continue
-                    
-                path = texture.get("Texture").get("Path")
-                
+            def place_unused_nodes(items, used_set, create_node, x, y_step, label):
+                unused = [item for item in items if item.get("Name").casefold() not in used_set]
+                if not unused:
+                    return False
+
+                frame = nodes.new("NodeFrame")
+                frame.label = label
+                y = 0
+                for item in unused:
+                    node = create_node(item, item.get("Name"))
+                    if node is not None:
+                        node.location = x, y
+                        node.parent = frame
+                        y -= y_step
+                return True
+
+            def make_texture(item, name):
                 try:
-                    node = create_texture_node(nodes, name, self.import_image(path), texture.get("Texture").get("sRGB"))
-                    node.location = 400, y
-                    y -= 50
+                    path = item.get("Texture").get("Path")
+                    return create_texture_node(nodes, name, self.import_image(path), item.get("Texture").get("sRGB"))
                 except Exception:
                     traceback.print_exc()
+                    return None
 
-            for scalar in scalars:
-                name = scalar.get("Name")
-                if name.casefold() in used_scalars:
-                    continue
-                node = create_scalar_node(nodes, name, scalar.get("Value"))
-                node.location = 400, y
-                y -= 100
+            def make_scalar(item, name):
+                return create_scalar_node(nodes, name, item.get("Value"))
 
-            for vector in vectors:
-                name = vector.get("Name")
-                if name.casefold() in used_vectors:
-                    continue
-                value = vector.get("Value")
+            def make_vector(item, name):
+                value = item.get("Value")
                 is_vector = (
                         any(vector_param_names, lambda x: x.casefold() in name.casefold())
                         or any(list(value.values())[0:4], lambda v: v < 0)
                 )
-                node = create_vector_node(nodes, name, value) if is_vector else create_color_node(nodes, name, value)
-                node.location = 400, y
-                y -= 200
+                return create_vector_node(nodes, name, value) if is_vector else create_color_node(nodes, name, value)
 
-            for component_mask in component_masks:
-                name = component_mask.get("Name")
-                if name.casefold() in used_component_masks:
-                    continue
-                node = create_color_node(nodes, name, component_mask.get("Value"))
-                node.location = 400, y
-                y -= 200
+            def make_component_mask(item, name):
+                return create_color_node(nodes, name, item.get("Value"))
 
-            for switch in switches:
-                name = switch.get("Name")
-                if name.casefold() in used_switches:
-                    continue
-                node = create_switch_node(nodes, name, switch.get("Value"))
-                node.location = 400, y
-                y -= 125
+            def make_switch(item, name):
+                return create_switch_node(nodes, name, item.get("Value"))
+
+            param_groups = [
+                (textures, used_textures, make_texture, 50, "Unused Textures"),
+                (scalars, used_scalars, make_scalar, 100, "Unused Scalars"),
+                (vectors, used_vectors, make_vector, 175, "Unused Vectors"),
+                (component_masks, used_component_masks, make_component_mask, 175, "Unused Component Masks"),
+                (switches, used_switches, make_switch, 125, "Unused Switches"),
+            ]
+
+            x = 500
+            for items, used_set, create_node, y_step, label in param_groups:
+                if place_unused_nodes(items, used_set, create_node, x, y_step, label):
+                    x += col_spacing
+
 
         all_mappings = find_all_matching_mappings(material_data)
 
