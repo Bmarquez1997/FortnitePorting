@@ -155,3 +155,10 @@ allowed_reorient_children = {
     "calf_l": ["foot_l"],
     "foot_l": ["ball_l"],
 }
+
+extra_deform_mappings = {
+    "upperRetArm_r": "upperarm_r",
+    "upperRetArm_l": "upperarm_l",
+    "lowerRetArm_r": "lowerarm_r",
+    "lowerRetArm_l": "lowerarm_l",
+}

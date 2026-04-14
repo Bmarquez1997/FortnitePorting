@@ -455,11 +455,20 @@ public partial class AssetLoader : ObservableObject
         Func<BaseAssetItem, IComparable> sort = type switch
         {
             EAssetSortType.AZ => asset => asset.CreationData.DisplayName,
-            EAssetSortType.Season => asset => asset is AssetItem assetItem ? assetItem.Season + (double) assetItem.Rarity * 0.01 : 0,
-            EAssetSortType.Rarity => asset => asset is AssetItem assetItem ? assetItem.Series?.DisplayName.Text + (int) assetItem.Rarity : asset.CreationData.DisplayName,
-            _ => asset => asset is AssetItem assetItem ? assetItem.CreationData.Object?.Name ?? string.Empty : asset.CreationData.DisplayName
-        };
 
+            EAssetSortType.Season => asset =>
+                asset is AssetItem assetItem
+                    ? (assetItem.Season, assetItem.CreationData.ID)
+                    : (0, asset.CreationData.ID),
+
+            EAssetSortType.Rarity => asset =>
+                asset is AssetItem assetItem
+                    ? (assetItem.Rarity, assetItem.CreationData.DisplayName)
+                    : (0, asset.CreationData.ID),
+
+            _ => asset => asset.CreationData.ID
+        };
+        
         return descending
             ? SortExpressionComparer<BaseAssetItem>.Descending(sort)
             : SortExpressionComparer<BaseAssetItem>.Ascending(sort);

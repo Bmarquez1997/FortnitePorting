@@ -8,11 +8,11 @@ from .logger import Log
 
 blend_files = ["fortnite_porting_data.blend", "fortnite_porting_materials.blend"]
 
-_loaded_versions: dict[str, tuple] = {}
+loaded_versions: dict[str, tuple] = {}
 
 def ensure_blend_data_for_file(file_name):
     current = addon_version()
-    if _loaded_versions.get(file_name) == current:
+    if loaded_versions.get(file_name) == current:
         return
 
     addon_dir = os.path.dirname(os.path.splitext(__file__)[0])
@@ -43,7 +43,7 @@ def ensure_blend_data_for_file(file_name):
         if not node_group.get("addon_version"):
             node_group["addon_version"] = version_string()
 
-    _loaded_versions[file_name] = current
+    loaded_versions[file_name] = current
 
 
 # TODO: Make dynamic from mappings_registry.blend_files list?

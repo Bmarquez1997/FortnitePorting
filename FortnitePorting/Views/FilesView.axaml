@@ -148,7 +148,7 @@
                     
                     <controls:ContentCard Grid.Row="1">
                         <Grid Margin="{ext:Space 1}">
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                            <controls:DynamicFadeScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                                           IsVisible="{Binding !UseFlatView}">
                                 <Grid>
                                     <ListBox ItemsSource="{Binding FileViewCollection}" SelectionMode="Multiple"
@@ -276,10 +276,10 @@
                                     </StackPanel>
 
                                 </Grid>
-                            </ScrollViewer>
+                            </controls:DynamicFadeScrollViewer>
 
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                                          IsVisible="{Binding UseFlatView}">
+                            <controls:DynamicFadeScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                                     IsVisible="{Binding UseFlatView}">
                                 <Grid>
                                     <ListBox ItemsSource="{Binding FlatViewCollection}" SelectionMode="Multiple"
                                              SelectedItems="{Binding SelectedFlatViewItems, Mode=TwoWay}"
@@ -322,7 +322,7 @@
                                                Classes="BodyTextBlockStyle TextFillColorTertiaryBrush"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
-                            </ScrollViewer>
+                            </controls:DynamicFadeScrollViewer>
                         </Grid>
                     </controls:ContentCard>
                 </Grid>

@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using FluentAvalonia.UI.Controls;
 using RestSharp;
 using Serilog;
 
@@ -17,7 +18,7 @@ public class APIBase
         _client = client;
     }
 
-    protected async Task<T?> ExecuteAsync<T>(string url, Method method = Method.Get, bool verbose = true, params Parameter[] parameters)
+    protected async Task<T?> ExecuteAsync<T>(string url, Method method = Method.Get, bool verbose = true, bool notifyRateLimit = false, params Parameter[] parameters)
     {
         try
         {
@@ -28,6 +29,10 @@ public class APIBase
             if (verbose) Log.Information("[{Method}] {StatusDescription} ({StatusCode}): {Uri}", request.Method,
                 response.StatusDescription, (int) response.StatusCode, request.Resource);
             if (verbose && response.ErrorException is not null) Log.Error(response.ErrorException.ToString());
+            if (notifyRateLimit && response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                Info.Message("Rate Limit", "You are being rate limited, please slow down your requests.", InfoBarSeverity.Warning);
+            }
             return response.StatusCode != HttpStatusCode.OK ? default : response.Data;
         }
         catch (Exception e)
@@ -37,12 +42,12 @@ public class APIBase
         }
     }
 
-    protected T? Execute<T>(string url, Method method = Method.Get, bool verbose = true,params Parameter[] parameters)
+    protected T? Execute<T>(string url, Method method = Method.Get, bool verbose = true, bool notifyRateLimit = false, params Parameter[] parameters)
     {
-        return ExecuteAsync<T>(url, method, verbose, parameters).GetAwaiter().GetResult();
+        return ExecuteAsync<T>(url, method, verbose, notifyRateLimit, parameters).GetAwaiter().GetResult();
     }
 
-    protected async Task<RestResponse> ExecuteAsync(string url, Method method = Method.Get, bool verbose = true, object? body = null, params Parameter[] parameters)
+    protected async Task<RestResponse> ExecuteAsync(string url, Method method = Method.Get, bool verbose = true, object? body = null, bool notifyRateLimit = false, params Parameter[] parameters)
     {
         var request = new RestRequest(string.IsNullOrEmpty(BaseURL) ? url : $"{BaseURL}/{url}", method);
         foreach (var parameter in parameters) request.AddParameter(parameter);
@@ -53,6 +58,10 @@ public class APIBase
         if (verbose) Log.Information("[{Method}] {StatusDescription} ({StatusCode}): {Uri}", request.Method, response.StatusDescription, (int) response.StatusCode, request.Resource);
         if (verbose && response.ErrorException is not null) Log.Error(response.ErrorException.ToString());
         if (verbose && response.StatusCode != HttpStatusCode.OK) Log.Error(response.Content);
+        if (notifyRateLimit && response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            Info.Message("Rate Limit", "You are being rate limited, please slow down your requests.", InfoBarSeverity.Warning);
+        }
         
         return response;
     }

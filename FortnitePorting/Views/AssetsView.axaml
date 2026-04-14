@@ -306,7 +306,7 @@
             <Grid Grid.Column="1" RowDefinitions="*,Auto" Margin="{ext:Space 1, 0, 0, 0}"
                   IsVisible="{Binding !!AssetLoader.ActiveLoader.SelectedAssetInfos.Count}">
 
-                <ScrollViewer Grid.Row="0" Classes="FixedScrollbar" VerticalScrollBarVisibility="Hidden"
+                <controls:DynamicFadeScrollViewer Grid.Row="0" Classes="FixedScrollbar" VerticalScrollBarVisibility="Hidden"
                               PointerWheelChanged="OnScrollAssets">
                     <ItemsControl ItemsSource="{Binding AssetLoader.ActiveLoader.SelectedAssetInfos}">
                         <ItemsControl.ItemTemplate>
@@ -514,7 +514,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </ScrollViewer>
+                </controls:DynamicFadeScrollViewer>
 
                 <Grid Grid.Row="1" HorizontalAlignment="Stretch" Margin="{ext:Space 0, 1, 0, 0}">
                     <Grid.ColumnDefinitions>

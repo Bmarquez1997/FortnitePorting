@@ -12,6 +12,7 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
+using CUE4Parse.Utils;
 using DynamicData;
 using FortnitePorting.Extensions;
 using SkiaSharp;
@@ -78,6 +79,10 @@ public partial class AssetStyleInfo : ObservableObject
             if (AssetLoader.GetIcon(style)?.Decode()?.ToSkBitmap() is { } iconBitmap)
             {
                 var rarity = style.GetOrDefault("Rarity", EFortRarity.Uncommon);
+                if (style.GetDataListItem<FName?>("Rarity") is { } dataListRarityName
+                        && Enum.TryParse(dataListRarityName.Text.SubstringAfter("::"), out EFortRarity dataListRarity))
+                    rarity = dataListRarity;
+                
                 var image = CreateDisplayImage(iconBitmap, rarity);
                 previewBitmap = image.ToWriteableBitmap();
             }

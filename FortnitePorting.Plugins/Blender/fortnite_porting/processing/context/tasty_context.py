@@ -572,6 +572,33 @@ class TastyImportContext:
                        DriverVariable("use_ik", "SINGLE_PROP", target_skeleton, '["use_ik_hand_l"]'),
                        DriverVariable("use_pole", "SINGLE_PROP", target_skeleton, '["use_pole_targets"]')
                    ])),
+            
+            # squibbly tentacle ik
+            IKBone("tentacle_10_r", "ik_hand_target_r", "ik_hand_pole_r", 10, name="IK w/ Pole",
+                   lock_axes=["X"], limit_axes={"Y": [-45, 45], "Z": [-120, 30]},
+                   driver=DriverBuilder("use_ik and use_pole", [
+                       DriverVariable("use_ik", "SINGLE_PROP", target_skeleton, '["use_ik_hand_r"]'),
+                       DriverVariable("use_pole", "SINGLE_PROP", target_skeleton, '["use_pole_targets"]')
+                   ])),
+            IKBone("tentacle_10_r", "ik_hand_target_r", None, 10, name="IK w/o Pole",
+                   lock_axes=["X"], limit_axes={"Y": [-45, 45], "Z": [-120, 30]},
+                   driver=DriverBuilder("use_ik and not use_pole", [
+                       DriverVariable("use_ik", "SINGLE_PROP", target_skeleton, '["use_ik_hand_r"]'),
+                       DriverVariable("use_pole", "SINGLE_PROP", target_skeleton, '["use_pole_targets"]')
+                   ])),
+
+            IKBone("tentacle_10_l", "ik_hand_target_l", "ik_hand_pole_l", 10, name="IK w/ Pole",
+                   lock_axes=["X"], limit_axes={"Y": [-45, 45], "Z": [-120, 30]},
+                   driver=DriverBuilder("use_ik and use_pole", [
+                       DriverVariable("use_ik", "SINGLE_PROP", target_skeleton, '["use_ik_hand_l"]'),
+                       DriverVariable("use_pole", "SINGLE_PROP", target_skeleton, '["use_pole_targets"]')
+                   ])),
+            IKBone("tentacle_10_l", "ik_hand_target_l", None, 10, name="IK w/o Pole",
+                   lock_axes=["X"], limit_axes={"Y": [-45, 45], "Z": [-120, 30]},
+                   driver=DriverBuilder("use_ik and not use_pole", [
+                       DriverVariable("use_ik", "SINGLE_PROP", target_skeleton, '["use_ik_hand_l"]'),
+                       DriverVariable("use_pole", "SINGLE_PROP", target_skeleton, '["use_pole_targets"]')
+                   ])),
         
             IKBone("calf_r", "ik_foot_target_r", "ik_foot_pole_r", 2, name="IK w/ Pole",
                    lock_axes=["X"], limit_axes={"Y": [-15, 15], "Z": [-135, 5]},
@@ -1072,7 +1099,7 @@ class TastyImportContext:
     
             has_vertex_group = pose_bone.color.palette != "THEME14"
     
-            if "dyn_" in pose_bone.name and "_mstr" not in pose_bone.name.casefold():
+            if "dyn_" in pose_bone.name and "_mstr" not in pose_bone.name.casefold() or "tentacle_" in pose_bone.name:
                 dynamic_collection.assign(pose_bone)
     
                 if options.use_dynamic_bone_shape:
