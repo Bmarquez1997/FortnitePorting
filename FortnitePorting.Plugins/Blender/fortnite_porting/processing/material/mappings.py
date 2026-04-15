@@ -1417,7 +1417,8 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("Use Second UV Channel", "Use Second UV"),
 
         SlotMapping("Affects Base Color"),
-        SlotMapping("Multiply Flipbook Emissive"),
+        SlotMapping("Multiply Flipbook Emission"),
+        SlotMapping("Multiply Flipbook Emissive", "Multiply Flipbook Emission"),
 
         SlotMapping("BumpOffset Intensity"),
         SlotMapping("Bump Height"),
@@ -1435,8 +1436,9 @@ class FlipbookMappings(MappingCollection):
         SlotMapping("UseUV2forMouth", "Use Second UV"),
         SlotMapping("FB_MouthUseUV2", "Use Second UV"),
         SlotMapping("Affects Base Color"),
-        SlotMapping("Multiply Flipbook Emissive"),
-        SlotMapping("useEmissiveforMouth", "Multiply Flipbook Emissive"),
+        SlotMapping("Multiply Flipbook Emission"),
+        SlotMapping("Multiply Flipbook Emissive", "Multiply Flipbook Emission"),
+        SlotMapping("useEmissiveforMouth", "Multiply Flipbook Emission"),
     )
 
 
