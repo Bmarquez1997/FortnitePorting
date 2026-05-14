@@ -162,10 +162,6 @@ public partial class AssetLoaderService : ObservableObject, IService
                         }
                     ],
                 },
-                new AssetLoader(EExportType.Wrap)
-                {
-                    ClassNames = ["AthenaItemWrapDefinition"]
-                },
                 new AssetLoader(EExportType.Kicks)
                 {
                     ClassNames = ["CosmeticShoesItemDefinition"],
@@ -184,6 +180,10 @@ public partial class AssetLoaderService : ObservableObject, IService
 
                         return new FGameplayTagContainer(newTags.ToArray());
                     }
+                },
+                new AssetLoader(EExportType.Wrap)
+                {
+                    ClassNames = ["AthenaItemWrapDefinition"]
                 }
             ]
         },

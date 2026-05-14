@@ -126,11 +126,12 @@ public enum EExportType
     [Description("Sidekicks"), Export(EPrimitiveExportType.Mesh)]
     SideKick,
     
+    [Description("Kicks"), Export(EPrimitiveExportType.Mesh)]
+    Kicks,
+    
     [Description("Wraps"), Export(EPrimitiveExportType.Material)]
     Wrap,
 
-    [Description("Kicks"), Export(EPrimitiveExportType.Mesh)]
-    Kicks,
     
     // Rocket Racing
 
