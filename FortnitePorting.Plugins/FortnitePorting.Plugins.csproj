@@ -11,13 +11,12 @@
 
     <ItemGroup>
         <Folder Include="Unity\" />
-        <Folder Include="UEFormat\" />
     </ItemGroup>
 
     <ItemGroup>
         <Compile Remove="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
         <Content Include="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
         <Compile Remove="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
-        <Compile Include="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
+<!--        <Compile Include="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />-->
     </ItemGroup>
 </Project>

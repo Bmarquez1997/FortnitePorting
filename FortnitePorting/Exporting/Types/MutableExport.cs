@@ -17,6 +17,7 @@ using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Export.Models;
 using FortnitePorting.Exporting.Models;
+using FortnitePorting.Exporting.Models.Files.Meta;
 using FortnitePorting.Exporting.Types;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets;
@@ -34,7 +35,7 @@ public class MutableExport : BaseExport
     public readonly List<ExportMaterial> Materials = [];
     
     
-    public MutableExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
+    public MutableExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
         UCustomizableObject? customizableObject = null;
         string? filterSkeletonName = null;

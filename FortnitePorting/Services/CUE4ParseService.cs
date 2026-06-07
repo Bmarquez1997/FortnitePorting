@@ -375,13 +375,7 @@ public partial class CUE4ParseService : ObservableObject, IService
         {
             Info.Message("Internationalization", $"Failed to load language \"{AppSettings.Installation.CurrentProfile.GameLanguage.Description}\"");
         }
-
-        if (AppSettings.Installation.CurrentProfile.FortniteVersion == EFortniteVersion.Custom || invalidKeys.Count == 0) return;
         
-        Log.Information("Removing Unused Keys:");
-        invalidKeys.ForEach(key => Log.Information("{0}", key.KeyString));
-
-        await AppSettings.Installation.CurrentProfile.RemoveEncryptionKeys(invalidKeys.ToList());
     }
 
     [LoadingStage("Loading Mappings", stage: 10, weight: 1)]
@@ -566,7 +560,7 @@ public partial class CUE4ParseService : ObservableObject, IService
 
         await LoadLocalExtraKeys();
     }
-    
+
     private async Task LoadLocalExtraKeys()
     {
         var invalidKeys = AppSettings.Installation.CurrentProfile.ExtraKeys.ToList();
@@ -576,13 +570,22 @@ public partial class CUE4ParseService : ObservableObject, IService
             {
                 if (extraKey.IsEmpty) continue;
                 if (!vfs.TestAesKey(extraKey.EncryptionKey)) continue;
-                        
-                Log.Information("Submitting Local Extra Key {Key} with GUID {Guid} for {FileName}", extraKey.EncryptionKey, vfs.EncryptionKeyGuid, vfs.Name);
+
+                Log.Information("Submitting Local Extra Key {Key} with GUID {Guid} for {FileName}",
+                    extraKey.EncryptionKey, vfs.EncryptionKeyGuid, vfs.Name);
                 var paksMounted = await Provider.SubmitKeyAsync(vfs.EncryptionKeyGuid, extraKey.EncryptionKey);
                 if (paksMounted > 0) invalidKeys.Remove(extraKey);
             }
         }
-    
+        
+        if (AppSettings.Installation.CurrentProfile.FortniteVersion == EFortniteVersion.Custom || invalidKeys.Count == 0) return;
+        
+        Log.Information("Removing Unused Keys:");
+        invalidKeys.ForEach(key => Log.Information("{0}", key.KeyString));
+
+        await AppSettings.Installation.CurrentProfile.RemoveEncryptionKeys(invalidKeys.ToList());
+    }
+
     private async Task<string?> GetEndpointMappings()
     {
         var mappings = await Api.FortnitePorting.Mappings(string.Empty);

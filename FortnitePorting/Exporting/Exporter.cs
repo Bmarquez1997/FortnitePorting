@@ -263,7 +263,7 @@ public static class Exporter
             EPrimitiveExportType.Font => new FontExport(displayName, asset, exportType, metaData, fileMeta),
             EPrimitiveExportType.PoseAsset => new PoseAssetExport(displayName, asset, exportType, metaData, fileMeta),
             EPrimitiveExportType.Material => new MaterialExport(displayName, asset, exportType, metaData, fileMeta),
-            EPrimitiveExportType.Mutable => new MutableExport(displayName, asset, styles, exportType, fileMeta),
+            EPrimitiveExportType.Mutable => new MutableExport(displayName, asset, styles, exportType, metaData, fileMeta),
             _ => throw new NotImplementedException($"Exporting {primitiveType} assets is not supported yet.")
         };
         
