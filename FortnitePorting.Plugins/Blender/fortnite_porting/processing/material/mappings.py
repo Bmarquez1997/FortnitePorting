@@ -1747,7 +1747,7 @@ class SequinSecondaryMappings(SequinMappings):
 
 @registry.register
 class GmapMappings(MappingCollection):
-    node_name="FPv4 Gmap Material" # TODO: Rename to "Gmap" or "GMap Color"?
+    node_name="FPv4 GMap Material" # TODO: Rename to "Gmap" or "GMap Color"?
     type=ENodeType.NT_Advanced_FX
 
     @classmethod

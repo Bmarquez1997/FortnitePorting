@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using CUE4Parse.FileProvider.Vfs;
 using CUE4Parse.UE4.IO;
-using CUE4Parse.UE4.IO.OnDemand;
 using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
 using CUE4Parse.Utils;
@@ -16,6 +15,7 @@ namespace FortnitePorting.Models.CUE4Parse;
 public class HybridFileProvider : AbstractVfsFileProvider
 {
     public bool LoadExtraDirectories;
+    public bool LoadOnDemandTocs;
     private readonly DirectoryInfo WorkingDirectory;
     private readonly IEnumerable<DirectoryInfo> ExtraDirectories;
     private const SearchOption SearchOption = System.IO.SearchOption.AllDirectories;
@@ -40,20 +40,26 @@ public class HybridFileProvider : AbstractVfsFileProvider
 
     public override void Initialize()
     {
-        if (!WorkingDirectory.Exists) throw new DirectoryNotFoundException($"Provided installation folder does not exist: {WorkingDirectory.FullName}");
+        InitializeAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task InitializeAsync()
+    {
+        if (!WorkingDirectory.Exists) 
+            throw new DirectoryNotFoundException($"Provided installation folder does not exist: {WorkingDirectory.FullName}");
         
-        RegisterFiles(WorkingDirectory);
+        await RegisterFiles(WorkingDirectory);
         
         if (LoadExtraDirectories)
         {
             foreach (var extraDirectory in ExtraDirectories)
             {
-                RegisterFiles(extraDirectory);
+                await RegisterFiles(extraDirectory);
             }
         }
     }
 
-    public void RegisterFiles(DirectoryInfo directory)
+    public async Task RegisterFiles(DirectoryInfo directory)
     {
         foreach (var file in directory.EnumerateFiles("*.*", EnumerationOptions))
         {
@@ -63,16 +69,16 @@ public class HybridFileProvider : AbstractVfsFileProvider
                 RegisterVfs(file.FullName, [ file.OpenRead() ], it => new FStreamArchive(it, File.OpenRead(it), Versions));
             }
 
-            if (extension is "uondemandtoc")
+            if (extension is "uondemandtoc" && LoadOnDemandTocs)
             {
                 var archive = new FByteArchive(file.FullName, File.ReadAllBytes(file.FullName), Versions);
                 var ioChunkToc = new IoChunkToc(archive);
-                RegisterVfs(ioChunkToc, OnDemandOptions);
+                await RegisterVfsAsync(ioChunkToc);
             }
         }
     }
     
-    public void RegisterFiles(FBuildPatchAppManifest manifest)
+    public async Task RegisterFiles(FBuildPatchAppManifest manifest)
     {
         var targetCacheDirectory = Path.Combine(UEParse.CacheFolder.FullName, "uondemandtoc", manifest.Meta.BuildVersion);
         Directory.CreateDirectory(targetCacheDirectory);
@@ -91,19 +97,18 @@ public class HybridFileProvider : AbstractVfsFileProvider
                         manifest.Files.First(subFile => subFile.FileName.Equals(name)).GetStream()));
             }
 
-            if (extension is "uondemandtoc")
+            if (extension is "uondemandtoc" && LoadOnDemandTocs)
             {
-                
                 var targetPath = Path.Combine(targetCacheDirectory, file.FileName.SubstringAfterLast("/"));
                 if (!File.Exists(targetPath))
                 {
-                    using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write);
-                    file.GetStream().CopyTo(fileStream);
+                    await using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write);
+                    await file.GetStream().CopyToAsync(fileStream);
                 }
                 
-                var archive = new FByteArchive(targetPath, File.ReadAllBytes(targetPath), Versions);
+                var archive = new FByteArchive(targetPath, await File.ReadAllBytesAsync(targetPath), Versions);
                 var ioChunkToc = new IoChunkToc(archive);
-                RegisterVfs(ioChunkToc, OnDemandOptions);
+                await RegisterVfsAsync(ioChunkToc);
             }
 
         }

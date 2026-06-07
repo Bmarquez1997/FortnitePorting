@@ -1,11 +1,14 @@
 using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using FortnitePorting.Controls.Navigation.Sidebar;
 using FortnitePorting.Controls.WrapPanel;
 using FortnitePorting.Framework;
+using FortnitePorting.Models.Assets;
 using FortnitePorting.Models.Assets.Asset;
 using FortnitePorting.Models.Assets.Custom;
 using FortnitePorting.Models.Assets.Filters;
@@ -17,6 +20,8 @@ namespace FortnitePorting.Views;
 
 public partial class AssetsView : ViewBase<AssetsViewModel>
 {
+    private bool _finishedFirstLoad = false;
+    
     public AssetsView()
     {
         InitializeComponent();
@@ -42,6 +47,17 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
                 args.Handled = true;
             }
         }, handledEventsToo: true);
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        if (!_finishedFirstLoad)
+        {
+            Navigation.Assets.Open(AppSettings.Application.UseDefaultExportLoadType ? AppSettings.Application.DefaultExportLoadType : EExportType.Outfit);
+            _finishedFirstLoad = true;
+        }
     }
 
     private void ChangeTab(EExportType assetType)
@@ -142,5 +158,15 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
         if (item.IconDisplayImage is not null) return;
         
         item.LoadBitmap();
+    }
+
+    private void OnStyleBoxPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control control) return;
+        if (control.DataContext is not AssetStyleInfo assetStyleInfo) return;
+        if (assetStyleInfo.RequiredSelection) return;
+        
+        assetStyleInfo.SelectedStyleIndex = -1;
+        assetStyleInfo.SelectedItems.Clear();
     }
 }

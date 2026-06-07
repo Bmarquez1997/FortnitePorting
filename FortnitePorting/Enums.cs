@@ -83,53 +83,69 @@ public enum EAssetCategory
 public enum EExportType
 {
     [Description("None")]
+    [NonAsset]
     None,
     
     // COSMETIC
     
     [Description("Outfits"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Outfit,
     
     [Description("Character Parts"), Export(EPrimitiveExportType.Mesh)]
+    [NonAsset]
     CharacterPart,
 
     [Description("Backpacks"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Backpack,
 
     [Description("Pickaxes"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Pickaxe,
 
     [Description("Gliders"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Glider,
 
     [Description("Pets"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Pet,
 
     [Description("Toys"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Toy,
 
     [Description("Emoticons"), Export(EPrimitiveExportType.Texture)]
+    [CosmeticAsset]
     Emoticon,
 
     [Description("Sprays"), Export(EPrimitiveExportType.Texture)]
+    [CosmeticAsset]
     Spray,
 
     [Description("Banners"), Export(EPrimitiveExportType.Texture)]
+    [CosmeticAsset]
     Banner,
 
     [Description("Loading Screens"), Export(EPrimitiveExportType.Texture)]
+    [CosmeticAsset]
     LoadingScreen,
 
     [Description("Emotes"), Export(EPrimitiveExportType.Animation)]
+    [CosmeticAsset]
     Emote,
     
     [Description("Sidekicks"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     SideKick,
     
     [Description("Kicks"), Export(EPrimitiveExportType.Mesh)]
+    [CosmeticAsset]
     Kicks,
     
     [Description("Wraps"), Export(EPrimitiveExportType.Material)]
+    [CosmeticAsset]
     Wrap,
 
     
@@ -208,34 +224,44 @@ public enum EExportType
     // GENERIC
 
     [Description("Mesh"), Export(EPrimitiveExportType.Mesh)]
+    [NonAsset]
     Mesh,
     
     [Description("World"), Export(EPrimitiveExportType.Mesh)]
+    [NonAsset]
     World,
     
     [Description("Texture"), Export(EPrimitiveExportType.Texture)]
+    [NonAsset]
     Texture,
     
     [Description("Animation"), Export(EPrimitiveExportType.Animation)]
+    [NonAsset]
     Animation,
     
     [Description("Sound"), Export(EPrimitiveExportType.Sound)]
+    [NonAsset]
     Sound,
     
     [Description("Font"), Export(EPrimitiveExportType.Font)]
+    [NonAsset]
     Font,
     
     [Description("Pose Asset"), Export(EPrimitiveExportType.PoseAsset)]
+    [NonAsset]
     PoseAsset,
     
     [Description("Material"), Export(EPrimitiveExportType.Material)]
+    [NonAsset]
     Material,
     
     [Description("MaterialInstance"), Export(EPrimitiveExportType.Material)]
+    [NonAsset]
     MaterialInstance,
     
     // UTILITY
     [Description("Tasty Rig"), Export(EPrimitiveExportType.TastyRig)]
+    [NonAsset]
     TastyRig,
     
     // EXPERIMENTAL
@@ -287,7 +313,10 @@ public enum EAssetSortType
     Season,
 
     [Description("Rarity")]
-    Rarity
+    Rarity,
+    
+    [Description("Series")]
+    Series
 }
 
 public enum EImageFormat

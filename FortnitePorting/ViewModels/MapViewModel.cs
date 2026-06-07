@@ -76,7 +76,7 @@ public partial class MapViewModel : ViewModelBase
     {
         await TaskService.RunDispatcherAsync(async () =>
         {
-             IsLoading = true;
+            IsLoading = true;
         
             var maps = await Api.FortnitePorting.Maps();
             foreach (var map in maps)

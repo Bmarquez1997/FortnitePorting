@@ -1,14 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <LangVersion>preview</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-    
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.3.2" />
+        <PackageReference Include="Avalonia" />
     </ItemGroup>
 
     <ItemGroup>
@@ -18,13 +10,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="UEFormat\" />
-      <Folder Include="Unity\" />
+        <Folder Include="Unity\" />
+        <Folder Include="UEFormat\" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Compile Remove="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
-      <Content Include="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
-      <Compile Remove="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
+        <Compile Remove="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
+        <Content Include="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
+        <Compile Remove="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
+        <Compile Include="UEFormat\Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
     </ItemGroup>
 </Project>

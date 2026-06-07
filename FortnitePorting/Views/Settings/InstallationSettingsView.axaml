@@ -79,7 +79,7 @@
                             <TextBox Text="{Binding ArchiveDirectory}"
                                      Watermark="Ex. C:/Fortnite/FortniteGame/Content/Paks" />
                             <Button Margin="4 0 0 0" Command="{Binding BrowseArchivePath}">
-                                <ui:SymbolIcon Symbol="Folder" />
+                                <material:MaterialIcon Kind="Folder"/>
                             </Button>
                         </StackPanel>
                     </controls:SettingsItem.Footer>
@@ -159,14 +159,13 @@
                                      MaxWidth="500" />
                             <Button Margin="4 0 0 0" Command="{Binding BrowseMappingsFile}"
                                     IsEnabled="{Binding UseMappingsFile}">
-                                <ui:SymbolIcon Symbol="Folder" />
+                                <material:MaterialIcon Kind="Folder"/>
                             </Button>
                         </StackPanel>
                     </controls:SettingsItem.Footer>
                 </controls:SettingsItem>
-                
-                <controls:SettingsItem Title="On-Demand Texture Streaming"
-                                       Description="Downloads high resolution cosmetic textures on-demand. Disable if you already have this package installed."
+                <controls:SettingsItem Title="On-Demand Assets"
+                                       Description="Allows the streaming of on-demand assets, served from Fortnite's servers."
                                        IsVisible="{Binding TextureStreamingEnabled}">
                     <controls:SettingsItem.Footer>
                         <ToggleSwitch IsChecked="{Binding UseTextureStreaming}" />

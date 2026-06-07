@@ -15,110 +15,12 @@ public partial class FilesView : ViewBase<FilesViewModel>
     public FilesView() : base(FilesVM, initializeViewModel: false)
     {
         InitializeComponent();
-        
-        AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
-
     }
     
-    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnFileItemTapped(TreeItem item)
     {
-        if (ViewModel.UseFlatView) return;
-
-        var point = e.GetCurrentPoint(this);
-        if (point.Properties.IsXButton1Pressed && ViewModel.CanGoBack)
-        {
-            ViewModel.GoBack();
-            e.Handled = true;
-        }
-        else if (point.Properties.IsXButton2Pressed && ViewModel.CanGoForward)
-        {
-            ViewModel.GoForward();
-            e.Handled = true;
-        }
-    }
-
-    private void OnSearchKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-        if (sender is not TextBox textBox) return;
-
-        if (ViewModel.UseFlatView)
-            ViewModel.FlatSearchFilter = textBox.Text ?? string.Empty;
-        else
-            ViewModel.FileSearchFilter = textBox.Text ?? string.Empty;
-    }
-
-    private void OnFileItemDoubleTapped(object? sender, TappedEventArgs e)
-    { 
-        if (sender is not ListBox listBox) return;
-        if (listBox.SelectedItem is not TreeItem item) return;
-        if (item.Type == ENodeType.File)
-        {
-            TaskService.RunDispatcher(async () => await ViewModel.Preview());
-            return;
-        }
+        if (item.Type != ENodeType.File) return;
         
-        ViewModel.LoadFileItems(item);
-        item.Expanded = true;
-    }
-    
-    private void OnBreadcrumbItemPressed(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args)
-    {
-        if (args.Item is not TreeItem treeItem) return;
-        
-        ViewModel.ClearSearchFilter();
-        ViewModel.LoadFileItems(treeItem);
-    }
-
-    private void OnTreeItemTapped(object? sender, TappedEventArgs e)
-    {
-        if (sender is not TreeView treeView) return;
-        if (treeView.SelectedItem is not TreeItem item) return;
-        if (item.Type == ENodeType.File) return;
-        
-        ViewModel.LoadFileItems(item);
-    }
-    
-    private void OnTreeItemDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        if (sender is not TreeView treeView) return;
-        if (treeView.SelectedItem is not TreeItem item) return;
-        if (item.Type == ENodeType.Folder)
-        {
-            item.Expanded = !item.Expanded;
-            return;
-        }
-        
-        ViewModel.ClearSearchFilter();
-        ViewModel.FlatViewJumpTo(item.FilePath);
-    }
-    
-    private void OnFlatItemDoubleTapped(object? sender, TappedEventArgs e)
-    { 
-        if (sender is not ListBox listBox) return;
-        if (listBox.SelectedItem is not FlatItem item) return;
-        
-        ViewModel.FileViewJumpTo(item.Path);
-    }
-
-    private void OnItemRealized(object? sender, ItemRealizedEventArgs e)
-    {
-        if (e.Item is not TreeItem item) return;
-        if (item.FileBitmap is not null) return;
-        
-        item.EnsureChildrenSorted();
-        ViewModel.RealizeFileData(ref item);
-    }
-
-    private void OnFlatViewHyperlinkPressed(object? sender, PointerPressedEventArgs e)
-    {
-        var searchTerm = ViewModel.FileSearchFilter;
-        
-        ViewModel.FileSearchFilter = string.Empty;
-        ViewModel.FileSearchText = string.Empty;
-        
-        ViewModel.UseFlatView = true;
-        ViewModel.FlatSearchFilter = searchTerm;
-        ViewModel.FlatSearchText = searchTerm;
+        TaskService.RunDispatcher(async () => await ViewModel.Preview());
     }
 }

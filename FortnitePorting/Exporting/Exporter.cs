@@ -21,6 +21,8 @@ using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
 using FortnitePorting.Export.Types;
 using FortnitePorting.Exporting.Models;
+using FortnitePorting.Exporting.Models.Files;
+using FortnitePorting.Exporting.Models.Files.Meta;
 using FortnitePorting.Exporting.Types;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models;
@@ -152,9 +154,9 @@ public static class Exporter
         })!, metaData);
     }
     
-    public static async Task<bool> Export(List<KeyValuePair<UObject, EExportType>> assets, ExportDataMeta metaData)
+    public static async Task<bool> Export(List<ExportFileEntry> assets, ExportDataMeta metaData)
     {
-        return await Export(() => assets.Select(kvp => CreateExport(kvp.Key.Name, kvp.Key, kvp.Value, [], metaData)), metaData);
+        return await Export(() => assets.Select(entry => CreateExport(entry.Object.Name, entry.Object, entry.Type, [], metaData, entry.Meta)), metaData);
     }
     
     public static async Task<bool>? Export(IEnumerable<UObject> assets, EExportType type, ExportDataMeta metaData)
@@ -235,7 +237,7 @@ public static class Exporter
         return outPath;
     }
     
-    private static BaseExport CreateExport(string displayName, UObject asset, EExportType exportType, BaseStyleData[] styles, ExportDataMeta metaData)
+    private static BaseExport CreateExport(string displayName, UObject asset, EExportType exportType, BaseStyleData[] styles, ExportDataMeta metaData, IExportFileMeta? fileMeta = null)
     {
         var path = asset.GetPathName();
         Info.Message($"Exporting", asset.Name, id: path, autoClose: false);
@@ -254,14 +256,14 @@ public static class Exporter
         var primitiveType = exportType.PrimitiveType;
         BaseExport export = primitiveType switch
         {
-            EPrimitiveExportType.Mesh => new MeshExport(displayName, asset, styles, exportType, metaData),
-            EPrimitiveExportType.Texture => new TextureExport(displayName, asset, exportType, metaData),
-            EPrimitiveExportType.Sound => new SoundExport(displayName, asset, exportType, metaData),
-            EPrimitiveExportType.Animation => new AnimExport(displayName, asset, styles, exportType, metaData),
-            EPrimitiveExportType.Font => new FontExport(displayName, asset, exportType, metaData),
-            EPrimitiveExportType.PoseAsset => new PoseAssetExport(displayName, asset, exportType, metaData),
-            EPrimitiveExportType.Material => new MaterialExport(displayName, asset, exportType, metaData),
-            EPrimitiveExportType.Mutable => new MutableExport(displayName, asset, styles, exportType, metaData),
+            EPrimitiveExportType.Mesh => new MeshExport(displayName, asset, styles, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Texture => new TextureExport(displayName, asset, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Sound => new SoundExport(displayName, asset, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Animation => new AnimExport(displayName, asset, styles, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Font => new FontExport(displayName, asset, exportType, metaData, fileMeta),
+            EPrimitiveExportType.PoseAsset => new PoseAssetExport(displayName, asset, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Material => new MaterialExport(displayName, asset, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Mutable => new MutableExport(displayName, asset, styles, exportType, fileMeta),
             _ => throw new NotImplementedException($"Exporting {primitiveType} assets is not supported yet.")
         };
         
