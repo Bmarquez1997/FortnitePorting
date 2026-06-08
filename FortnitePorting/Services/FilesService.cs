@@ -83,7 +83,8 @@ public partial class FilesService : ObservableObject, IService
     private bool IsValidFilePath(string path)
     {
         var isValidExtension = path.EndsWith(".uasset") || path.EndsWith(".umap") || path.EndsWith(".ufont");
+        var isOptionalSegment = path.Contains(".o.");
         var isVerse = path.Contains("/_Verse/");
-        return isValidExtension && !isVerse;
+        return AppSettings.Developer.ShowAllFilesInFilesTab || (isValidExtension && !isOptionalSegment && !isVerse);
     }
 }
