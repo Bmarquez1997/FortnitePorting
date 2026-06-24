@@ -110,6 +110,13 @@ public partial class MusicPackItem : ObservableObject
     [RelayCommand]
     public async Task SaveAudio()
     {
+        if (IsUnsupported)
+        {
+            Info.Message("Unsupported Lobby Music Format",
+                $"\"{TrackName}\" uses a new format for lobby music that is currently unsupported.");
+            return;
+        }
+        
         if (await App.SaveFileDialog(suggestedFileName: Id, [Globals.MP3FileType, Globals.WAVFileType, Globals.OGGFileType, Globals.FLACFileType]) is not { } path) return;
 
         var extension = Path.GetExtension(path);
