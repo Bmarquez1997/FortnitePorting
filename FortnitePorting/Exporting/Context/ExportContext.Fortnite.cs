@@ -32,13 +32,9 @@ public partial class ExportContext
         var exportPart = Mesh<ExportPart>(skeletalMesh);
         if (exportPart is null) return null;
         
-        exportPart.Type = part.TryGetValue<sbyte>(out var partType,"CharacterPartType") 
-                        ? (EFortCustomPartType)partType 
-                        : part.GetOrDefault("CharacterPartType", EFortCustomPartType.Head);
-        // exportPart.GenderPermitted = part.GetOrDefault("GenderPermitted", EFortCustomGender.Male);
-        exportPart.GenderPermitted = part.TryGetValue<sbyte>(out var genderType,"GenderPermitted") 
-                        ? (EFortCustomGender)genderType 
-                        : part.GetOrDefault("GenderPermitted", EFortCustomGender.Male);
+        exportPart.Type = part.GetEnumOrDefault("CharacterPartType", EFortCustomPartType.Head);
+
+        exportPart.GenderPermitted = part.GetEnumOrDefault("GenderPermitted", EFortCustomGender.Male);
 
         if (part.TryGetValue(out FStructFallback[] materialOverrides, "MaterialOverrides"))
         {
