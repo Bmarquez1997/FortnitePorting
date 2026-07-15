@@ -45,6 +45,8 @@ public partial class FileBrowserContext : ObservableObject
 
     [ObservableProperty] private string _flatSearchFilter = string.Empty;
     [ObservableProperty] private string _fileSearchFilter = string.Empty;
+    
+    [ObservableProperty] private bool _isDragDropEnabled = false;
 
     [ObservableProperty] private EFileFilterType _fileTypeFilter = EFileFilterType.All;
     private readonly Dictionary<EFileFilterType, string[]> _searchTermsByFilter = new()
@@ -102,6 +104,32 @@ public partial class FileBrowserContext : ObservableObject
         Selected = true
     };
 
+    private IDisposable? _flatViewSubscription;
+
+    public void Reset()
+    {
+        _flatViewSubscription?.Dispose();
+        _flatViewSubscription = null;
+
+        _parentTreeItem.DetachSourceNodes();
+        _parentTreeItem.FolderChildren.Clear();
+        _parentTreeItem.FileChildCount = 0;
+        _parentTreeItem.FolderChildCount = 0;
+
+        CurrentFolder = _parentTreeItem;
+
+        TreeViewCollection = [];
+        FileViewCollection = [];
+        FileViewStack = [];
+        SelectedFlatViewItems = [];
+        SelectedFileViewItems = [];
+        VfsFilterCollection = [];
+        FlatViewCollection = new ReadOnlyObservableCollection<FlatItem>([]);
+
+        _backStack.Clear();
+        _forwardStack.Clear();
+    }
+
     public void Initialize(string? startPath = null)
     {
         VfsFilterCollection = [..UEParse.Provider.MountedVfs
@@ -124,7 +152,7 @@ public partial class FileBrowserContext : ObservableObject
             .CombineLatest(vfsCheckedChanges.StartWith(Unit.Default))
             .Select(_ => CreateAssetFilter(FlatSearchFilter, UseRegex, VfsFilterCollection));
 
-        AppServices.Files.FlatViewAssetCache.Connect()
+        _flatViewSubscription = AppServices.Files.FlatViewAssetCache.Connect()
             .ObserveOn(RxApp.TaskpoolScheduler)
             .Filter(assetFilter)
             .Sort(SortExpressionComparer<FlatItem>.Ascending(x => x.Path))
@@ -250,65 +278,14 @@ public partial class FileBrowserContext : ObservableObject
         FileTypeFilter = EFileFilterType.All;
     }
 
-    public void RealizeFileData(TreeItem item)
+    public async Task RealizeFileDataAsync(TreeItem item)
     {
         if (item.FileBitmap is not null) return;
         if (item.Type == ENodeType.Folder) return;
 
-        if (UEParse.Provider.TryLoadPackage(item.FilePath, out var package))
-        {
-            for (var i = 0; i < package.ExportMapLength; i++)
-            {
-                var pointer = new FPackageIndex(package, i + 1).ResolvedObject;
-                if (pointer?.Object is null) continue;
-                if (!pointer.Name.Text.Equals(item.NameWithoutExtension) &&
-                    !pointer.Name.Text.Equals(item.NameWithoutExtension + "_C")) continue;
-
-                var obj = ((AbstractUePackage) package).ConstructObject(pointer.Class, package);
-                item.ExportType = obj.ExportType;
-
-                if (obj is UTexture2D && pointer.TryLoad(out var textureObj) &&
-                    textureObj is UTexture2D texture &&
-                    texture.Decode(maxMipSize: 128) is { } decodedTexture)
-                {
-                    item.FileBitmap = decodedTexture.ToWriteableBitmap();
-                    break;
-                }
-
-                var assetLoader = AssetLoading.Categories
-                    .SelectMany(category => category.Loaders)
-                    .FirstOrDefault(loader => loader.ClassNames.Contains(obj.ExportType));
-                if (assetLoader is not null && pointer.TryLoad(out var assetObj))
-                {
-                    item.FileBitmap = assetLoader.IconHandler(assetObj)?.Decode(maxMipSize: 128)?.ToWriteableBitmap();
-                    break;
-                }
-
-                if (obj.GetEditorIconBitmap() is { } objectBitmap)
-                {
-                    item.FileBitmap = objectBitmap;
-                    break;
-                }
-
-                if (Exporter.DetermineExportType(obj) is var exportType and not EExportType.None
-                    && $"avares://FortnitePorting/Assets/FN/{exportType}.png" is { } exportIconPath
-                    && AssetLoader.Exists(new Uri(exportIconPath)))
-                {
-                    item.FileBitmap = ImageExtensions.AvaresBitmap(exportIconPath);
-                    break;
-                }
-            }
-
-            if (item.ExportType is null &&
-                new FPackageIndex(package, 1).ResolvedObject is { } zeroPointer)
-            {
-                var zeroObj = ((AbstractUePackage) package).ConstructObject(zeroPointer.Class, package);
-                item.ExportType = zeroObj.ExportType;
-            }
-        }
-
-        item.FileBitmap ??= ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
-        item.ExportType ??= item.Extension;
+        var (icon, _, exportType) = await UEParse.ResolveGameFileAsync(item.FilePath);
+        item.FileBitmap = icon;
+        item.ExportType = exportType ?? item.Extension;
     }
 
     public void FileViewJumpTo(string path)

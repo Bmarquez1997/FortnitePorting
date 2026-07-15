@@ -10,8 +10,10 @@ using CUE4Parse.Utils;
 using FortnitePorting.Exporting;
 using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
+using FortnitePorting.Models.Chat;
 using FortnitePorting.Models.Clipboard;
 using FortnitePorting.Models.Fortnite;
+using FortnitePorting.Services;
 using FortnitePorting.Views;
 using FortnitePorting.Windows;
 using Newtonsoft.Json;
@@ -41,6 +43,15 @@ public class AssetItem : Base.BaseAssetItem
 
     private static ConcurrentDictionary<string, UFortItemSeriesDefinition> SeriesCache = [];
     private static ConcurrentDictionary<string, WriteableBitmap> BackgroundCache = [];
+
+    public static void ResetCaches()
+    {
+        SeriesCache.Clear();
+        
+        foreach (var bitmap in BackgroundCache.Values)
+            bitmap.Dispose();
+        BackgroundCache.Clear();
+    }
     
     public AssetItem(AssetItemCreationArgs args)
     {
@@ -71,10 +82,13 @@ public class AssetItem : Base.BaseAssetItem
         }
     }
 
-    public void LoadBitmap()
+    public async Task LoadBitmapAsync()
     {
-        if (CreationData.Icon.Decode()?.ToSkBitmap() is not { } iconBitmap)
-            return;
+        if (CreationData.IconPath is not { } iconPath) return;
+        
+        var texture = await UEParse.Provider!.SafeLoadPackageObjectAsync<UTexture2D>(iconPath);
+        using var iconBitmap = texture?.Decode()?.ToSkBitmap();
+        if (iconBitmap is null) return;
         
         IconDisplayImage = iconBitmap.ToWriteableBitmap();
         BackgroundImage = CreateBackgroundImage();
@@ -122,7 +136,7 @@ public class AssetItem : Base.BaseAssetItem
     {
         Navigation.App.Open<FilesView>();
 
-        var assetPath = UEParse.Provider.FixPath(CreationData.Object.GetPathName().SubstringBefore("."));
+        var assetPath = UEParse.Provider!.FixPath(CreationData.Object.GetPathName().SubstringBefore("."));
         FilesVM.JumpTo(assetPath);
         
         AppWM.Window.BringToTop();
@@ -135,14 +149,25 @@ public class AssetItem : Base.BaseAssetItem
 
     public override async Task PreviewProperties()
     {
-        var assets = await UEParse.Provider.LoadAllObjectsAsync(Exporter.FixPath(CreationData.Object.GetPathName()));
+        var assets = await UEParse.Provider!.LoadAllObjectsAsync(Exporter.FixPath(CreationData.Object.GetPathName()));
         var json = JsonConvert.SerializeObject(assets, Formatting.Indented);
         PropertiesPreviewWindow.Preview(CreationData.Object.Name, json);
     }
     
-    public override async Task CopyIcon(bool withBackground = false)
+    public override async Task SaveIcon()
     {
-        await AvaloniaClipboard.SetImageAsync(IconDisplayImage);
+        var iconPath = CreationData.HighResIconPath ?? CreationData.LowResIconPath;
+        if (iconPath is null || await UEParse.Provider!.SafeLoadPackageObjectAsync<UTexture2D>(iconPath) is not { } texture)
+        {
+            Info.Message("Save Icon", "Failed to save icon, no valid icon stored.");
+            return;
+        }
+        
+        if (await App.SaveFileDialog(suggestedFileName: texture.Name, Globals.PNGFileType) is not { } savePath) 
+            return;
+
+        using var bitmap = texture.Decode()?.ToSkBitmap()?.ToWriteableBitmap();
+        bitmap?.Save(savePath);
     }
     
     public override void Favorite()
@@ -157,5 +182,16 @@ public class AssetItem : Base.BaseAssetItem
             AppSettings.Application.FavoriteAssets.Remove(path);
             IsFavorite = false;
         }
+    }
+
+    public override async Task SendToUser()
+    {
+        var path = CreationData.Object.GetPathName();
+        var (icon, displayName, _) = await UEParse.ResolveGameFileAsync(path);
+        TaskService.RunDispatcher(() =>
+        {
+            ChatVM.PendingGameFile = new PendingGameFileAttachment(path, icon, displayName);
+            Navigation.App.Open<ChatView>();
+        });
     }
 }

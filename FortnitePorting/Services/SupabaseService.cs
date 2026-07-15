@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -30,7 +31,7 @@ public partial class SupabaseService : ObservableObject, IService
         
         TaskService.Run(async () =>
         {
-            var auth = await Api.FortnitePorting.Auth();
+            var auth = await Api.FortnitePorting.AuthInfo();
             if (auth is null)
             {
                 Info.Message("Online Services", "Failed to retrieve authentication information.", InfoBarSeverity.Error);
@@ -80,6 +81,7 @@ public partial class SupabaseService : ObservableObject, IService
     
     private ProviderAuthState? _currentAuthState;
     private bool _postedLogin;
+    private readonly ConcurrentDictionary<string, UserInfoResponse> _userInfoCache = [];
     
     private static readonly SupabaseOptions DefaultOptions = new()
     {
@@ -122,7 +124,7 @@ public partial class SupabaseService : ObservableObject, IService
         _currentAuthState = await Client.Auth.SignIn(Constants.Provider.Discord, new SignInOptions
         {
             FlowType = Constants.OAuthFlowType.PKCE,
-            RedirectTo = "https://api.fortniteporting.app/v1/auth/redirect",
+            RedirectTo = "https://api.fortniteporting.app/v2/auth/redirect",
         });
         
         App.Launch(_currentAuthState.Uri.AbsoluteUri);
@@ -206,6 +208,18 @@ public partial class SupabaseService : ObservableObject, IService
 
     private async Task LoadUserInfo()
     {
-        UserInfo = await AppServices.Api.FortnitePorting.UserInfo(Client.Auth.CurrentUser!.Id!);
+        UserInfo = await GetUserAsync(Client.Auth.CurrentUser!.Id!);
+    }
+
+    public async Task<UserInfoResponse?> GetUserAsync(string? id)
+    {
+        if (id is null) return null;
+        if (_userInfoCache.TryGetValue(id, out var cached)) return cached;
+
+        var userInfo = await Api.FortnitePorting.UserInfo(id);
+        if (userInfo is not null)
+            _userInfoCache[id] = userInfo;
+
+        return userInfo;
     }
 }

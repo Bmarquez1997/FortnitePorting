@@ -30,12 +30,12 @@ public partial class ChatView : ViewBase<ChatViewModel>
     private bool _shouldAutoScroll = true;
     private bool _didInitialScroll = false;
     private bool _isLoadingMore = false;
+    private double _lastExtentHeight = 0;
     private int _mentionStart = -1;
 
     public ChatView()
     {
         InitializeComponent();
-        ViewModel.ImageFlyout = ImageFlyout;
 
         ViewModel.TextBox = TextBox;
         TextBox.AddHandler(KeyDownEvent, OnTextKeyDown, RoutingStrategies.Tunnel);
@@ -44,9 +44,19 @@ public partial class ChatView : ViewBase<ChatViewModel>
 
         Scroll.LayoutUpdated += (sender, args) =>
         {
-            if (_didInitialScroll) return;
-            Scroll.ScrollToEnd();
-            _didInitialScroll = true;
+            var currentExtent = Scroll.Extent.Height;
+
+            if (!_didInitialScroll)
+            {
+                if (currentExtent <= Scroll.Viewport.Height) return;
+                _didInitialScroll = true;
+            }
+
+            var extentGrew = currentExtent > _lastExtentHeight;
+            _lastExtentHeight = currentExtent;
+
+            if (_shouldAutoScroll && extentGrew)
+                Scroll.ScrollToEnd();
         };
 
         Scroll.ScrollChanged += async (sender, args) =>
@@ -58,7 +68,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
                 ViewModel.ClearNewMessageIndicator();
 
             var distanceFromTop = Scroll.Offset.Y;
-            if (distanceFromTop <= LoadMoreThreshold && !_isLoadingMore && Chat.HasMoreMessages)
+            if (_didInitialScroll && distanceFromTop <= LoadMoreThreshold && !_isLoadingMore && Chat.HasMoreMessages)
                 await LoadMoreMessages();
         };
 
@@ -100,12 +110,24 @@ public partial class ChatView : ViewBase<ChatViewModel>
 
             var loaded = await Chat.LoadMoreMessages();
 
-            if (loaded)
+            if (!loaded) return;
+
+            // really scuffed layout wait, but it works!
+            var tcs = new TaskCompletionSource();
+            EventHandler? onLayout = null;
+            onLayout = (_, _) =>
             {
-                await Task.Delay(50);
-                var heightDifference = Scroll.Extent.Height - previousExtentHeight;
+                if (Scroll.Extent.Height <= previousExtentHeight) return;
+                Scroll.LayoutUpdated -= onLayout;
+                tcs.TrySetResult();
+            };
+            Scroll.LayoutUpdated += onLayout;
+            await Task.WhenAny(tcs.Task, Task.Delay(1000));
+            Scroll.LayoutUpdated -= onLayout;
+
+            var heightDifference = Scroll.Extent.Height - previousExtentHeight;
+            if (heightDifference > 0)
                 Scroll.Offset = Scroll.Offset.WithY(previousOffset + heightDifference);
-            }
         }
         finally
         {
@@ -222,7 +244,14 @@ public partial class ChatView : ViewBase<ChatViewModel>
     {
         if (sender is not TextBox textBox) return;
         var text = textBox.Text ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(text) && !ImageFlyout.IsOpen) return;
+        if (string.IsNullOrWhiteSpace(text) && ViewModel.PendingImage is null && ViewModel.PendingGameFile is null && ViewModel.EditMessage is null) return;
+
+        if (e.Key == Key.Escape && ViewModel.EditMessage is not null)
+        {
+            ViewModel.EditMessage = null;
+            e.Handled = true;
+            return;
+        }
 
         if (MentionPopup.IsOpen)
         {
@@ -265,41 +294,41 @@ public partial class ChatView : ViewBase<ChatViewModel>
                 return;
             }
 
+            if (ViewModel.EditMessage is { } editMessage)
+            {
+                var editText = text;
+                ViewModel.EditMessage = null;
+                textBox.Text = string.Empty;
+                TaskService.Run(async () => await Chat.UpdateMessage(editMessage, editText));
+                e.Handled = true;
+                return;
+            }
+
             if (text.StartsWith("/shrug"))
                 text = @"¯\_(ツ)_/¯";
 
-            var shouldUploadImage = ImageFlyout.IsOpen;
+            var pendingImage = ViewModel.PendingImage;
+            var pendingGameFile = ViewModel.PendingGameFile;
             TaskService.Run(async () =>
             {
                 string? imagePath = null;
-                if (shouldUploadImage)
+                if (pendingImage is not null)
                 {
-                    var imageBucket = SupaBase.Client.Storage.From("chat-images");
                     var memoryStream = new MemoryStream();
-                    ViewModel.SelectedImage.Save(memoryStream);
+                    pendingImage.Bitmap.Save(memoryStream);
 
-                    var fileNameWithoutExtension = ViewModel.SelectedImageName.SubstringBefore(".");
-                    var extension = ViewModel.SelectedImageName.SubstringAfterLast(".");
-                    var hash = memoryStream.GetHash();
-                    var fileName = $"{fileNameWithoutExtension}.{hash}.{extension}";
-
-                    try
-                    {
-                        imagePath = await imageBucket.Upload(memoryStream.ToArray(), fileName);
-                    }
-                    catch (SupabaseStorageException)
-                    {
-                        imagePath = $"chat-images/{fileName}";
-                    }
+                    var result = await Api.FortnitePorting.UploadImage(memoryStream.ToArray(), pendingImage.Name);
+                    imagePath = result?.Path;
                 }
 
                 await Chat.SendMessage(Chat.ConvertMentionsToIds(text), replyId: ViewModel.ReplyMessage?.Id,
-                    imagePath: imagePath);
+                    imagePath: imagePath, gameFilePath: pendingGameFile?.Path);
                 ViewModel.ReplyMessage = null;
             });
 
             textBox.Text = string.Empty;
-            ImageFlyout.IsOpen = false;
+            ViewModel.ClearImage();
+            ViewModel.ClearGameFile();
             CloseMentionPopup();
             Scroll.ScrollToEnd();
             e.Handled = true;
@@ -346,6 +375,7 @@ public partial class ChatView : ViewBase<ChatViewModel>
         TextBox.Focus();
         ViewModel.ClearNewMessageIndicator();
         _didInitialScroll = false;
+        _lastExtentHeight = 0;
     }
 
     private void OnUserPressed(object? sender, PointerPressedEventArgs e)
@@ -354,22 +384,10 @@ public partial class ChatView : ViewBase<ChatViewModel>
         FlyoutBase.ShowAttachedFlyout(control);
     }
 
-    private async void OnYeahPressed(object? sender, PointerPressedEventArgs e)
+    private void OnMessageActionsClicked(object? sender, RoutedEventArgs e)
     {
-        if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessage message) return;
-
-        if (message.DidReactTo)
-            await SupaBase.Client.Rpc("remove_reaction", new { message_id = message.Id });
-        else
-            await SupaBase.Client.Rpc("add_reaction", new { message_id = message.Id });
-    }
-
-    private void OnDeletePressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessage message) return;
-        TaskService.Run(async () => await Chat.DeleteMessage(message));
+        if (sender is not Button button) return;
+        FlyoutBase.ShowAttachedFlyout(button);
     }
 
     private void OnMessageUserPressed(object? sender, PointerPressedEventArgs e)
@@ -378,36 +396,9 @@ public partial class ChatView : ViewBase<ChatViewModel>
         FlyoutBase.ShowAttachedFlyout(control);
     }
 
-    private async void OnReplyPressed(object? sender, PointerPressedEventArgs e)
+    private void OnEditCancelled(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessage chatMessage) return;
-        ViewModel.ReplyMessage = chatMessage;
-    }
-
-    private void OnEditPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessage message) return;
-        message.IsEditing = !message.IsEditing;
-    }
-
-    private void OnEditBoxKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (sender is not TextBox textBox) return;
-        if (textBox.DataContext is not ChatMessage message) return;
-
-        if (e.Key == Key.Enter && !e.KeyModifiers.HasFlag(KeyModifiers.Shift))
-        {
-            message.IsEditing = false;
-            var newText = textBox.Text!;
-            TaskService.Run(async () => await Chat.UpdateMessage(message, newText));
-        }
-        else if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
-        {
-            textBox.Text += "\n";
-            textBox.CaretIndex = textBox.Text.Length;
-        }
+        ViewModel.EditMessage = null;
     }
 
     private void OnReplyCancelled(object? sender, PointerPressedEventArgs e)
@@ -415,12 +406,16 @@ public partial class ChatView : ViewBase<ChatViewModel>
         ViewModel.ReplyMessage = null;
     }
 
-    private void OnCopyPressed(object? sender, PointerPressedEventArgs e)
+    private void OnImageCancelled(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is not Control control) return;
-        if (control.DataContext is not ChatMessage message) return;
-        App.Clipboard.SetTextAsync(message.Text);
+        ViewModel.ClearImage();
     }
+
+    private void OnGameFileCancelled(object? sender, PointerPressedEventArgs e)
+    {
+        ViewModel.ClearGameFile();
+    }
+
 
     private void OnNewMessageIndicatorPressed(object? sender, PointerPressedEventArgs e)
     {

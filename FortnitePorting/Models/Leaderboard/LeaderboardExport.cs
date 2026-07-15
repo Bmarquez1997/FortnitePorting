@@ -27,6 +27,12 @@ public partial class LeaderboardExport : ObservableObject
     private static Dictionary<string, Bitmap> CachedBitmaps = [];
     private static Dictionary<string, UObject> CachedObjects = [];
 
+    public static void ClearCache()
+    {
+        CachedBitmaps.Clear();
+        CachedObjects.Clear();
+    }
+
     // returns if is a valid export
     public async Task<bool> Load()
     {
@@ -80,7 +86,8 @@ public partial class LeaderboardExport : ObservableObject
         }
         else
         {
-            ExportBitmap = assetLoader.IconHandler(asset)?.Decode()?.ToWriteableBitmap() ?? asset.GetEditorIconBitmap() ?? ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
+            var icon = assetLoader.LowResIconHandler(asset) ?? assetLoader.HighResIconHandler(asset);
+            ExportBitmap = icon?.Decode()?.ToWriteableBitmap() ?? asset.GetEditorIconBitmap() ?? ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
             CachedBitmaps[ObjectPath] = ExportBitmap;
         }
         

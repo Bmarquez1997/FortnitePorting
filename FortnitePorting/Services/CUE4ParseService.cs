@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Textures.BC;
 using CUE4Parse.Compression;
@@ -16,6 +18,8 @@ using CUE4Parse.MappingsProvider.Usmap;
 using CUE4Parse.UE4.AssetRegistry;
 using CUE4Parse.UE4.AssetRegistry.Objects;
 using CUE4Parse.UE4.Assets;
+using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Material;
@@ -23,6 +27,7 @@ using CUE4Parse.UE4.IO;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
+using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.UE4.Pak;
 using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
@@ -30,7 +35,9 @@ using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.Utils;
 using EpicManifestParser;
 using EpicManifestParser.UE;
+using FortnitePorting.Exporting;
 using FortnitePorting.Extensions;
+using FortnitePorting.Framework;
 using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
@@ -38,24 +45,23 @@ using FortnitePorting.Models.Information;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Views;
 using FortnitePorting.Views.Settings;
-using FortnitePorting.Windows;
 using Serilog;
 using UE4Config.Parsing;
 using FGuid = CUE4Parse.UE4.Objects.Core.Misc.FGuid;
 
 namespace FortnitePorting.Services;
 
-public partial class CUE4ParseService : ObservableObject, IService
+public partial class CUE4ParseService : ObservableObject, IService, IResettable
 {
     [ObservableProperty] private string _status = "Loading Files";
     [ObservableProperty] private bool _finishedLoading;
     [ObservableProperty] private float _progress = 0.0f;
-
-    public HybridFileProvider Provider;
+    [ObservableProperty] private bool _isLoading;
+    public HybridFileProvider? Provider;
 
     public FBuildPatchAppManifest? LiveManifest;
     
-    public readonly List<FAssetData> AssetRegistry = [];
+    public readonly List<FPartialAssetData> AssetRegistry = [];
     public readonly List<FRarityCollection> RarityColors = [];
     public readonly Dictionary<int, FColor> BeanstalkColors = [];
     public readonly Dictionary<int, FLinearColor> BeanstalkMaterialProps = [];
@@ -140,6 +146,42 @@ public partial class CUE4ParseService : ObservableObject, IService
 
         UpdateStatus(string.Empty);
         FinishedLoading = true;
+        Progress = 0;
+    }
+
+    public void Reset()
+    {
+        FinishedLoading = false;
+        Progress = 0;
+        Status = "Loading Files";
+
+        Provider?.Dispose();
+        Provider = null;
+        LiveManifest = null;
+
+        AssetRegistry.Clear();
+        RarityColors.Clear();
+        BeanstalkColors.Clear();
+        BeanstalkMaterialProps.Clear();
+        BeanstalkAtlasTextureUVs.Clear();
+        MaleLobbyMontages.Clear();
+        FemaleLobbyMontages.Clear();
+        SetNames.Clear();
+    }
+
+    public async Task LoadCoreSessionAsync()
+    {
+        IsLoading = true;
+        await Initialize();
+        IsLoading = false;
+
+        if (!FinishedLoading) return;
+
+        if (AppSettings.Application.UseDefaultExportLoadType)
+            await AssetLoading.Load(AppSettings.Application.DefaultExportLoadType);
+
+        Files.Initialize();
+        await FilesVM.Initialize();
     }
 
     public void UpdateStatus(string status)
@@ -209,9 +251,9 @@ public partial class CUE4ParseService : ObservableObject, IService
         if (!File.Exists(mainPakPath)) return;
 
         var mainPakReader = new PakFileReader(mainPakPath);
-        if (mainPakReader.TestAesKey(new FAesKey(aes.MainKey)))
+        if (mainPakReader.TestAesKey(new FAesKey(aes.MainKey.Key)))
         {
-            Log.Information("Main key {Key} succeeded on pak {PakName}", aes.MainKey, mainPakPath);
+            Log.Information("Main key {Key} succeeded on pak {PakName}", aes.MainKey.Key, mainPakPath);
             return;
         }
         
@@ -341,8 +383,8 @@ public partial class CUE4ParseService : ObservableObject, IService
                     break;
                 }
 
-                Log.Information("Submitting Main Key {Key}", aes.MainKey);
-                await Provider.SubmitKeyAsync(Globals.ZERO_GUID, new FAesKey(aes.MainKey));
+                Log.Information("Submitting Main Key {Key}", aes.MainKey.Key);
+                await Provider.SubmitKeyAsync(Globals.ZERO_GUID, new FAesKey(aes.MainKey.Key));
                 
                 foreach (var key in aes.DynamicKeys)
                 {
@@ -505,7 +547,7 @@ public partial class CUE4ParseService : ObservableObject, IService
 
             try
             {
-                var assetRegistry = new FAssetRegistryState(assetArchive);
+                var assetRegistry = new FPartialAssetRegistryState(assetArchive);
                 AssetRegistry.AddRange(assetRegistry.PreallocatedAssetDataBuffers);
                 Log.Information("Loaded Asset Registry: {FilePath}", file.Path);
             }
@@ -585,14 +627,14 @@ public partial class CUE4ParseService : ObservableObject, IService
 
     private async Task<string?> GetEndpointMappings()
     {
-        var mappings = await Api.FortnitePorting.Mappings(string.Empty);
+        var mappings = await Api.FortnitePorting.Mappings();
         if (mappings?.Url is null) return null;
 
         var mappingsFilePath = Path.Combine(App.DataFolder.FullName, mappings.Url.SubstringAfterLast("/"));
         if (File.Exists(mappingsFilePath) && new FileInfo(mappingsFilePath).GetFileHashMD5().Equals(mappings.HashMD5)) return mappingsFilePath;
             
         var createdFile = await Api.DownloadFileAsync(mappings.Url, mappingsFilePath);
-        if (!createdFile.Exists) return null;
+        if (createdFile is { Exists: false}) return null;
             
         File.SetCreationTime(mappingsFilePath, mappings.GetCreationTime());
 
@@ -606,6 +648,81 @@ public partial class CUE4ParseService : ObservableObject, IService
 
         var latestUsmap = usmapFiles.MaxBy(x => x.CreationTime);
         return latestUsmap?.FullName;
+    }
+
+    public async Task<(Bitmap Icon, string? DisplayName, string? ExportType)> ResolveGameFileAsync(string gameFilePath)
+    {
+        return await Task.Run(() =>
+        {
+            Bitmap? icon = null;
+            string? displayName = null;
+            string? exportType = null;
+            var fileName = gameFilePath.SubstringAfterLast("/").SubstringBefore(".");
+
+            if (!Provider.TryLoadPackage(Provider.FixPath(gameFilePath), out var package))
+            {
+                icon = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
+                displayName = fileName;
+                return (icon, displayName, exportType);
+            }
+
+            for (var i = 0; i < package.ExportMapLength; i++)
+            {
+                var pointer = new FPackageIndex(package, i + 1).ResolvedObject;
+                if (pointer?.Object is null) continue;
+                if (!pointer.Name.Text.Equals(fileName) &&
+                    !pointer.Name.Text.Equals(fileName + "_C")) continue;
+
+                var obj = ((AbstractUePackage) package).ConstructObject(pointer.Class, package);
+                exportType = obj.ExportType;
+
+                if (obj is UTexture2D && pointer.TryLoad(out var textureObj) &&
+                    textureObj is UTexture2D texture &&
+                    texture.Decode(maxMipSize: 128) is { } decodedTexture)
+                {
+                    icon = decodedTexture.ToWriteableBitmap();
+                    break;
+                }
+
+                var assetLoader = AssetLoading.Categories
+                    .SelectMany(category => category.Loaders)
+                    .FirstOrDefault(loader => loader.ClassNames.Contains(obj.ExportType));
+                if (assetLoader is not null && pointer.TryLoad(out var assetObj))
+                {
+                    icon = (assetLoader.LowResIconHandler(assetObj) ?? assetLoader.HighResIconHandler(assetObj))
+                        ?.Decode(maxMipSize: 128)?.ToWriteableBitmap();
+                    displayName = assetLoader.DisplayNameHandler(assetObj);
+                    break;
+                }
+
+                displayName = obj.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text;
+
+                if (obj.GetEditorIconBitmap() is { } editorIcon)
+                {
+                    icon = editorIcon;
+                    break;
+                }
+
+                if (Exporter.DetermineExportType(obj) is var fnExportType and not EExportType.None
+                    && $"avares://FortnitePorting/Assets/FN/{fnExportType}.png" is { } exportIconPath
+                    && AssetLoader.Exists(new Uri(exportIconPath)))
+                {
+                    icon = ImageExtensions.AvaresBitmap(exportIconPath);
+                    break;
+                }
+            }
+
+            // fallback: resolve export type from first export if named export didn't set it
+            if (exportType is null && new FPackageIndex(package, 1).ResolvedObject is { } zeroPointer)
+            {
+                var zeroObj = ((AbstractUePackage) package).ConstructObject(zeroPointer.Class, package);
+                exportType = zeroObj.ExportType;
+            }
+
+            icon ??= ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
+            displayName ??= fileName;
+            return (icon, displayName, exportType);
+        });
     }
 }
 

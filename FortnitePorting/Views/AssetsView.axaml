@@ -34,6 +34,11 @@
                     <ToggleButton IsChecked="{Binding ShowNames}" HorizontalAlignment="Stretch">
                         <controls:IconText Text="Show Names" Icon="{Binding ShowNamesIcon}" />
                     </ToggleButton>
+                    <Button HorizontalAlignment="Stretch" Command="{Binding ExportAllIconsCommand}"
+                            IsEnabled="{Binding AssetLoader.ActiveLoader.FinishedLoading, FallbackValue=False}"
+                            ToolTip.Tip="Export all high-res icons for the current category to a folder">
+                        <controls:IconText Text="Export Icons" Icon="FolderMultipleImage" />
+                    </Button>
                 </StackPanel>
             </sidebar:Sidebar.Footer>
         </sidebar:Sidebar>
@@ -192,9 +197,8 @@
                         </StackPanel>
                     </DropDownButton>
 
-                    <AutoCompleteBox Grid.Column="8" FilterMode="ContainsOrdinal" Watermark="Search"
-                                     ItemsSource="{Binding AssetLoader.ActiveLoader.SearchAutoComplete}"
-                                     Text="{Binding AssetLoader.ActiveLoader.SearchFilter, Mode=TwoWay}" />
+                    <controls:SearchBar Grid.Column="8" Watermark="Search"
+                                       Text="{Binding AssetLoader.ActiveLoader.SearchFilter, Mode=TwoWay}" />
 
                     <ToggleButton Grid.Column="10" ToolTip.Tip="Regex" HorizontalAlignment="Right"
                                   Content="{material:MaterialIconExt Regex}"
@@ -227,14 +231,12 @@
                                                     <MenuItem Header="Copy Path"
                                                               Icon="{material:MaterialIconExt Clipboard}"
                                                               Command="{Binding CopyPathCommand}" />
-                                                    <MenuItem Header="Copy Icon" Icon="{material:MaterialIconExt Image}">
-                                                        <MenuItem Header="With Background"
-                                                                  Command="{Binding CopyIconCommand}"
-                                                                  CommandParameter="{x:True}" />
-                                                        <MenuItem Header="Without Background"
-                                                                  Command="{Binding CopyIconCommand}"
-                                                                  CommandParameter="{x:False}" />
-                                                    </MenuItem>
+                                                    <MenuItem Header="Save Icon"
+                                                              Icon="{material:MaterialIconExt ContentSave}"
+                                                              Command="{Binding SaveIconCommand}" />
+                                                    <MenuItem Header="Send in Chat"
+                                                              Icon="{material:MaterialIconExt Send}"
+                                                              Command="{Binding SendToUserCommand}" />
                                                 </ContextMenu>
                                             </ContentControl.ContextMenu>
                                             <StackPanel
@@ -315,7 +317,7 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <controls:ContentCard Grid.Row="0" ClipToBounds="True">
+                                    <controls:ContentCard Grid.Row="0" ClipToBounds="True" Padding="{ext:Space 1}">
                                         <Grid RowDefinitions="* 2*">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -323,20 +325,19 @@
                                                 <ColumnDefinition Width="2.5*" />
                                             </Grid.ColumnDefinitions>
                                             <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" CornerRadius="8"
-                                                    ClipToBounds="True" Margin="{ext:Space 1}">
+                                                    ClipToBounds="True">
                                                 <Image Source="{Binding Asset.IconDisplayImage}" />
                                             </Border>
 
                                             <TextBlock Grid.Row="0" Grid.Column="2" Classes="BodyStrongTextBlockStyle"
-                                                       VerticalAlignment="Bottom" TextAlignment="Left" Margin="{ext:Space 0, 1, 0, 0}"
+                                                       VerticalAlignment="Bottom" TextAlignment="Left"
                                                        TextTrimming="CharacterEllipsis"
                                                        Text="{Binding Asset.CreationData.DisplayName}" />
                                             <TextBlock Grid.Row="1" Grid.Column="2"
                                                        Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"
                                                        VerticalAlignment="Top"
                                                        Text="{Binding Asset.CreationData.Description}"
-                                                       Margin="{ext:Space 0, 0, 1, 1}"
-                                                       TextAlignment="Left" TextWrapping="Wrap" Opacity="0.75" />
+                                                       TextAlignment="Left" TextWrapping="Wrap"/>
                                         </Grid>
                                     </controls:ContentCard>
 
@@ -359,7 +360,6 @@
 
                                                         <DropDownButton Grid.Row="2" Margin="{ext:Space 1, 0}"
                                                                         HorizontalAlignment="Stretch"
-                                                                        Background="#222326"
                                                                         CornerRadius="12"
                                                                         IsVisible="{Binding !MultiSelect}">
                                                             <DropDownButton.Flyout>

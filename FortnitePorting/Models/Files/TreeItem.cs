@@ -7,6 +7,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.Utils;
 using FortnitePorting.Extensions;
+using FortnitePorting.Models.Chat;
+using FortnitePorting.Services;
+using FortnitePorting.Views;
 
 namespace FortnitePorting.Models.Files;
 
@@ -41,7 +44,7 @@ public partial class TreeItem : ObservableObject
 
     public bool HasFolders => FolderChildCount > 0;
 
-    public FileNode? SourceNode { get; }
+    public FileNode? SourceNode { get; private set; }
 
     private readonly Action<TreeItem>? _onExpand;
 
@@ -70,6 +73,13 @@ public partial class TreeItem : ObservableObject
         return child is not null;
     }
 
+    public void DetachSourceNodes()
+    {
+        SourceNode = null;
+        foreach (var child in FolderChildren)
+            child.DetachSourceNodes();
+    }
+
     partial void OnExpandedChanged(bool value)
     {
         if (!value) return;
@@ -80,6 +90,18 @@ public partial class TreeItem : ObservableObject
     public async Task CopyPath(bool withoutExtension = false)
     {
         await App.Clipboard.SetTextAsync(withoutExtension ? FilePath.SubstringBefore(".") : FilePath);
+    }
+
+    [RelayCommand]
+    public async Task SendToChat()
+    {
+        if (Type == ENodeType.Folder) return;
+        var (icon, displayName, _) = await UEParse.ResolveGameFileAsync(FilePath);
+        await TaskService.RunDispatcherAsync(() =>
+        {
+            ChatVM.PendingGameFile = new PendingGameFileAttachment(FilePath, icon, displayName);
+            Navigation.App.Open<ChatView>();
+        });
     }
 }
 

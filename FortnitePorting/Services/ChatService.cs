@@ -11,6 +11,7 @@ using DynamicData;
 using DynamicData.Binding;
 using FortnitePorting.Extensions;
 using FortnitePorting.Framework;
+using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.Chat;
 using FortnitePorting.Models.Supabase.Tables;
 using FortnitePorting.Shared.Extensions;
@@ -21,7 +22,6 @@ using Serilog;
 using Supabase.Realtime;
 using Supabase.Realtime.Interfaces;
 using Supabase.Realtime.Models;
-using Constants = Supabase.Postgrest.Constants;
 
 namespace FortnitePorting.Services;
 
@@ -37,6 +37,7 @@ public partial class ChatService : ObservableObject, IService
     public event EventHandler<ChatMessage>? MessageReceived;
 
     [ObservableProperty] private ReadOnlyObservableCollection<ChatMessage> _messages = new([]);
+    [ObservableProperty] private ObservableCollection<IChatFeedItem> _feedItems = [];
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(UsersByGroup)),
      NotifyPropertyChangedFor(nameof(UserMentionNames))]
@@ -79,15 +80,18 @@ public partial class ChatService : ObservableObject, IService
     private RealtimeBroadcast<BaseBroadcast> _chatBroadcast;
 
     private SourceCache<ChatMessage, string> _messageCache = new(message => message.Id);
+    private readonly Dictionary<DateTime, ChatDaySeparator> _separatorCache = new();
 
     private readonly SemaphoreSlim _userGetLock = new(1, 1);
     private readonly SemaphoreSlim _messageFetchLock = new(1, 1);
 
-    // Pagination state
     private const int PageSize = 20;
     [ObservableProperty] private bool _isLoadingMessages = false;
     [ObservableProperty] private bool _hasMoreMessages = true;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsEmpty))] private bool _hasFetchedMessages = false;
     private DateTime? _oldestFetchedTimestamp = null;
+
+    public bool IsEmpty => HasFetchedMessages && Messages.Count == 0;
 
     public async Task Initialize()
     {
@@ -97,7 +101,11 @@ public partial class ChatService : ObservableObject, IService
             .ObserveOn(RxApp.MainThreadScheduler)
             .Sort(SortExpressionComparer<ChatMessage>.Ascending(item => item.Timestamp))
             .Bind(out var messageCollection)
-            .Subscribe();
+            .Subscribe(_ =>
+            {
+                RebuildFeedItems();
+                OnPropertyChanged(nameof(IsEmpty));
+            });
 
         Messages = messageCollection;
 
@@ -114,8 +122,6 @@ public partial class ChatService : ObservableObject, IService
         };
 
         await ChatPresence.Track(Presence);
-
-        await LoadMoreMessages();
 
         MessageReceived += (sender, message) =>
         {
@@ -151,48 +157,60 @@ public partial class ChatService : ObservableObject, IService
         {
             IsLoadingMessages = true;
 
-            var query = SupaBase.Client.From<Message>()
-                .Order("timestamp", Constants.Ordering.Descending)
-                .Limit(PageSize + 1);
+            var response = await Api.FortnitePorting.GetMessages(before: _oldestFetchedTimestamp, limit: PageSize);
 
-            if (_oldestFetchedTimestamp.HasValue)
-            {
-                var utcTimestamp = _oldestFetchedTimestamp.Value.ToUniversalTime();
-                query = query.Filter("timestamp", Constants.Operator.LessThanOrEqual, utcTimestamp.ToString("o"));
-            }
+            if (response is null)
+                return false;
 
-            var response = await query.Get();
-            var messages = response.Models.ToList();
-            var originalCount = messages.Count;
-
-            if (_oldestFetchedTimestamp.HasValue && messages.Count > 0)
-            {
-                messages = messages.Skip(1).ToList();
-            }
-
-            if (messages.Count == 0)
+            var entries = response.Messages;
+            if (entries.Count == 0)
             {
                 HasMoreMessages = false;
                 return false;
             }
 
-            _oldestFetchedTimestamp = messages.Last().Timestamp.ToUniversalTime();
+            _oldestFetchedTimestamp = response.NextCursor;
+            HasMoreMessages = response.NextCursor.HasValue;
 
-            if (originalCount < PageSize + 1)
+            var prepared = new List<ChatMessage>();
+            foreach (var entry in entries.OrderBy(x => x.ReplyId is not null))
             {
-                HasMoreMessages = false;
+                if (_messageCache.Lookup(entry.Id).HasValue) continue;
+
+                var chatMessage = entry.Adapt<ChatMessage>();
+                chatMessage.Timestamp = entry.CreatedAt.ToLocalTime();
+                chatMessage.User = await GetUser(entry.UserId);
+                chatMessage.GameFilePath = entry.GameFilePath;
+                if (!string.IsNullOrEmpty(entry.GameFilePath))
+                    chatMessage.LoadGameFileData();
+
+                if (chatMessage.Text.Contains($"<@{SupaBase.UserInfo?.UserId}>") ||
+                    (chatMessage.Text.Contains("<@everyone>") && chatMessage.User?.Role >= ESupabaseRole.Staff))
+                    chatMessage.IsPing = true;
+
+                prepared.Add(chatMessage);
             }
 
-            var addedCount = 0;
-            foreach (var message in messages.OrderBy(x => x.ReplyId is not null))
-            {
-                if (_messageCache.Lookup(message.Id).HasValue) continue;
+            if (prepared.Count == 0) return false;
 
-                await AddMessage(message, isInit: true);
-                addedCount++;
+            var topLevel = prepared.Where(m => m.ReplyId is null).ToList();
+            if (topLevel.Count > 0)
+            {
+                _messageCache.Edit(updater =>
+                {
+                    foreach (var msg in topLevel)
+                        updater.AddOrUpdate(msg);
+                });
             }
 
-            return addedCount > 0;
+            foreach (var msg in prepared.Where(m => m.ReplyId is not null))
+            {
+                var replyParent = _messageCache.Lookup(msg.ReplyId!);
+                if (replyParent.HasValue)
+                    replyParent.Value.ReplyMessages.InsertSorted(msg, SortExpressionComparer<ChatMessage>.Ascending(x => x.Timestamp));
+            }
+
+            return true;
         }
         catch (Exception)
         {
@@ -201,6 +219,7 @@ public partial class ChatService : ObservableObject, IService
         finally
         {
             IsLoadingMessages = false;
+            HasFetchedMessages = true;
             _messageFetchLock.Release();
         }
     }
@@ -305,14 +324,14 @@ public partial class ChatService : ObservableObject, IService
             {
                 case "insert_message":
                 {
-                    var message = broadcast.Get<Message>("message");
+                    var message = broadcast.Get<BroadcastMessage>("message");
                     await AddMessage(message);
 
                     break;
                 }
                 case "update_message":
                 {
-                    var updatedMessage = broadcast.Get<Message>("message");
+                    var updatedMessage = broadcast.Get<BroadcastMessage>("message");
 
                     var parentLookup = updatedMessage.ReplyId is not null
                         ? _messageCache.Lookup(updatedMessage.ReplyId)
@@ -353,8 +372,13 @@ public partial class ChatService : ObservableObject, IService
                 {
                     var userId = broadcast.Get<string>("user_id");
                     var role = broadcast.Get<ESupabaseRole>("role");
+                    var isMuted = broadcast.Get<bool>("is_muted");
 
-                    UserCache.UpdateIfContains(userId, user => user.Role = role);
+                    UserCache.UpdateIfContains(userId, user =>
+                    {
+                        user.Role = role;
+                        user.IsMuted = isMuted;
+                    });
                     OnPropertyChanged(nameof(UsersByGroup));
                     break;
                 }
@@ -362,10 +386,14 @@ public partial class ChatService : ObservableObject, IService
         });
     }
 
-    public async Task AddMessage(Message inMessage, bool isInit = false)
+    public async Task AddMessage(BroadcastMessage inMessage, bool isInit = false)
     {
         var message = inMessage.Adapt<ChatMessage>();
+        message.Timestamp = inMessage.Timestamp.ToLocalTime();
         message.User = await GetUser(inMessage.UserId);
+        message.GameFilePath = inMessage.GameFilePath;
+        if (!string.IsNullOrEmpty(message.GameFilePath))
+            message.LoadGameFileData();
 
         if (message.ReplyId is not null)
         {
@@ -386,6 +414,38 @@ public partial class ChatService : ObservableObject, IService
 
         if (!isInit)
             MessageReceived?.Invoke(this, message);
+    }
+
+    private void RebuildFeedItems() => FeedItems.Diff(BuildFeed());
+
+    private List<IChatFeedItem> BuildFeed()
+    {
+        var result = new List<IChatFeedItem>();
+        DateTime? lastDate = null;
+        foreach (var msg in Messages)
+        {
+            var date = msg.Timestamp.Date;
+            if (lastDate is null || lastDate.Value != date)
+                result.Add(GetOrCreateSeparator(date));
+            
+            result.Add(msg);
+            lastDate = date;
+        }
+        return result;
+    }
+
+    private ChatDaySeparator GetOrCreateSeparator(DateTime date)
+    {
+        if (_separatorCache.TryGetValue(date, out var existingSeparator))
+            return existingSeparator;
+
+        var label = date == DateTime.Today ? "Today"
+            : date == DateTime.Today.AddDays(-1) ? "Yesterday"
+            : date.ToShortDateString();
+
+        var separator = new ChatDaySeparator(label);
+        _separatorCache[date] = separator;
+        return separator;
     }
 
     public string ConvertMentionsToIds(string text)
@@ -438,7 +498,7 @@ public partial class ChatService : ObservableObject, IService
         {
             if (UserCache.TryGetValue(id, out var existingUser)) return existingUser;
 
-            var userInfo = await Api.FortnitePorting.UserInfo(id);
+            var userInfo = await SupaBase.GetUserAsync(id);
             if (userInfo is null) return null;
 
             var user = userInfo.Adapt<ChatUser>();
@@ -452,9 +512,9 @@ public partial class ChatService : ObservableObject, IService
         }
     }
 
-    public async Task SendMessage(string text, string? replyId = null, string? imagePath = null)
+    public async Task SendMessage(string text, string? replyId = null, string? imagePath = null, string? gameFilePath = null)
     {
-        await Api.FortnitePorting.PostMessage(text, replyId, imagePath);
+        await Api.FortnitePorting.PostMessage(text, replyId, imagePath, gameFilePath);
     }
 
     public async Task UpdateMessage(ChatMessage message, string text)

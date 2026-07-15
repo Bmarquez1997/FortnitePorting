@@ -1,50 +1,86 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FluentAvalonia.UI.Controls;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.Chat;
 using FortnitePorting.Models.Clipboard;
 using FortnitePorting.Models.Supabase.Tables;
 using FortnitePorting.Services;
+using FortnitePorting.Windows;
 
 namespace FortnitePorting.ViewModels;
 
-public partial class ChatViewModel(SupabaseService supabase, ChatService chatService) : ViewModelBase
+public partial class ChatViewModel(SupabaseService supabase, ChatService chatService, FilesService filesService) : ViewModelBase
 {
     [ObservableProperty] private SupabaseService _supaBase = supabase;
     [ObservableProperty] private ChatService _chat = chatService;
+    [ObservableProperty] private FilesService _files = filesService;
 
     [ObservableProperty] private ChatMessage? _replyMessage;
-    
-    [ObservableProperty] private TeachingTip _imageFlyout;
-    
+    [ObservableProperty] private ChatMessage? _editMessage;
+
     [ObservableProperty] private string _text = string.Empty;
     [ObservableProperty] private TextBox _textBox;
-    
-    [ObservableProperty] private Bitmap _selectedImage;
-    [ObservableProperty] private string _selectedImageName;
+
+    [ObservableProperty] private PendingImageAttachment? _pendingImage;
+    [ObservableProperty] private PendingGameFileAttachment? _pendingGameFile;
     
     [ObservableProperty] private bool _showNewMessageIndicator = false;
     
     [ObservableProperty, NotifyPropertyChangedFor(nameof(NewMessageCountText))] private int _unreadMessageCount = 0;
     
     public string NewMessageCountText => UnreadMessageCount == 1 ? "1 New Message" : $"{UnreadMessageCount} New Messages";
-
     
+    partial void OnEditMessageChanged(ChatMessage? value)
+    {
+        if (value is not null) ReplyMessage = null;
+        Text = value?.Text ?? string.Empty;
+    }
+
+    partial void OnReplyMessageChanged(ChatMessage? value)
+    {
+        if (value is not null) EditMessage = null;
+    }
+
+    [RelayCommand]
+    public void ClearEdit()
+    {
+        EditMessage = null;
+    }
+
     [RelayCommand]
     public async Task OpenImage()
     {
         if (await App.BrowseFileDialog(fileTypes: Globals.ChatAttachmentFileType) is { } path)
+            PendingImage = new PendingImageAttachment(new Bitmap(path), Path.GetFileName(path));
+    }
+
+    [RelayCommand]
+    public void ClearImage()
+    {
+        PendingImage = null;
+    }
+
+    [RelayCommand]
+    public async Task OpenGameFile()
+    {
+        if (await FilePickerWindow.OpenBrowserAsync("Attach Game File") is { Length: > 0 } paths
+            && paths.FirstOrDefault() is { } path)
         {
-            SelectedImageName = Path.GetFileName(path);
-            SelectedImage = new Bitmap(path);
-            ImageFlyout.IsOpen = true;
+            var (icon, displayName, _) = await UEParse.ResolveGameFileAsync(path);
+            PendingGameFile = new PendingGameFileAttachment(path, icon, displayName);
         }
+    }
+
+    [RelayCommand]
+    public void ClearGameFile()
+    {
+        PendingGameFile = null;
     }
 
     public async Task ClipboardPaste()
@@ -58,9 +94,7 @@ public partial class ChatViewModel(SupabaseService supabase, ChatService chatSer
         }
         else if (await AvaloniaClipboard.GetImageAsync() is { } image && SupaBase.UserInfo?.Role >= ESupabaseRole.Verified)
         {
-            SelectedImageName = "clipboard.png";
-            SelectedImage = image;
-            ImageFlyout.IsOpen = true;
+            PendingImage = new PendingImageAttachment(image, "clipboard.png");
         }
     }
     
@@ -81,5 +115,9 @@ public partial class ChatViewModel(SupabaseService supabase, ChatService chatSer
         Discord.Update($"Chatting with {Chat.Users.Count} {(Chat.Users.Count > 1 ? "Users" : "User")}");
 
         Chat.UnseenMessageCount = 0;
+
+        if (!Chat.HasFetchedMessages)
+            await Chat.LoadMoreMessages();
     }
+
 }

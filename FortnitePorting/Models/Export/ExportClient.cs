@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Writers;
+using CUE4Parse.Utils;
 using FortnitePorting.Exporting;
 using FortnitePorting.Extensions;
 using FortnitePorting.Services;
@@ -20,7 +21,8 @@ public enum EExportCommandType : byte
 {
     Message = 0,
     Data = 1,
-    DragDropRequest = 2
+    DragDropRequest = 2,
+    Dialog = 3
 }
 
 public class ExportClient(EExportServerType serverType) : IDisposable
@@ -246,6 +248,10 @@ public class ExportClient(EExportServerType serverType) : IDisposable
                 var message = JsonConvert.DeserializeObject<string>(jsonData) ?? string.Empty;
                 Info.Message($"{serverType.Description} Server", message);
                 break;
+            case EExportCommandType.Dialog:
+                var dialogMessage = JsonConvert.DeserializeObject<string>(jsonData) ?? string.Empty;
+                Info.Dialog($"{serverType.Description} Plugin", dialogMessage);
+                break;
             case EExportCommandType.DragDropRequest:
                 if (JObject.Parse(jsonData).TryGetValue("paths", out var token) 
                     && token.ToArray() is { } paths)
@@ -253,7 +259,7 @@ public class ExportClient(EExportServerType serverType) : IDisposable
                     TaskService.Run(async () =>
                     {
                         var loadedObjects = paths
-                            .Select(path => UEParse.Provider.SafeLoadPackageObject(path.Value<string>()))
+                            .Select(path => UEParse.Provider.SafeLoadPackageObject(path.Value<string>()!.SubstringBeforeLast(".")))
                             .Where(asset => asset is not null);
                         await Exporter.Export(loadedObjects!, AppSettings.ExportSettings.CreateExportMeta(serverType.LocationType));
                     });

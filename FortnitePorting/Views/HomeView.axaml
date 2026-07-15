@@ -89,7 +89,7 @@
             
             <ItemsControl Grid.Row="2" ItemsSource="{Binding News}" HorizontalAlignment="Stretch" ClipToBounds="False">
                 <ItemsControl.DataTemplates>
-                    <DataTemplate DataType="responses:NewsResponse">
+                    <DataTemplate DataType="responses:NewsEntry">
                         <controls:ContentCard Margin="{ext:Space 1}"
                                               HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                             <Grid>
@@ -116,7 +116,15 @@
                                             CornerRadius="12" 
                                             Padding="{ext:Space 1, 0.5}"
                                             HorizontalAlignment="Left" ClipToBounds="False"
-                                            Background="{DynamicResource FPAccentBrush}">
+                                            BoxShadow="{DynamicResource FPCardShadow}">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%, 0%" EndPoint="0%, 100%">
+                                                <GradientStops>
+                                                    <GradientStop Color="#8141db" Offset="0"/>
+                                                    <GradientStop Color="#953bf8" Offset="1"/>
+                                                </GradientStops>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
                             
                                         <TextBlock Text="{Binding Tag, Converter={StaticResource StringToUppercase}}" 
                                                    FontFamily="{StaticResource SFTextSemiBold}"
@@ -186,7 +194,7 @@
 
             <ItemsControl Grid.Row="2" ItemsSource="{Binding FeaturedArt}" HorizontalAlignment="Stretch" ClipToBounds="False">
                 <ItemsControl.DataTemplates>
-                    <DataTemplate DataType="responses:FeaturedArtResponse">
+                    <DataTemplate DataType="responses:FeaturedArtEntry">
                          <controls:ContentCard Margin="{ext:Space 1}"
                                               HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                             <Grid>
