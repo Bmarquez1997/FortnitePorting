@@ -496,7 +496,7 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                  new AssetLoader(EExportType.LegoOutfit)
                  {
                      ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
-                     IconHandler = asset =>
+                     LowResIconHandler = asset =>
                      {
                          var meshSchema = asset.GetAnyOrDefault<UObject?>("AssembledMeshSchema", "LowDetailsAssembledMeshSchema");
                          if (meshSchema is null) return null;
@@ -505,6 +505,20 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                          foreach (var additionalData in additionalDatas)
                          {
                              var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                             if (previewImage is not null) return previewImage;
+                         }
+
+                         return null;
+                     },
+                     HighResIconHandler = asset =>
+                     {
+                         var meshSchema = asset.GetAnyOrDefault<UObject?>("AssembledMeshSchema", "LowDetailsAssembledMeshSchema");
+                         if (meshSchema is null) return null;
+
+                         var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
+                         foreach (var additionalData in additionalDatas)
+                         {
+                             var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("LargePreviewImage", "SmallPreviewImage");
                              if (previewImage is not null) return previewImage;
                          }
 
@@ -537,10 +551,15 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                  new AssetLoader(EExportType.LegoEmote)
                  {
                      ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
-                     IconHandler = asset =>
+                     LowResIconHandler = asset =>
                      {
                          var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
                          return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                     },
+                     HighResIconHandler = asset =>
+                     {
+                         var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                         return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("LargePreviewImage", "SmallPreviewImage");
                      },
                      DisplayNameHandler = asset =>
                      {
