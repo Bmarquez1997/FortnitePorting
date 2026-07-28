@@ -82,7 +82,7 @@ public partial class FileBrowser : UserControl
     private bool IsSourceAlreadySelected(Control source)
     {
         if (Context.UseFlatView)
-            return source.DataContext is FlatItem fi && Context.SelectedFlatViewItems.Contains(fi);
+            return source.DataContext is FlatItem fi && Context.IsFlatItemSelected(fi);
 
         return source.DataContext is TreeItem ti && Context.SelectedFileViewItems.Contains(ti);
     }
@@ -199,7 +199,7 @@ public partial class FileBrowser : UserControl
         }
 
         Context.ClearSearchFilter();
-        Context.FlatViewJumpTo(item.FilePath);
+        Context.FileViewJumpTo(item.FilePath);
     }
 
     private void OnBreadcrumbItemPressed(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args)

@@ -180,7 +180,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         if (AppSettings.Application.UseDefaultExportLoadType)
             await AssetLoading.Load(AppSettings.Application.DefaultExportLoadType);
 
-        Files.Initialize();
+        await Files.Initialize();
         await FilesVM.Initialize();
     }
 
@@ -222,7 +222,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         Provider.ReadNaniteData = AppSettings.Installation.CurrentProfile.LoadNaniteData;
         Provider.OnDemandOptions = new IoStoreOnDemandOptions
         {
-            ChunkHostUri = new Uri("https://download.epicgames.com/", UriKind.Absolute),
+            ChunkHostUri = new Uri("https://egdownload.fastly-edge.com/", UriKind.Absolute),
             ChunkCacheDirectory = CacheFolder,
             Authorization = new AuthenticationHeaderValue("Bearer", AppSettings.Application.EpicAuth?.Token),
             Timeout = TimeSpan.FromSeconds(AppSettings.Developer.RequestTimeoutSeconds)
@@ -274,23 +274,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         }
     }
     
-    [LoadingStage("Loading Oodle", stage: 3, weight: 1)]
-    private async Task InitializeOodle()
-    {
-        var noodleFileFullName = Dependencies.NoodleFile.FullName;
-        if (!File.Exists(noodleFileFullName)) await OodleHelper.DownloadOodleDllAsync(ref noodleFileFullName);
-        await OodleHelper.InitializeAsync(noodleFileFullName);
-    }
-    
-    [LoadingStage("Loading Zlib", stage: 4, weight: 1)]
-    private async Task InitializeZlib()
-    {
-        var zlibPath = Path.Combine(App.DataFolder.FullName, ZlibHelper.DLL_NAME);
-        if (!File.Exists(zlibPath)) await ZlibHelper.DownloadDllAsync(zlibPath);
-        await ZlibHelper.InitializeAsync(zlibPath);
-    }
-    
-    [LoadingStage("Loading Detex", stage: 5, weight: 1)]
+    [LoadingStage("Loading Detex", stage: 3, weight: 1)]
     private async Task InitializeDetex()
     {
         var detexPath = Path.Combine(App.DataFolder.FullName, DetexHelper.DLL_NAME);
@@ -298,7 +282,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         DetexHelper.Initialize(detexPath);
     }
     
-    [LoadingStage("Initializing Provider", stage: 6, weight: 10)]
+    [LoadingStage("Initializing Provider", stage: 4, weight: 10)]
     private async Task InitializeProvider()
     {
         if (AppSettings.Installation.CurrentProfile.FortniteVersion is EFortniteVersion.LatestInstalled or EFortniteVersion.LatestOnDemand)
@@ -315,18 +299,26 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
 
                 var options = new ManifestParseOptions
                 {
-                    ChunkBaseUrl = "http://download.epicgames.com/Builds/Fortnite/CloudDir/",
+                    ChunkBaseUrl = "https://egdownload.fastly-edge.com/Builds/Fortnite/CloudDir/",
                     ChunkCacheDirectory = CacheFolder.FullName,
                     ManifestCacheDirectory = CacheFolder.FullName,
-                    Decompressor = ManifestZlibStreamDecompressor.Decompress,
-                    DecompressorState = ZlibHelper.Instance,
+                    Decompressor = Compression.Decompressor,
                     CacheChunksAsIs = true
                 };
                 
                 var (manifest, element) = await manifestInfo.DownloadAndParseAsync(options);
                 LiveManifest = manifest;
-
                 await Provider.RegisterFiles(manifest);
+                
+                var manifests = await Api.Dilly.Manifests();
+                if (manifests.FirstOrDefault(x => x.AppName == "Fortnite_Studio")?.DownloadUrl is { } studioDownloadUrl
+                    && await Api.DownloadFileAsync(studioDownloadUrl, CacheFolder) is { } studioManifestFile)
+                {
+                    var studioManifestBytes = await File.ReadAllBytesAsync(studioManifestFile.FullName);
+                    var studioManifest = FBuildPatchAppManifest.Deserialize(studioManifestBytes, options);
+                    await Provider.RegisterFiles(studioManifest);
+                }
+
                 
                 break;
             }
@@ -338,11 +330,12 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         }
     }
 
-    [LoadingStage("Loading Texture Streaming", stage: 7, weight: 5)]
+    [LoadingStage("Loading Texture Streaming", stage: 5, weight: 5)]
     private async Task InitializeTextureStreaming()
     {
         if (AppSettings.Installation.CurrentProfile.FortniteVersion is not (EFortniteVersion.LatestInstalled or EFortniteVersion.LatestOnDemand)) return;
-        if (!AppSettings.Installation.CurrentProfile.UseTextureStreaming) return;
+        if (AppSettings.Installation.CurrentProfile.FortniteVersion is EFortniteVersion.LatestInstalled  
+            && !AppSettings.Installation.CurrentProfile.UseTextureStreaming) return;
 
         try
         {
@@ -368,7 +361,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         }
     }
     
-    [LoadingStage("Submitting Keys", stage: 8, weight: 20)]
+    [LoadingStage("Submitting Keys", stage: 6, weight: 20)]
     private async Task LoadKeys()
     {
         switch (AppSettings.Installation.CurrentProfile.FortniteVersion)
@@ -404,20 +397,21 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         }
     }
     
-    [LoadingStage("Loading Virtual Paths", stage: 9, weight: 15)]
+    [LoadingStage("Loading Virtual Paths", stage: 7, weight: 15)]
     private async Task LoadVirtualPaths()
     {
         Provider.LoadVirtualPaths();
         Provider.PostMount();
         
-        if (!Provider.TryChangeCulture(Provider.GetLanguageCode(AppSettings.Installation.CurrentProfile.GameLanguage)))
+        if (AppSettings.Installation.CurrentProfile.GameLanguage is not ELanguage.English 
+            && !Provider.TryChangeCulture(Provider.GetLanguageCode(AppSettings.Installation.CurrentProfile.GameLanguage)))
         {
             Info.Message("Internationalization", $"Failed to load language \"{AppSettings.Installation.CurrentProfile.GameLanguage.Description}\"");
         }
         
     }
 
-    [LoadingStage("Loading Mappings", stage: 10, weight: 1)]
+    [LoadingStage("Loading Mappings", stage: 8, weight: 1)]
     private async Task LoadMappings()
     {
         var mappingsPath = AppSettings.Installation.CurrentProfile.FortniteVersion switch
@@ -437,7 +431,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         Log.Information("Loaded Mappings: {Path}", mappingsPath);
     }
     
-    [LoadingStage("Loading Required Assets", stage: 11, weight: 5)]
+    [LoadingStage("Loading Required Assets", stage: 9, weight: 5)]
     private async Task LoadApplicationAssets()
     {
         if (await Provider.SafeLoadPackageObjectAsync("FortniteGame/Content/Balance/RarityData") is { } rarityData)
@@ -529,7 +523,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
     }
     
     
-    [LoadingStage("Loading Asset Registries", stage: 12, weight: 10)]
+    [LoadingStage("Loading Asset Registries", stage: 10, weight: 10)]
     private async Task LoadAssetRegistries()
     {
         var assetRegistries = Provider.Files

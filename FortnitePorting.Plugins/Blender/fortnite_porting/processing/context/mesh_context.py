@@ -1,5 +1,6 @@
 import os.path
 import bpy
+import numpy as np
 from math import radians
 from mathutils import Euler
 
@@ -10,6 +11,9 @@ from ...utils import *
 from ...logger import Log
 from ...ueformat.importer.logic import UEFormatImport
 from ...ueformat.options import UEModelOptions
+
+VERTEX_CRUNCH_NAME = "FPv4 Vertex Crunch"
+FULL_VERTEX_CRUNCH_NAME = "FPv4 Full Vertex Crunch"
 
 class MeshImportContext:
     def import_mesh_data(self, data):
@@ -55,17 +59,17 @@ class MeshImportContext:
             self.update_preskinned_bounds(master_mesh)
             
             for material, elements in self.partial_vertex_crunch_materials.items():
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new(VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(VERTEX_CRUNCH_NAME)
 
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
                 for name, value in elements.items():
-                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
+                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1, self.version_profile)
                     
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Full Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                vertex_crunch_modifier = master_mesh.modifiers.new(FULL_VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(FULL_VERTEX_CRUNCH_NAME)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
 
             if self.add_toon_outline:
                 master_mesh.data.materials.append(bpy.data.materials.get("M_FP_Outline"))
@@ -87,16 +91,16 @@ class MeshImportContext:
         if self.type in [EExportType.SIDEKICK]:
             master_mesh = self.imported_meshes[0]["Mesh"]
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Full Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                vertex_crunch_modifier = master_mesh.modifiers.new(FULL_VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(FULL_VERTEX_CRUNCH_NAME)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
 
             for material, elements in self.partial_vertex_crunch_materials.items():
-                vertex_crunch_modifier = master_mesh.modifiers.new("FPv4 Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FPv4 Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                vertex_crunch_modifier = master_mesh.modifiers.new(VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(VERTEX_CRUNCH_NAME)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
                 for name, value in elements.items():
-                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
+                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1, self.version_profile)
 
             shape_keys = master_mesh.data.shape_keys
             if (len(self.override_morph_targets) > 0) and shape_keys is not None:
@@ -184,12 +188,18 @@ class MeshImportContext:
 
         # Only add preskinned attributes if they don't already exist
         if imported_mesh is not None and imported_mesh.data.attributes.get("PS_LOCAL_POSITION") is None:
-            preskinned_pos = imported_mesh.data.attributes.new( domain="POINT", type="FLOAT_VECTOR",  name="PS_LOCAL_POSITION")
-            preskinned_normal = imported_mesh.data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_NORMAL")
+            mesh_data = imported_mesh.data
+            vert_count = len(mesh_data.vertices)
+            positions = np.empty(vert_count * 3, dtype=np.float32)
+            normals = np.empty(vert_count * 3, dtype=np.float32)
+            mesh_data.vertices.foreach_get("co", positions)
+            mesh_data.vertices.foreach_get("normal", normals)
 
-            for vert in imported_mesh.data.vertices:
-                preskinned_pos.data[vert.index].vector = vert.co
-                preskinned_normal.data[vert.index].vector = vert.normal
+            # Bulk foreach_set — per-vertex bpy writes are multi-minute on large meshes.
+            preskinned_pos = mesh_data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_POSITION")
+            preskinned_normal = mesh_data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_NORMAL")
+            preskinned_pos.data.foreach_set("vector", positions)
+            preskinned_normal.data.foreach_set("vector", normals)
 
             self.update_preskinned_bounds(imported_mesh, True)
 
@@ -319,29 +329,40 @@ class MeshImportContext:
     
 
     def update_preskinned_bounds(self, imported_mesh, new_attribute=False):
+        mesh_data = imported_mesh.data
+        vert_count = len(mesh_data.vertices)
+        if vert_count == 0:
+            return
+
         corners = imported_mesh.bound_box
         x_coords, y_coords, z_coords = zip(*corners)
-        bbox_min = (min(x_coords), min(y_coords), min(z_coords))
-        bbox_max = (max(x_coords), max(y_coords), max(z_coords))
+        bbox_min = np.array(
+            (min(x_coords), min(y_coords), min(z_coords)),
+            dtype=np.float32,
+        )
+        bbox_max = np.array(
+            (max(x_coords), max(y_coords), max(z_coords)),
+            dtype=np.float32,
+        )
+        ranges = bbox_max - bbox_min
+        safe_ranges = np.where(ranges != 0.0, ranges, 1.0)
 
-        def map_bounds(point):
-            x_range = bbox_max[0] - bbox_min[0]
-            y_range = bbox_max[1] - bbox_min[1]
-            z_range = bbox_max[2] - bbox_min[2]
-    
-            x_mapped = (point[0] - bbox_min[0]) / x_range if x_range != 0 else 0.0
-            y_mapped = (point[1] - bbox_min[1]) / y_range if y_range != 0 else 0.0
-            z_mapped = (point[2] - bbox_min[2]) / z_range if z_range != 0 else 0.0
-            
-            return x_mapped, y_mapped, z_mapped
+        positions = np.empty(vert_count * 3, dtype=np.float32)
+        mesh_data.vertices.foreach_get("co", positions)
+        pts = positions.reshape(vert_count, 3)
+        mapped = (pts - bbox_min) / safe_ranges
+        mapped = np.where(ranges != 0.0, mapped, 0.0).astype(np.float32, copy=False)
 
         if new_attribute:
-            preskinned_bounds = imported_mesh.data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_BOUNDS")
+            preskinned_bounds = mesh_data.attributes.new(
+                domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_BOUNDS"
+            )
         else:
-            preskinned_bounds = imported_mesh.data.attributes.get("PS_LOCAL_BOUNDS")
+            preskinned_bounds = mesh_data.attributes.get("PS_LOCAL_BOUNDS")
+            if preskinned_bounds is None:
+                return
 
-        for vert in imported_mesh.data.vertices:
-            preskinned_bounds.data[vert.index].vector = map_bounds(vert.co)
+        preskinned_bounds.data.foreach_set("vector", mapped.ravel())
             
     def parent_deform_bones(self, skeleton, prefixes):
         bpy.context.view_layer.objects.active = skeleton

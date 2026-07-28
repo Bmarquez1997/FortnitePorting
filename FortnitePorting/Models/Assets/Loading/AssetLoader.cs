@@ -43,7 +43,7 @@ public partial class AssetLoader : ObservableObject
     public bool HideRarity;
     public Func<AssetLoader, UObject, string, bool> HidePredicate = (loader, asset, name) => false;
     public Action<AssetLoader, UObject, string> AddStyleHandler = (loader, asset, name) => {};
-    public string PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Generic";
+    public string PlaceholderIconPath = "FortniteGame/Content/Global/Textures/Default/DefaultUI/T_Placeholder_Generic";
     public Func<UObject, UTexture2D?> LowResIconHandler = GetLowResIcon;
     public Func<UObject, UTexture2D?> HighResIconHandler = GetHighResIcon;
     public Func<UObject, string?> DisplayNameHandler = asset => asset.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text;
@@ -497,9 +497,6 @@ public partial class AssetLoader : ObservableObject
                 {
                     if (sortType is EAssetSortType.Series && assetItem.Series is null)
                         return false;
-                
-                    if (sortType is EAssetSortType.Season && assetItem.Season == AssetItem.INVALID_SEASON)
-                        return false;
                 }
 
                 return assetItem.Match(searchFilter, useRegex)
@@ -515,14 +512,26 @@ public partial class AssetLoader : ObservableObject
     private static SortExpressionComparer<BaseAssetItem> CreateAssetSort((EAssetSortType, bool) values)
     {
         var (type, descending) = values;
+
+        if (type is EAssetSortType.Season)
+        {
+            // keep invalid seasons at the bottom regardless of ascending/descending.
+            var comparer = SortExpressionComparer<BaseAssetItem>.Ascending(asset =>
+                asset is AssetItem { Season: AssetItem.INVALID_SEASON } ? 1 : 0);
+
+            Func<BaseAssetItem, IComparable> seasonSort = asset =>
+                asset is AssetItem assetItem
+                    ? (assetItem.Season, assetItem.CreationData.ID)
+                    : (0, asset.CreationData.ID);
+
+            return descending
+                ? comparer.ThenByDescending(seasonSort)
+                : comparer.ThenByAscending(seasonSort);
+        }
+
         Func<BaseAssetItem, IComparable> sort = type switch
         {
             EAssetSortType.AZ => asset => asset.CreationData.DisplayName,
-
-            EAssetSortType.Season => asset =>
-                asset is AssetItem assetItem
-                    ? (assetItem.Season, assetItem.CreationData.ID)
-                    : (0, asset.CreationData.ID),
 
             EAssetSortType.Rarity => asset =>
                 asset is AssetItem assetItem
