@@ -23,6 +23,7 @@ class DefaultMappings(MappingCollection):
         SlotMapping("Concrete", "Diffuse"),
         SlotMapping("Trunk_BaseColor", "Diffuse"),
         SlotMapping("Diffuse Top", "Diffuse"),
+        SlotMapping("DiffuseTexture", "Diffuse"),
         SlotMapping("Diffuse Texture", "Diffuse"),
         SlotMapping("BaseColor_Trunk", "Diffuse"),
         SlotMapping("CliffTexture", "Diffuse"),
@@ -43,8 +44,9 @@ class DefaultMappings(MappingCollection):
         SlotMapping("SRM", "SpecularMasks", switch_slot="SwizzleRoughnessToGreen"),
         SlotMapping("S Mask", "SpecularMasks"),
         SlotMapping("Input S", "SpecularMasks"),
-        SlotMapping("Specular Mask", "SpecularMasks"),
+        SlotMapping("SpecTexture", "SpecularMasks"),
         SlotMapping("SpecularMask", "SpecularMasks"),
+        SlotMapping("Specular Mask", "SpecularMasks"),
         SlotMapping("Concrete_SpecMask", "SpecularMasks"),
         SlotMapping("Trunk_Specular", "SpecularMasks"),
         SlotMapping("Specular Top", "SpecularMasks"),
@@ -90,6 +92,7 @@ class DefaultMappings(MappingCollection):
         SlotMapping("FxMask", "FX Mask"),
         SlotMapping("FX_Mask", "FX Mask"),
         SlotMapping("Input FX", "FX Mask"),
+        SlotMapping("FXMaskTexture", "FX Mask"),
     )
 
     scalars=(
