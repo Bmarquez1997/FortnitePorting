@@ -92,6 +92,19 @@ public enum EExportType
     [Description("Kicks"), Export(EPrimitiveExportType.Mesh)]
     [CosmeticAsset]
     Kicks = ExportCategory.Cosmetic + 14,
+    
+    [Description("Wraps"), Export(EPrimitiveExportType.Material)]
+    [CosmeticAsset]
+    Wrap = ExportCategory.Cosmetic + 15,
+    
+    
+    // Rocket Racing
+
+    [Description("Bodies"), Export(EPrimitiveExportType.Mutable)]
+    VehicleBody = ExportCategory.Cars + 1,
+
+    [Description("Wheels"), Export(EPrimitiveExportType.Mutable)]
+    VehicleWheel = ExportCategory.Cars + 2,
 
     // CREATIVE
 
@@ -144,19 +157,15 @@ public enum EExportType
     // LEGO
 
     [Description("Outfits"), Export(EPrimitiveExportType.Mesh)]
-    [Disabled]
     LegoOutfit = ExportCategory.Lego + 1,
 
     [Description("Emotes"), Export(EPrimitiveExportType.Animation)]
-    [Disabled]
     LegoEmote = ExportCategory.Lego + 2,
 
     [Description("Props"), Export(EPrimitiveExportType.Mesh)]
-    [Disabled]
     LegoProp = ExportCategory.Lego + 3,
 
     [Description("Wildlife"), Export(EPrimitiveExportType.Mesh)]
-    [Disabled]
     LegoWildlife = ExportCategory.Lego + 4,
 
     // FALL GUYS
@@ -201,6 +210,10 @@ public enum EExportType
     [Description("MaterialInstance"), Export(EPrimitiveExportType.Material)]
     [NonAsset]
     MaterialInstance = ExportCategory.Generic + 9,
+    
+    // EXPERIMENTAL
+    [Description("Mutable"), Export(EPrimitiveExportType.Mutable)]
+    Mutable = ExportCategory.Generic + 10,
 
     // UTILITY
 
@@ -233,7 +246,20 @@ public enum EPrimitiveExportType
     Material,
 
     [Description("Tasty Rig")]
-    TastyRig
+    TastyRig,
+    
+    // EXPERIMENTAL
+    [Description("Mutable")]
+    Mutable
+}
+
+public enum EAnimFormat
+{
+    [Description("UEFormat (.ueanim)")]
+    UEFormat,
+
+    [Description("ActorX (.psa)")]
+    ActorX
 }
 
 public enum EImageFormat
@@ -280,4 +306,5 @@ file static class ExportCategory
     public const int FallGuys = 6 << 8;
     public const int Generic = 7 << 8;
     public const int Utility = 8 << 8;
+    internal const int Cars = 9 << 8;
 }

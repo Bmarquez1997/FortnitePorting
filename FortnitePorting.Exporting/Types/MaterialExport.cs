@@ -15,7 +15,7 @@ public class MaterialExport : BaseExport
     {
         if (exportType == EExportType.Wrap && asset.TryGetValue(out UMaterialInterface wrapMaterial, "ItemWrapMaterial"))
         {
-            Materials.AddIfNotNull(Exporter.Material(wrapMaterial, 0));
+            Materials.AddIfNotNull(Context.Material(wrapMaterial, 0));
             return;
         }
         Materials.AddIfNotNull(Context.Material((UMaterialInterface)asset, 0));

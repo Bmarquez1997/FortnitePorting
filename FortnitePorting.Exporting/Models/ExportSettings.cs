@@ -1,8 +1,5 @@
-using CUE4Parse_Conversion;
-using CUE4Parse_Conversion.Animations;
-using CUE4Parse_Conversion.Meshes;
-using CUE4Parse_Conversion.UEFormat.Enums;
-using CUE4Parse.UE4.Assets.Exports.Nanite;
+using CUE4Parse_Conversion.Options;
+using CUE4Parse_Conversion.Writers.UEFormat.Enums;
 
 namespace FortnitePorting.Exporting.Models;
 
@@ -14,19 +11,19 @@ public class ExportSettings
     public EMeshFormat MeshFormat { get; set; } = EMeshFormat.UEFormat;
     public bool ExportNanite { get; set; } = false;
     public bool ImportInstancedFoliage { get; set; } = true;
+    public bool ImportLights { get; set; } = true;
     public EAnimFormat AnimFormat { get; set; } = EAnimFormat.UEFormat;
     public bool ImportLobbyPoses { get; set; } = false;
     public ESoundFormat SoundFormat { get; set; } = ESoundFormat.WAV;
     public bool OpenFoldersOnExport { get; set; } = false;
 
-    public ExporterOptions CreateExportOptions()
+    public ExportOptions CreateExportOptions()
     {
-        return new ExporterOptions
-        {
-            MeshFormat = MeshFormat,
-            AnimFormat = AnimFormat,
-            CompressionFormat = CompressionFormat,
-            NaniteMeshFormat = ExportNanite ? ENaniteMeshFormat.NaniteSeparateFile : ENaniteMeshFormat.OnlyNormalLODs
-        };
+        return new ExportOptions(
+            meshFormat: MeshFormat,
+            naniteMeshFormat: ExportNanite ? ENaniteMeshFormat.NaniteSeparateFile : ENaniteMeshFormat.NoNanite,
+            compressionFormat: CompressionFormat,
+            exportMaterials: ExportMaterials
+        );
     }
 }

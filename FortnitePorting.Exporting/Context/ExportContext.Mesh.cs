@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using CUE4Parse_Conversion.Meshes;
+using CUE4Parse_Conversion.Options;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component;
@@ -8,7 +9,6 @@ using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
-using CUE4Parse.UE4.Assets.Exports.Nanite;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Objects;
@@ -51,11 +51,14 @@ public partial class ExportContext
             NumLods = convertedMesh.LODs.Count
         };
 
-        var sections = convertedMesh.LODs[0].Sections.Value;
-        foreach (var (index, section) in sections.Enumerate())
+        foreach (var (index, section) in convertedMesh.LODs[0].Sections.Enumerate())
         {
-            if (section.Material is null) continue;
-            if (!section.Material.TryLoad(out var materialObject)) continue;
+            var materialIndex = section.MaterialIndex;
+            if (materialIndex < 0 || materialIndex >= convertedMesh.Materials.Length) continue;
+
+            var materialRef = convertedMesh.Materials[materialIndex].Material;
+            if (materialRef is null) continue;
+            if (!materialRef.TryLoad(out var materialObject)) continue;
             if (materialObject is not UMaterialInterface material) continue;
 
             exportPart.Materials.AddIfNotNull(Material(material, index));
@@ -72,21 +75,27 @@ public partial class ExportContext
     public T? Mesh<T>(UStaticMesh? mesh) where T : ExportMesh, new()
     {
         if (mesh is null) return null;
-        if (!mesh.TryConvert(out var convertedMesh, out var naniteLod, FileExportOptions.NaniteMeshFormat)) return null;
+        if (!mesh.TryConvert(out var convertedMesh, EMeshQuality.All, FileExportOptions.NaniteMeshFormat)) return null;
         if (convertedMesh.LODs.Count <= 0) return null;
+
+        var hasNanite = FileExportOptions.NaniteMeshFormat == ENaniteMeshFormat.NaniteSeparateFile
+                        && convertedMesh.LODs.Any(lod => lod.IsNanite);
         
         var exportPart = new T
         {
             Name = mesh.Name,
-            Path = Export(mesh, embeddedAsset: mesh.Owner?.Name.SubstringAfterLast("/") != mesh.Name, isNanite: naniteLod is not null),
+            Path = Export(mesh, embeddedAsset: mesh.Owner?.Name.SubstringAfterLast("/") != mesh.Name, isNanite: hasNanite),
             NumLods = convertedMesh.LODs.Count
         };
 
-        var sections = convertedMesh.LODs[0].Sections.Value;
-        foreach (var (index, section) in sections.Enumerate())
+        foreach (var (index, section) in convertedMesh.LODs[0].Sections.Enumerate())
         {
-            if (section.Material is null) continue;
-            if (!section.Material.TryLoad(out var materialObject)) continue;
+            var materialIndex = section.MaterialIndex;
+            if (materialIndex < 0 || materialIndex >= convertedMesh.Materials.Length) continue;
+
+            var materialRef = convertedMesh.Materials[materialIndex].Material;
+            if (materialRef is null) continue;
+            if (!materialRef.TryLoad(out var materialObject)) continue;
             if (materialObject is not UMaterialInterface material) continue;
 
             exportPart.Materials.AddIfNotNull(Material(material, index));
@@ -194,21 +203,24 @@ public partial class ExportContext
     public T? MeshComponent<T>(USplineMeshComponent? mesh) where T : ExportMesh, new()
     {
         if (mesh is null) return null;
-        if (!mesh.TryConvert(out var convertedMesh, out var naniteLod, FileExportOptions.NaniteMeshFormat)) return null;
+        if (!mesh.TryConvert(out var convertedMesh)) return null;
         if (convertedMesh.LODs.Count <= 0) return null;
 
         var exportPart = new T
         {
             Name = mesh.Name,
-            Path = Export(mesh, embeddedAsset: true, isNanite: naniteLod is not null),
+            Path = Export(mesh, embeddedAsset: true),
             NumLods = convertedMesh.LODs.Count
         };
 
-        var sections = convertedMesh.LODs[0].Sections.Value;
-        foreach (var (index, section) in sections.Enumerate())
+        foreach (var (index, section) in convertedMesh.LODs[0].Sections.Enumerate())
         {
-            if (section.Material is null) continue;
-            if (!section.Material.TryLoad(out var materialObject)) continue;
+            var materialIndex = section.MaterialIndex;
+            if (materialIndex < 0 || materialIndex >= convertedMesh.Materials.Length) continue;
+
+            var materialRef = convertedMesh.Materials[materialIndex].Material;
+            if (materialRef is null) continue;
+            if (!materialRef.TryLoad(out var materialObject)) continue;
             if (materialObject is not UMaterialInterface material) continue;
 
             exportPart.Materials.AddIfNotNull(Material(material, index));

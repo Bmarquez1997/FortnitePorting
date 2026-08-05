@@ -354,14 +354,14 @@ public class MeshExport : BaseExport
                 for (var matIndex = 0; matIndex < materialParams.Length; matIndex++)
                 {
                     if (materialParams[matIndex].TryGetValue(out UMaterialInterface material, "ParameterValue"))
-                        matList.AddIfNotNull(Exporter.Material(material, matIndex));
+                        matList.AddIfNotNull(Context.Material(material, matIndex));
                 }
 
                 var meshParams = props.Get<FStructFallback[]>("SkeletalMeshParameters");
                 foreach (var meshParam in meshParams)
                 {
                     if (!meshParam.TryGetValue(out USkeletalMesh mesh, "ParameterValue")) continue;
-                    var exportMesh = Exporter.Mesh(mesh);
+                    var exportMesh = Context.Mesh(mesh);
                     exportMesh?.OverrideMaterials.AddRange(matList);
                     Meshes.AddIfNotNull(exportMesh);
                 }

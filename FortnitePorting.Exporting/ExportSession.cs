@@ -65,6 +65,7 @@ public class ExportSession
             EPrimitiveExportType.Font => new FontExport(displayName, asset, exportType, Meta, fileMeta),
             EPrimitiveExportType.PoseAsset => new PoseAssetExport(displayName, asset, exportType, Meta, fileMeta),
             EPrimitiveExportType.Material => new MaterialExport(displayName, asset, exportType, Meta, fileMeta),
+            EPrimitiveExportType.Mutable => new MutableExport(displayName, asset, styles, exportType, Meta, fileMeta),
             _ => throw new NotImplementedException($"Exporting {primitiveType} assets is not supported yet.")
         };
     }

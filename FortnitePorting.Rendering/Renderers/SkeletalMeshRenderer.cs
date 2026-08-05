@@ -1,6 +1,6 @@
-using CUE4Parse_Conversion.Animations.PSA;
+using CUE4Parse_Conversion.Dto;
 using CUE4Parse_Conversion.Meshes;
-using CUE4Parse_Conversion.Meshes.PSK;
+using CUE4Parse_Conversion.Writers.ActorX.Structs.Animations;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
@@ -33,10 +33,10 @@ public class SkeletalMeshRenderer : MeshRenderer
             throw new RenderingXException("Failed to convert skeletal mesh.");
         }
 
-        BoundingBox = convertedMesh.BoundingBox;
+        BoundingBox = convertedMesh.Bounds;
 
         var refPose = skeletalMesh.ReferenceSkeleton.FinalRefBonePose;
-        Pose = new SkeletalPoseEvaluator(convertedMesh.RefSkeleton, refPose);
+        Pose = new SkeletalPoseEvaluator(convertedMesh.Bones, refPose);
         _uploadBones = new Matrix4[Pose.BoneCount];
         Array.Fill(_uploadBones, Matrix4.Identity);
 
@@ -47,10 +47,10 @@ public class SkeletalMeshRenderer : MeshRenderer
 
         var lod = convertedMesh.LODs[Math.Min(lodLevel, convertedMesh.LODs.Count - 1)];
 
-        Indices = lod.Indices!.Value;
+        Indices = lod.Indices;
 
-        var vertices = lod.Verts;
-        var extraUVs = lod.ExtraUV.Value;
+        var vertices = lod.Vertices;
+        var extraUVs = lod.ExtraUvs;
         
         var buildVertices = new List<float>(vertices.Length * 28);
 
@@ -60,7 +60,7 @@ public class SkeletalMeshRenderer : MeshRenderer
             var position = vertex.Position * 0.01f;
             var normal = vertex.Normal;
             var tangent = vertex.Tangent;
-            var uv = vertex.UV;
+            var uv = vertex.Uv;
             var materialLayer = extraUVs.Length > 0 ? extraUVs[0][vertexIndex].U : 0;
 
             buildVertices.AddRange([
@@ -76,7 +76,7 @@ public class SkeletalMeshRenderer : MeshRenderer
 
         Vertices = buildVertices.ToArray();
 
-        var sections = lod.Sections.Value;
+        var sections = lod.Sections;
         Materials = new Material[sections.Length];
 
         for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++)
@@ -84,7 +84,7 @@ public class SkeletalMeshRenderer : MeshRenderer
             var section = sections[sectionIndex];
             Sections.Add(new Section(section.MaterialIndex, section.NumFaces * 3, section.FirstIndex));
 
-            if (skeletalMesh.Materials[section.MaterialIndex]?.TryLoad(out var sectionMaterial) ?? false)
+            if (convertedMesh.Materials[section.MaterialIndex].Material?.TryLoad(out var sectionMaterial) ?? false)
             {
                 Materials[sectionIndex] = sectionMaterial switch
                 {
@@ -233,17 +233,17 @@ public class SkeletalMeshRenderer : MeshRenderer
         _boneBuffer.Delete();
     }
 
-    private static void PackInfluences(CSkelMeshVertex vertex, List<float> buildVertices)
+    private static void PackInfluences(SkinnedMeshVertex vertex, List<float> buildVertices)
     {
         Span<float> indices = stackalloc float[InfluenceSlots];
         Span<float> weights = stackalloc float[InfluenceSlots];
 
-        var sources = vertex.Influences.Count <= InfluenceSlots
+        var sources = vertex.Influences.Length <= InfluenceSlots
             ? vertex.Influences
-            : vertex.Influences.OrderByDescending(i => i.Weight).Take(InfluenceSlots).ToList();
+            : vertex.Influences.OrderByDescending(i => i.Weight).Take(InfluenceSlots).ToArray();
 
         var weightSum = 0f;
-        for (var i = 0; i < sources.Count; i++)
+        for (var i = 0; i < sources.Length; i++)
         {
             indices[i] = sources[i].Bone;
             weights[i] = sources[i].Weight;
@@ -252,7 +252,7 @@ public class SkeletalMeshRenderer : MeshRenderer
 
         if (weightSum > 0f)
         {
-            for (var i = 0; i < sources.Count; i++)
+            for (var i = 0; i < sources.Length; i++)
                 weights[i] /= weightSum;
         }
         else

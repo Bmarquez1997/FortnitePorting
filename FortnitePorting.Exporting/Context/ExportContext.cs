@@ -7,8 +7,11 @@ using System.Threading.Tasks;
 using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Animations;
 using CUE4Parse_Conversion.DNA;
-using CUE4Parse_Conversion.Meshes;
-using CUE4Parse_Conversion.Meshes.UEFormat;
+using CUE4Parse_Conversion.Dto;
+using CUE4Parse_Conversion.Formats.Animations;
+using CUE4Parse_Conversion.Formats.Meshes;
+using CUE4Parse_Conversion.Formats.PoseAsset;
+using CUE4Parse_Conversion.Options;
 using CUE4Parse_Conversion.PoseAsset;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports;
@@ -16,15 +19,12 @@ using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
-using CUE4Parse.UE4.Assets.Exports.Nanite;
 using CUE4Parse.UE4.Assets.Exports.Rig;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Engine.Animation;
-using CUE4Parse.UE4.Objects.UObject;
-using CUE4Parse.UE4.Writers;
 using CUE4Parse.Utils;
 using FFMpegCore;
 using CUE4Parse.FileProvider.Vfs;
@@ -44,7 +44,7 @@ public partial class ExportContext
 
     public readonly ExportDataMeta Meta;
     public CancellationToken CancellationToken => Meta.CancellationToken;
-    private readonly ExporterOptions FileExportOptions;
+    private readonly ExportOptions FileExportOptions;
 
     private AbstractVfsFileProvider FileProvider => Meta.Provider.Provider;
 
@@ -58,17 +58,19 @@ public partial class ExportContext
     {
         var extension = asset switch
         {
-            USkeletalMesh or UStaticMesh or USkeleton => Meta.Settings.MeshFormat switch
+            USkeletalMesh or UStaticMesh or USkeleton or USplineMeshComponent => Meta.Settings.MeshFormat switch
             {
                 EMeshFormat.UEFormat => "uemodel",
                 EMeshFormat.ActorX => "psk",
                 EMeshFormat.Gltf2 => "glb",
-                EMeshFormat.OBJ => "obj",
+                EMeshFormat.USD => "usda",
+                _ => "uemodel"
             },
             UAnimSequenceBase => Meta.Settings.AnimFormat switch
             {
                 EAnimFormat.UEFormat => "ueanim",
-                EAnimFormat.ActorX => "psa"
+                EAnimFormat.ActorX => "psa",
+                _ => "ueanim"
             },
             UPoseAsset or UDNAAsset => "uepose",
             UTexture => Meta.Settings.ImageFormat switch
@@ -163,80 +165,89 @@ public partial class ExportContext
         {
             case USkeletalMesh skeletalMesh:
             {
-                var exporter = new MeshExporter(skeletalMesh, FileExportOptions);
-                foreach (var mesh in exporter.MeshLods)
-                {
-                    File.WriteAllBytes(path, mesh.FileData);
-                }
+                using var dto = new SkeletalMeshDto(skeletalMesh, FileExportOptions.MeshQuality, FileExportOptions.NaniteMeshFormat);
+                if (dto.LODs.Count == 0) break;
 
-                foreach (var dna in exporter.DNAAssets)
+                WriteExportFiles(path, GetMeshFormat().BuildSkeletalMesh(skeletalMesh.Name, FileExportOptions, dto), isNanite);
+
+                if (dto.AssetUserData != null)
                 {
-                    Export(dna.GetDNAAsset());
+                    foreach (var userData in dto.AssetUserData)
+                    {
+                        if (userData.TryLoad<UDNAAsset>(out var dna))
+                            Export(dna);
+                    }
                 }
                 break;
             }
             case UStaticMesh staticMesh:
             {
-                // TODO refactor system to allow nanite adding if exists here rather than needing to pre-detect
-                var exporter = new MeshExporter(staticMesh, FileExportOptions);
+                using var dto = new StaticMeshDto(staticMesh, FileExportOptions.MeshQuality, FileExportOptions.NaniteMeshFormat);
+                if (dto.LODs.Count == 0) break;
 
-                if (isNanite && exporter.NaniteMesh is not null)
-                {
-                    File.WriteAllBytes(path, exporter.NaniteMesh.FileData);
-                }
-                else
-                {
-                    foreach (var mesh in exporter.MeshLods)
-                    {
-                        File.WriteAllBytes(path, mesh.FileData);
-                    }
-                }
+                WriteExportFiles(path, GetMeshFormat().BuildStaticMesh(staticMesh.Name, FileExportOptions, dto), isNanite);
+                break;
+            }
+            case USplineMeshComponent splineMesh:
+            {
+                using var dto = new StaticMeshDto(splineMesh, FileExportOptions.MeshQuality);
+                if (dto.LODs.Count == 0) break;
+
+                WriteExportFiles(path, GetMeshFormat().BuildStaticMesh(splineMesh.Name, FileExportOptions, dto), isNanite);
                 break;
             }
             case USkeleton skeleton:
             {
-                var exporter = new MeshExporter(skeleton, FileExportOptions);
-                foreach (var skel in exporter.MeshLods)
-                {
-                    File.WriteAllBytes(path, skel.FileData);
-                }
-                break;
-            }
-            case UAnimSequence animSequence:
-            {
-                var exporter = new AnimExporter(animSequence, FileExportOptions);
-                foreach (var sequence in exporter.AnimSequences)
-                {
-                    File.WriteAllBytes(path, sequence.FileData);
-                }
+                using var dto = new SkeletonDto(skeleton);
+                WriteExportFiles(path, GetMeshFormat().BuildSkeleton(skeleton.Name, FileExportOptions, dto));
                 break;
             }
             case UAnimStreamable animStreamable:
             {
-                var exporter = new AnimExporter(animStreamable, FileExportOptions);
-                foreach (var sequence in exporter.AnimSequences)
+                var files = Meta.Settings.AnimFormat switch
                 {
-                    File.WriteAllBytes(path, sequence.FileData);
-                }
+                    EAnimFormat.ActorX => throw new NotSupportedException("ActorX does not support anim streamable exports"),
+                    _ => new UEFormatAnimFormat().BuildAnimStreamable(animStreamable.Name, FileExportOptions, animStreamable)
+                };
+                WriteExportFiles(path, files);
+                break;
+            }
+            case UAnimSequenceBase animSequence:
+            {
+                var animSet = animSequence.ConvertAnims();
+                var files = Meta.Settings.AnimFormat switch
+                {
+                    EAnimFormat.ActorX => new ActorXAnimFormat().Build(animSequence.Name, FileExportOptions, animSet),
+                    _ => new UEFormatAnimFormat().Build(animSequence.Name, FileExportOptions, animSet)
+                };
+                WriteExportFiles(path, files);
                 break;
             }
             case UDNAAsset dnaAsset:
             {
-                var exporter = new DNAExporter(dnaAsset, FileExportOptions);
-                if (!exporter.TryConvertToPoseAsset(out var poseAsset))
+                if (!dnaAsset.TryConvert(out var convertedPoseAsset))
                 {
                     Log.Error("Failed to convert DNA asset {0}", dnaAsset.DnaFileName);
                     return;
                 }
-                
-                File.WriteAllBytes(path, poseAsset.FileData);
-                
+
+                var poseName = string.IsNullOrEmpty(dnaAsset.DnaFileName)
+                    ? dnaAsset.Name
+                    : Path.GetFileNameWithoutExtension(dnaAsset.DnaFileName);
+                var poseFile = new UEFormatPoseFormat().Build(poseName, FileExportOptions, convertedPoseAsset);
+                File.WriteAllBytes(path, poseFile.Data);
                 break;
             }
             case UPoseAsset poseAsset:
             {
-                var exporter = new PoseAssetExporter(poseAsset, FileExportOptions);
-                File.WriteAllBytes(path, exporter.PoseAsset.FileData);
+                if (!poseAsset.TryConvert(out var convertedPoseAsset))
+                {
+                    Log.Error("Failed to convert pose asset {0}", poseAsset.Name);
+                    return;
+                }
+
+                var poseFile = new UEFormatPoseFormat().Build(poseAsset.Name, FileExportOptions, convertedPoseAsset);
+                File.WriteAllBytes(path, poseFile.Data);
                 break;
             }
             case UTexture2DArray textureArray:
@@ -294,13 +305,8 @@ public partial class ExportContext
             case ALandscapeProxy landscapeProxy:
             {
                 var processor = new LandscapeProcessor(landscapeProxy);
-                var mesh = processor.Process();
-
-                var archive = new FArchiveWriter();
-                var model = new UEModel(landscapeProxy.Name, mesh, new FPackageIndex(), FileExportOptions);
-                model.Save(archive);
-
-                File.WriteAllBytes(path, archive.GetBuffer());
+                using var mesh = processor.Process();
+                WriteExportFiles(path, new UEFormatMeshFormat().BuildStaticMesh(landscapeProxy.Name, FileExportOptions, mesh));
                 break;
             }
             case UFontFace fontFace:
@@ -312,6 +318,43 @@ public partial class ExportContext
                 File.WriteAllBytes(path, fontData);
                 break;
             }
+        }
+    }
+
+    private IMeshExportFormat GetMeshFormat() => FileExportOptions.MeshFormat switch
+    {
+        EMeshFormat.ActorX => new ActorXMeshFormat(),
+        EMeshFormat.Gltf2 => new GltfMeshFormat(),
+        EMeshFormat.UEFormat => new UEFormatMeshFormat(
+            FileExportOptions.NaniteMeshFormat == ENaniteMeshFormat.NaniteSeparateFile),
+        _ => new UEFormatMeshFormat(
+            FileExportOptions.NaniteMeshFormat == ENaniteMeshFormat.NaniteSeparateFile)
+    };
+
+    private static void WriteExportFiles(string path, IReadOnlyList<ExportFile> files, bool isNanite = false)
+    {
+        if (files.Count == 0) return;
+
+        if (isNanite)
+        {
+            var naniteFile = files.FirstOrDefault(file => file.NameSuffix == "_Nanite");
+            File.WriteAllBytes(path, (naniteFile.Data ?? files[^1].Data)!);
+            return;
+        }
+
+        foreach (var file in files)
+        {
+            if (file.NameSuffix == "_Nanite" && files.Count > 1) continue;
+
+            var writePath = path;
+            if (!string.IsNullOrEmpty(file.NameSuffix) && file.NameSuffix != "_Nanite")
+            {
+                writePath = Path.Combine(
+                    Path.GetDirectoryName(path) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(path) + file.NameSuffix + Path.GetExtension(path));
+            }
+
+            File.WriteAllBytes(writePath, file.Data);
         }
     }
 
