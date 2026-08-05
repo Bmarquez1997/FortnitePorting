@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using FortnitePorting.Framework;
 using FortnitePorting.Services;
+using FortnitePorting.Providers;
 using FortnitePorting.ViewModels;
 using FortnitePorting.WindowModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +38,10 @@ public static class AppServices
     public static AssetLoaderService AssetLoading => Services.GetRequiredService<AssetLoaderService>();
     public static FilesService Files => Services.GetRequiredService<FilesService>();
     public static ExportClientService ExportClient => Services.GetRequiredService<ExportClientService>();
+    public static ExportService Exporter => Services.GetRequiredService<ExportService>();
+    public static ExportAssetProvider ExportAssets => Services.GetRequiredService<ExportAssetProvider>();
     public static WindowManagerService WindowManager => Services.GetRequiredService<WindowManagerService>();
+    public static AudioPlaybackService Audio => Services.GetRequiredService<AudioPlaybackService>();
    
     // ViewModels
     public static AppWindowModel AppWM => Services.GetRequiredService<AppWindowModel>();
@@ -46,7 +50,6 @@ public static class AppServices
     public static MapViewModel MapVM => Services.GetRequiredService<MapViewModel>();
     public static MusicViewModel MusicVM => Services.GetRequiredService<MusicViewModel>();
     public static TimeWasterViewModel TimeWasterVM => Services.GetRequiredService<TimeWasterViewModel>();
-    public static SoundPreviewWindowModel SoundPreviewWM => Services.GetRequiredService<SoundPreviewWindowModel>();
     
 }
 
@@ -54,7 +57,7 @@ public static class AppServiceExtensions
 {
     extension(ServiceCollection collection)
     {
-        public  void AddCommonServices()
+        public void AddCommonServices()
         {
             var serviceTypes = Assembly.GetAssembly(typeof(IService))?
                 .GetTypes()
