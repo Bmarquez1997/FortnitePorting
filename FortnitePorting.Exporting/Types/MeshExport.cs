@@ -21,6 +21,7 @@ using CUE4Parse.Utils;
 using FortnitePorting.CUE4Parse.Extensions;
 using FortnitePorting.CUE4Parse.Models.Fortnite;
 using FortnitePorting.CUE4Parse.Models.Fortnite.Enums;
+using FortnitePorting.CUE4Parse.Models.Fortnite.Instructions;
 using FortnitePorting.Exporting.Custom;
 using FortnitePorting.Exporting.Models;
 using FortnitePorting.Exporting.Models.Files.Meta;
@@ -296,6 +297,10 @@ public class MeshExport : BaseExport
                 if (asset is UBlueprintGeneratedClass blueprintGeneratedClass)
                 {
                     AddObjects(Context.Blueprint(blueprintGeneratedClass));
+                }
+                else if (asset is FortBuildingInstructions buildingInstructions)
+                {
+                    Meshes.AddIfNotNull(Context.FortBuildingInstructions(buildingInstructions));
                 }
                 else
                 {
