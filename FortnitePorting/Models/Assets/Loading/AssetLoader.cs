@@ -212,6 +212,8 @@ public partial class AssetLoader : ObservableObject
             Filters = 
             [
                 new FilterItem("Baked", asset => asset.CreationData.GameplayTags.ContainsAny("Baked")),
+                new FilterItem("Dataless", asset => asset.CreationData.GameplayTags.ContainsAny("Dataless")),
+                new FilterItem("Mutable", asset => asset.CreationData.GameplayTags.ContainsAny("Mutable")),
             ],
             AllowedTypes = 
             [

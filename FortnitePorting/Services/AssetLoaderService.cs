@@ -188,13 +188,20 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                     {
                         var tags = AssetLoader.GetGameplayTags(asset);
                         
-                        if (!(asset.TryGetValue<UObject[]>(out var characterPart, "CharacterParts")
+                        FName? variantTag = null;
+                        if (asset.TryGetValue<UObject[]>(out var characterPart, "CharacterParts")
                             && characterPart[0].TryGetValue<UScriptArray>(out var partDataList, "CosmeticPartDataList")
                             && partDataList.Properties[0].GetValue<FInstancedStruct>().NonConstStruct
-                                .TryGetValue<FSoftObjectPath>(out var customPath, "CustomizableData")))
-                            return tags;
+                                .TryGetValue<FStructFallback[]>(out var skelMeshes, "SkeletalMeshParameters"))
+                        {
+                            variantTag = new FName("Baked");
+                        }
+                        else
+                        {
+                            variantTag = new FName("Mutable");
+                        }
                         
-                        var newTags = new List<FGameplayTag> { new(new FName("Baked")) };
+                        var newTags = new List<FGameplayTag> { new(variantTag.Value) };
                         newTags.AddRangeIfNotNull(tags?.GameplayTags);
 
                         return new FGameplayTagContainer(newTags.ToArray());
@@ -539,10 +546,24 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                          var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
                          var tags = AssetLoader.GetGameplayTags(baseItemDefinition);
 
-                         if (!asset.TryGetValue(out UObject ams, "AssembledMeshSchema")
-                             || !ams.TryGetValue(out FSoftObjectPath[] meshes, "SkeletalMeshes")) return tags;
-                         
-                         var newTags = new List<FGameplayTag> { new(new FName("Baked")) };
+                         if (!asset.TryGetValue(out UObject ams, "AssembledMeshSchema")) return tags;
+
+                         FName? variantTag = null;
+                         if (ams.TryGetValue(out FSoftObjectPath[] meshes, "SkeletalMeshes") && meshes.Length > 0)
+                         {
+                             variantTag = new FName("Baked");
+                         }
+                         else if (TryGetDatalessCoiDescriptor(ams, out var descriptor)
+                                  && HasValidSkeletalMeshParameter(descriptor))
+                         {
+                             variantTag = new FName("Dataless");
+                         }
+                         else
+                         {
+                             variantTag = new FName("Mutable");
+                         }
+
+                         var newTags = new List<FGameplayTag> { new(variantTag.Value) };
                          newTags.AddRangeIfNotNull(tags?.GameplayTags);
 
                          return new FGameplayTagContainer(newTags.ToArray());
@@ -595,13 +616,15 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                 {
                     ClassNames = ["FortVehicleCosmeticsItemDefinition_Body"],
                     PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Generic",
-                    HideRarity = true
+                    HideRarity = true,
+                    GameplayTagHandler = asset => GetVehicleVariantTags(asset, "SkeletalMeshInfo")
                 },
                 new AssetLoader(EExportType.VehicleWheel)
                 {
                     ClassNames = ["FortVehicleCosmeticsItemDefinition_Wheel"],
                     PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Generic",
-                    HideRarity = true
+                    HideRarity = true,
+                    GameplayTagHandler = asset => GetVehicleVariantTags(asset, "WheelSkeletalMeshInfo")
                 }
             ]
         }
@@ -641,5 +664,59 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         ActiveLoader = Get(type);
         ActiveCollection = ActiveLoader.Filtered;
         ActiveLoader.UpdateFilterVisibility();
+    }
+
+    private static bool TryGetDatalessCoiDescriptor(UObject ams, out FStructFallback descriptor)
+    {
+        descriptor = null!;
+
+        UObject? coi = null;
+        if (ams.TryGetValue(out FSoftObjectPath coiPath, "CustomizableObjectInstance"))
+            coi = coiPath.Load();
+        else
+            ams.TryGetValue(out coi, "CustomizableObjectInstance");
+
+        return coi is not null && coi.TryGetValue(out descriptor, "Descriptor");
+    }
+
+    private static bool HasValidSkeletalMeshParameter(FStructFallback descriptor)
+    {
+        var skeletalMeshParams = descriptor.GetOrDefault("SkeletalMeshParameters", Array.Empty<FStructFallback>());
+        return skeletalMeshParams.Any(param =>
+            param.TryGetValue(out FPackageIndex meshIndex, "ParameterValue") && !meshIndex.IsNull);
+    }
+
+    private static FGameplayTagContainer? GetVehicleVariantTags(UObject asset, string meshInfoProperty)
+    {
+        var tags = AssetLoader.GetGameplayTags(asset);
+        var tempTag = new FName("Mutable");
+        if (TryGetVehicleItemDef(asset, out var itemDef) && HasDatalessVehicleMeshInfo(itemDef, meshInfoProperty))
+            tempTag = new FName("Dataless");
+
+        var newTags = new List<FGameplayTag> { new(tempTag) };
+        newTags.AddRangeIfNotNull(tags?.GameplayTags);
+        return new FGameplayTagContainer(newTags.ToArray());
+    }
+
+    private static bool TryGetVehicleItemDef(UObject asset, out UObject itemDef)
+    {
+        itemDef = null!;
+        if (asset.TryGetValue(out FSoftObjectPath itemDefPath, "VehicleCosmeticsItemDef"))
+        {
+            itemDef = itemDefPath.Load();
+            return itemDef is not null;
+        }
+
+        return asset.TryGetValue(out itemDef, "VehicleCosmeticsItemDef");
+    }
+
+    private static bool HasDatalessVehicleMeshInfo(UObject itemDef, string meshInfoProperty)
+    {
+        if (!itemDef.TryGetValue(out FStructFallback meshInfo, meshInfoProperty))
+            return false;
+        if (!meshInfo.TryGetValue(out FSoftObjectPath meshPath, "ParameterValue"))
+            return false;
+
+        return !meshPath.AssetPathName.IsNone && !string.IsNullOrWhiteSpace(meshPath.AssetPathName.Text);
     }
 }

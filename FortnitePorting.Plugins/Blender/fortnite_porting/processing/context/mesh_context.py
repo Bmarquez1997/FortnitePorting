@@ -52,7 +52,7 @@ class MeshImportContext:
                 self.parent_deform_bones(imported_mesh["Skeleton"], ["dfrm_", "deform_"])
                 self.parent_bones(imported_mesh["Skeleton"], extra_deform_mappings)
             
-        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
+        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT, EExportType.LEGO_OUTFIT] and self.options.get("MergeArmatures"):
             master_skeleton = merge_parts(self.imported_meshes)
             master_mesh = get_armature_mesh(master_skeleton)
             # Update attribute to account for joined mesh

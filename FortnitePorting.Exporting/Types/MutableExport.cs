@@ -10,6 +10,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
+using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Assets.Objects.Properties;
 using CUE4Parse.UE4.Objects.UObject;
@@ -25,6 +26,13 @@ namespace FortnitePorting.Exporting.Types;
 
 public class MutableExport : BaseExport
 {
+    private const string BODY_MESH_PATH =
+        "/FigureCharacter/Figure_Core/SkeletalMesh/SKM_Figure_Preview";
+    private const string DEFAULT_LEGO_MATERIAL_PATH =
+        "/FigureCharacter/Figure_Core/Material/MaterialInstance/MI_Figure_DecoratedPlastic";
+    private const string VERTEX_CRUNCH_MATERIAL_PATH =
+        "/Game/Characters/Player/Male/Medium/Bodies/M_MED_HighTower_Tomato_Casual/Materials/MI_VertexCrunch";
+
     public readonly List<ExportMutable> Objects = [];
     public readonly List<string> Textures = [];
     public readonly List<ExportMaterial> Materials = [];
@@ -38,6 +46,9 @@ public class MutableExport : BaseExport
         {
             case EExportType.VehicleBody:
                 var itemDef = asset.Get<FSoftObjectPath>("VehicleCosmeticsItemDef").Load();
+                if (TryExportDatalessVehicleMesh(name, itemDef, "SkeletalMeshInfo"))
+                    return;
+
                 assetCodename = itemDef.Get<string[]>("CheatNames")?[0];
                 filterSkeletonName = assetCodename;
                 if (itemDef.TryGetValue(out FSoftObjectPath skeletonPath, "WheelAttachSkeletonReference")
@@ -50,6 +61,9 @@ public class MutableExport : BaseExport
                 break;
             case EExportType.VehicleWheel:
                 itemDef = asset.Get<FSoftObjectPath>("VehicleCosmeticsItemDef").Load();
+                if (TryExportDatalessVehicleMesh(name, itemDef, "WheelSkeletalMeshInfo"))
+                    return;
+
                 var tireInfo = itemDef.Get<FInstancedStruct>("WheelTirePoppedInfo");
                 skeleton = tireInfo.NonConstStruct.Get<FSoftObjectPath>("WheelSkeletonReference").Load();
                 filterSkeletonName = skeleton.Name;
@@ -74,17 +88,25 @@ public class MutableExport : BaseExport
                         return;
                     }
 
-                    if (ams.TryGetValue(out UObject coi, "CustomizableObjectInstance")
-                        && coi.TryGetValue(out FStructFallback descriptor, "Descriptor"))
+                    UObject? coi = null;
+                    if (ams.TryGetValue(out FSoftObjectPath coiPath, "CustomizableObjectInstance"))
+                        coi = coiPath.Load();
+                    else
+                        ams.TryGetValue(out coi, "CustomizableObjectInstance");
+
+                    if (coi is not null
+                        && coi.TryGetValue(out FStructFallback descriptor, "Descriptor")
+                        && HasValidSkeletalMeshParameter(descriptor))
                     {
-                        customizableObject = descriptor.Get<UCustomizableObject>("CustomizableObject");
-                        assetCodename = coi.Name.Replace("COI_Figure_", "");
+                        var characterCodename = GetCharacterCodename(asset);
+                        ExportDatalessLegoOutfit(name, descriptor, characterCodename);
+                        return;
                     }
                 }
 
                 // Prompt to ask if user wants to continue if file is in CO_Figure (or Recipe)?
                 // https://github.com/h4lfheart/FortnitePorting/commit/69732c1360d4d8d9d6b85e02a37c6efc4ffb8487#diff-4e523351690223eb266eff00616d9206a43003c903a859ca8f3aeb9896df1a0aR15-R131
-                throw new NotImplementedException("Lego outfit export has not been implemented yet");
+                throw new NotImplementedException("Mutable Lego outfit export has not been implemented yet");
             case EExportType.Kicks:
                 var characterPart = asset.Get<UObject[]>("CharacterParts")?[0];
                 if (styles.OfType<ExportObjectStyle>().FirstOrDefault() is { StyleData: var styleData }
@@ -161,6 +183,367 @@ public class MutableExport : BaseExport
 
     public MutableExport(string name, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
     {
+    }
+
+    private bool TryExportDatalessVehicleMesh(string name, UObject itemDef, string meshInfoProperty)
+    {
+        if (!TryGetVehicleMeshPath(itemDef, meshInfoProperty, out var meshPath))
+            return false;
+        if (!meshPath.TryLoad(out USkeletalMesh mesh))
+            return false;
+
+        var exportMesh = Context.Mesh(mesh);
+        if (exportMesh is null) return false;
+
+        Objects.Add(new ExportMutable
+        {
+            Name = name,
+            Meshes = [exportMesh]
+        });
+        return true;
+    }
+
+    private static bool TryGetVehicleMeshPath(UObject itemDef, string meshInfoProperty, out FSoftObjectPath meshPath)
+    {
+        meshPath = default;
+        if (!itemDef.TryGetValue(out FStructFallback meshInfo, meshInfoProperty))
+            return false;
+        if (!meshInfo.TryGetValue(out meshPath, "ParameterValue"))
+            return false;
+
+        return !meshPath.AssetPathName.IsNone && !string.IsNullOrWhiteSpace(meshPath.AssetPathName.Text);
+    }
+
+    private void ExportDatalessLegoOutfit(string name, FStructFallback descriptor, string? characterCodename)
+    {
+        var exportMutable = new ExportMutable
+        {
+            Name = name,
+            Meshes = []
+        };
+
+        // partKey (e.g. "Head Acc") -> export part
+        var partsByKey = new Dictionary<string, ExportPart>(StringComparer.OrdinalIgnoreCase);
+        // partKey -> material name used for OverrideParameters.MaterialNameToAlter
+        var materialNamesByKey = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!TryCreateDefaultBodyPart(characterCodename, out var bodyPart, out var bodyMaterialName))
+        {
+            Log.Warning("Failed to load default figure body mesh for dataless Lego outfit {Name}", name);
+            return;
+        }
+
+        partsByKey["Body"] = bodyPart;
+        materialNamesByKey["Body"] = bodyMaterialName;
+        exportMutable.Meshes.Add(bodyPart);
+
+        var skeletalMeshParams = descriptor.GetOrDefault("SkeletalMeshParameters", Array.Empty<FStructFallback>());
+        foreach (var meshParam in skeletalMeshParams)
+        {
+            if (!TryGetParameterName(meshParam, out var parameterName)) continue;
+            if (!meshParam.TryGetValue(out USkeletalMesh skeletalMesh, "ParameterValue")) continue;
+
+            var partKey = StripMeshParameterSuffix(parameterName);
+            var exportPart = Context.Mesh<ExportPart>(skeletalMesh);
+            if (exportPart is null) continue;
+
+            exportPart.Type = ResolveFigurePartType(partKey);
+            partsByKey[partKey] = exportPart;
+            exportMutable.Meshes.Add(exportPart);
+        }
+
+        ApplyMaterialOverrides(descriptor, partsByKey, materialNamesByKey);
+        ApplyDecoratedPlasticFallback(partsByKey, materialNamesByKey);
+
+        ApplyTextureOverrides(descriptor, materialNamesByKey, exportMutable);
+        ApplyFloatOverrides(descriptor, materialNamesByKey, exportMutable);
+
+        Objects.Add(exportMutable);
+    }
+
+    private static bool HasValidSkeletalMeshParameter(FStructFallback descriptor)
+    {
+        var skeletalMeshParams = descriptor.GetOrDefault("SkeletalMeshParameters", Array.Empty<FStructFallback>());
+        return skeletalMeshParams.Any(param => param.TryGetValue(out USkeletalMesh _, "ParameterValue"));
+    }
+
+    private static string? GetCharacterCodename(UObject asset)
+    {
+        if (!asset.TryGetValue(out FStructFallback assetId, "BaseAthenaCharacterAssetId"))
+            return null;
+
+        if (assetId.TryGetValue(out FName primaryAssetName, "PrimaryAssetName"))
+            return primaryAssetName.Text;
+
+        return assetId.TryGetValue(out string primaryAssetNameString, "PrimaryAssetName")
+            ? primaryAssetNameString
+            : null;
+    }
+
+    private bool TryCreateDefaultBodyPart(string? characterCodename, out ExportPart bodyPart, out string bodyMaterialName)
+    {
+        bodyPart = null!;
+        bodyMaterialName = "MI_Figure_DecoratedPlastic";
+
+        if (!Context.Meta.Provider.Provider.TryLoadPackageObject(BODY_MESH_PATH, out USkeletalMesh bodyMesh))
+            return false;
+
+        var exportPart = Context.Mesh<ExportPart>(bodyMesh);
+        if (exportPart is null) return false;
+
+        exportPart.Type = EFortCustomPartType.Body;
+        if (!string.IsNullOrWhiteSpace(characterCodename))
+            exportPart.Name = $"SKM_Figure_{characterCodename}";
+
+        if (Context.Meta.Provider.Provider.TryLoadPackageObject(DEFAULT_LEGO_MATERIAL_PATH, out UMaterialInterface decoratedPlastic))
+        {
+            exportPart.OverrideMaterials.AddIfNotNull(Context.Material(decoratedPlastic, 0));
+            bodyMaterialName = decoratedPlastic.Name;
+        }
+        else if (exportPart.Materials.FirstOrDefault(m => m.Slot == 0) is { } slot0)
+        {
+            bodyMaterialName = slot0.Name;
+        }
+
+        if (Context.Meta.Provider.Provider.TryLoadPackageObject(VERTEX_CRUNCH_MATERIAL_PATH, out UMaterialInterface vertexCrunch)
+            || Context.Meta.Provider.Provider.TryLoadPackageObject(
+                "/FortniteGame/Characters/Player/Male/Medium/Bodies/M_MED_HighTower_Tomato_Casual/Materials/MI_VertexCrunch",
+                out vertexCrunch))
+        {
+            exportPart.OverrideMaterials.AddIfNotNull(Context.Material(vertexCrunch, 1));
+        }
+
+        bodyPart = exportPart;
+        return true;
+    }
+
+    private void ApplyMaterialOverrides(FStructFallback descriptor, Dictionary<string, ExportPart> partsByKey, Dictionary<string, string> materialNamesByKey)
+    {
+        var materialParams = descriptor.GetOrDefault("MaterialParameters", Array.Empty<FStructFallback>());
+
+        // Prefer Override Material > plain Material > Animated Material when multiple exist for a part.
+        var bestByPart = new Dictionary<string, (UMaterialInterface Material, int Priority)>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var matParam in materialParams)
+        {
+            if (!TryGetParameterName(matParam, out var parameterName)) continue;
+            if (parameterName.Contains("RigDriven", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!matParam.TryGetValue(out UMaterialInterface material, "ParameterValue")) continue;
+
+            var partKey = StripMaterialParameterSuffix(parameterName);
+            if (partKey.Equals("Body", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!partsByKey.ContainsKey(partKey)) continue;
+
+            var priority = GetMaterialParamPriority(parameterName);
+            if (bestByPart.TryGetValue(partKey, out var existing) && existing.Priority <= priority) continue;
+
+            bestByPart[partKey] = (material, priority);
+        }
+
+        foreach (var (partKey, (material, _)) in bestByPart)
+        {
+            var exportMaterial = Context.Material(material, 0);
+            if (exportMaterial is null) continue;
+
+            partsByKey[partKey].OverrideMaterials.Add(exportMaterial);
+            materialNamesByKey[partKey] = exportMaterial.Name;
+        }
+    }
+
+    private void ApplyDecoratedPlasticFallback(Dictionary<string, ExportPart> partsByKey, Dictionary<string, string> materialNamesByKey)
+    {
+        foreach (var (partKey, part) in partsByKey)
+        {
+            if (materialNamesByKey.ContainsKey(partKey)) continue;
+
+            if (Context.Meta.Provider.Provider.TryLoadPackageObject(DEFAULT_LEGO_MATERIAL_PATH, out UMaterialInterface decoratedPlastic))
+            {
+                var exportMaterial = Context.Material(decoratedPlastic, 0);
+                part.OverrideMaterials.AddIfNotNull(exportMaterial);
+                materialNamesByKey[partKey] = decoratedPlastic.Name;
+            }
+            else
+            {
+                materialNamesByKey[partKey] = "MI_Figure_DecoratedPlastic";
+            }
+        }
+    }
+
+    private void ApplyTextureOverrides(FStructFallback descriptor, Dictionary<string, string> materialNamesByKey, ExportMutable exportMutable)
+    {
+        var textureParams = descriptor.GetOrDefault("TextureParameters", Array.Empty<FStructFallback>());
+        // Key by part so multiple parts sharing MI_Figure_DecoratedPlastic keep separate Tex* sets.
+        var overridesByPart = new Dictionary<string, ExportOverrideParameters>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var texParam in textureParams)
+        {
+            if (!TryGetParameterName(texParam, out var parameterName)) continue;
+            if (!texParam.TryGetValue(out UTexture texture, "ParameterValue")) continue;
+            if (!TryResolvePartKeyForParameter(parameterName, materialNamesByKey.Keys, out var partKey)) continue;
+            if (!materialNamesByKey.TryGetValue(partKey, out var materialName)) continue;
+
+            if (!overridesByPart.TryGetValue(partKey, out var overrideParams))
+            {
+                overrideParams = new ExportOverrideParameters { MaterialNameToAlter = materialName };
+                overridesByPart[partKey] = overrideParams;
+            }
+
+            var exportTexture = Context.Texture(texture);
+            if (exportTexture is null) continue;
+
+            var renamedParameter = RenameTextureParameter(parameterName, partKey);
+            overrideParams.Textures.AddUnique(new TextureParameter(renamedParameter, exportTexture));
+        }
+
+        foreach (var overrideParams in overridesByPart.Values)
+        {
+            overrideParams.Hash = overrideParams.GetHashCode();
+            exportMutable.OverrideParameters.Add(overrideParams);
+        }
+    }
+
+    private void ApplyFloatOverrides(FStructFallback descriptor, Dictionary<string, string> materialNamesByKey, ExportMutable exportMutable)
+    {
+        var floatParams = descriptor.GetOrDefault("FloatParameters", Array.Empty<FStructFallback>());
+        var scalars = new List<ScalarParameter>();
+
+        foreach (var floatParam in floatParams)
+        {
+            if (!TryGetParameterName(floatParam, out var parameterName)) continue;
+            if (!floatParam.TryGetValue(out float value, "ParameterValue")) continue;
+            scalars.Add(new ScalarParameter(parameterName, value));
+        }
+
+        if (scalars.Count == 0) return;
+
+        // Apply all floats to every active part material except MI_VertexCrunch (body slot 1).
+        foreach (var materialName in materialNamesByKey.Values.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (materialName.Equals("MI_VertexCrunch", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var existingList = exportMutable.OverrideParameters
+                .Where(p => p.MaterialNameToAlter.Equals(materialName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (existingList.Count > 0)
+            {
+                foreach (var existing in existingList)
+                {
+                    foreach (var scalar in scalars)
+                        existing.Scalars.AddUnique(scalar);
+                    existing.Hash = existing.GetHashCode();
+                }
+                continue;
+            }
+
+            var overrideParams = new ExportOverrideParameters
+            {
+                MaterialNameToAlter = materialName,
+                Scalars = [..scalars]
+            };
+            overrideParams.Hash = overrideParams.GetHashCode();
+            exportMutable.OverrideParameters.Add(overrideParams);
+        }
+    }
+
+    private static bool TryGetParameterName(FStructFallback param, out string parameterName)
+    {
+        parameterName = string.Empty;
+        if (param.TryGetValue(out FName name, "ParameterName"))
+        {
+            parameterName = name.Text;
+            return !string.IsNullOrWhiteSpace(parameterName);
+        }
+
+        if (param.TryGetValue(out string nameString, "ParameterName"))
+        {
+            parameterName = nameString;
+            return !string.IsNullOrWhiteSpace(parameterName);
+        }
+
+        return false;
+    }
+
+    private static string StripMeshParameterSuffix(string parameterName)
+    {
+        const string suffix = " SKM";
+        return parameterName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)
+            ? parameterName[..^suffix.Length].Trim()
+            : parameterName.Trim();
+    }
+
+    private static string StripMaterialParameterSuffix(string parameterName)
+    {
+        string[] suffixes =
+        [
+            " Override Material",
+            " Animated Material",
+            " Material RigDriven Slot",
+            " Material"
+        ];
+
+        foreach (var suffix in suffixes)
+        {
+            if (parameterName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                return parameterName[..^suffix.Length].Trim();
+        }
+
+        return parameterName.Trim();
+    }
+
+    private static int GetMaterialParamPriority(string parameterName)
+    {
+        if (parameterName.Contains("Override Material", StringComparison.OrdinalIgnoreCase)) return 0;
+        if (parameterName.Contains("Animated Material", StringComparison.OrdinalIgnoreCase)) return 2;
+        return 1;
+    }
+
+    private static EFortCustomPartType ResolveFigurePartType(string partKey)
+    {
+        var compact = partKey.Replace(" ", string.Empty, StringComparison.Ordinal);
+
+        if (compact.Contains("Cape", StringComparison.OrdinalIgnoreCase))
+            return EFortCustomPartType.Backpack;
+
+        if (compact.Contains("HeadAcc", StringComparison.OrdinalIgnoreCase))
+            return EFortCustomPartType.Face;
+
+        if (compact.Contains("Head", StringComparison.OrdinalIgnoreCase))
+            return EFortCustomPartType.Head;
+
+        if (compact.Contains("Neck", StringComparison.OrdinalIgnoreCase)
+            || compact.Contains("Hip", StringComparison.OrdinalIgnoreCase))
+            return EFortCustomPartType.MiscOrTail;
+
+        if (compact.Contains("Body", StringComparison.OrdinalIgnoreCase)
+            || compact.Contains("Hand", StringComparison.OrdinalIgnoreCase)
+            || compact.Contains("Leg", StringComparison.OrdinalIgnoreCase))
+            return EFortCustomPartType.Body;
+
+        return EFortCustomPartType.Head;
+    }
+
+    private static string RenameTextureParameter(string parameterName, string partKey)
+    {
+        if (parameterName.StartsWith(partKey, StringComparison.OrdinalIgnoreCase))
+            return "Tex" + parameterName[partKey.Length..];
+
+        return parameterName;
+    }
+
+    private static bool TryResolvePartKeyForParameter(string parameterName, IEnumerable<string> activePartKeys, out string partKey)
+    {
+        partKey = string.Empty;
+        var match = activePartKeys
+            .OrderByDescending(key => key.Length)
+            .FirstOrDefault(key =>
+                parameterName.StartsWith(key + " ", StringComparison.OrdinalIgnoreCase)
+                || parameterName.Equals(key, StringComparison.OrdinalIgnoreCase));
+
+        if (match is null) return false;
+
+        partKey = match;
+        return true;
     }
 
     private void ProcessMutableObject(UCustomizableObject customizableObject, string objectName, List<(string Path, MutableMeshFile Mesh)> meshes, string? assetCodename)

@@ -156,7 +156,7 @@ public enum EExportType
 
     // LEGO
 
-    [Description("Outfits"), Export(EPrimitiveExportType.Mesh)]
+    [Description("Outfits"), Export(EPrimitiveExportType.Mutable)]
     LegoOutfit = ExportCategory.Lego + 1,
 
     [Description("Emotes"), Export(EPrimitiveExportType.Animation)]
