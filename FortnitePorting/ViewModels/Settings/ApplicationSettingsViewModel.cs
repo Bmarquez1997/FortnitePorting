@@ -7,7 +7,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
+using FluentAvalonia.Styling;
 using FluentAvalonia.UI.Media.Animation;
 using FortnitePorting.Controls;
 using FortnitePorting.Extensions;
@@ -113,7 +116,23 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
         app.Styles.RemoveAll(style => style is FPStyles);
 
         var themeUri = new Uri($"avares://FortnitePorting/Assets/Themes/{value.ToString()}Theme.axaml");
-        if (AvaloniaXamlLoader.Load(themeUri) is FPStyles newTheme)
-            app.Styles.Add(newTheme);
+        if (AvaloniaXamlLoader.Load(themeUri) is not FPStyles newTheme)
+            return;
+
+        app.Styles.Add(newTheme);
+        SyncFluentAccentColor(app, newTheme);
+    }
+
+    // TextBox selection uses FluentAvalonia accent, not FPAccentBrush.
+    private static void SyncFluentAccentColor(Avalonia.Application app, Styles theme)
+    {
+        if (app.Styles.OfType<FluentAvaloniaTheme>().FirstOrDefault() is not { } fluentTheme)
+            return;
+
+        if (!theme.TryGetResource("FPAccentColor", app.ActualThemeVariant, out var resource)
+            || resource is not Color accentColor)
+            return;
+
+        fluentTheme.CustomAccentColor = accentColor;
     }
 }
