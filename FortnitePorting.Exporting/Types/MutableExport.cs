@@ -283,7 +283,7 @@ public class MutableExport : BaseExport
     private bool TryCreateDefaultBodyPart(string? characterCodename, out ExportPart bodyPart, out string bodyMaterialName)
     {
         bodyPart = null!;
-        bodyMaterialName = "MI_Figure_DecoratedPlastic";
+        bodyMaterialName = GetDecoratedPlasticMaterialName("Body");
 
         if (!Context.Meta.Provider.Provider.TryLoadPackageObject(BODY_MESH_PATH, out USkeletalMesh bodyMesh))
             return false;
@@ -297,8 +297,10 @@ public class MutableExport : BaseExport
 
         if (Context.Meta.Provider.Provider.TryLoadPackageObject(DEFAULT_LEGO_MATERIAL_PATH, out UMaterialInterface decoratedPlastic))
         {
-            exportPart.OverrideMaterials.AddIfNotNull(Context.Material(decoratedPlastic, 0));
-            bodyMaterialName = decoratedPlastic.Name;
+            var exportMaterial = CreateDecoratedPlasticMaterial(decoratedPlastic, "Body");
+            exportPart.OverrideMaterials.AddIfNotNull(exportMaterial);
+            if (exportMaterial is not null)
+                bodyMaterialName = exportMaterial.Name;
         }
         else if (exportPart.Materials.FirstOrDefault(m => m.Slot == 0) is { } slot0)
         {
@@ -358,15 +360,30 @@ public class MutableExport : BaseExport
 
             if (Context.Meta.Provider.Provider.TryLoadPackageObject(DEFAULT_LEGO_MATERIAL_PATH, out UMaterialInterface decoratedPlastic))
             {
-                var exportMaterial = Context.Material(decoratedPlastic, 0);
+                var exportMaterial = CreateDecoratedPlasticMaterial(decoratedPlastic, partKey);
                 part.OverrideMaterials.AddIfNotNull(exportMaterial);
-                materialNamesByKey[partKey] = decoratedPlastic.Name;
+                materialNamesByKey[partKey] = exportMaterial?.Name ?? GetDecoratedPlasticMaterialName(partKey);
             }
             else
             {
-                materialNamesByKey[partKey] = "MI_Figure_DecoratedPlastic";
+                materialNamesByKey[partKey] = GetDecoratedPlasticMaterialName(partKey);
             }
         }
+    }
+
+    private ExportMaterial? CreateDecoratedPlasticMaterial(UMaterialInterface decoratedPlastic, string partKey)
+    {
+        var exportMaterial = Context.Material(decoratedPlastic, 0);
+        if (exportMaterial is null) return null;
+
+        // Unique per-part name so override params don't collide across shared base materials.
+        return exportMaterial with { Name = GetDecoratedPlasticMaterialName(partKey) };
+    }
+
+    private static string GetDecoratedPlasticMaterialName(string partKey)
+    {
+        var compactKey = partKey.Replace(" ", string.Empty, StringComparison.Ordinal);
+        return $"MI_Figure_DecoratedPlastic_{compactKey}";
     }
 
     private void ApplyTextureOverrides(FStructFallback descriptor, Dictionary<string, string> materialNamesByKey, ExportMutable exportMutable)
