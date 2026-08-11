@@ -1060,6 +1060,7 @@ class MetalLUTMappings(MappingCollection):
     colors=(
         SlotMapping("MetalLUTMaskChannel"),
         SlotMapping("MetalLUT_Channel", "MetalLUTMaskChannel"),
+        SlotMapping("MetalMaskChannel", "MetalLUTMaskChannel"),
 
         SlotMapping("LUTChannel"),
     )
