@@ -455,7 +455,11 @@ public partial class ExportContext
             reader.ReadBytes(identifierLength);
 
             var version = (EUEFormatVersion) reader.ReadByte();
-            return version < EUEFormatVersion.LatestVersion;
+            
+            // UEFormat v10 was originally used in this fork for physics assets, we need to treat those files as outdated as well
+            var hasPhysics = version == EUEFormatVersion.AttributeFormatRestructure && File.GetCreationTime(path) < new DateTime(2026, 08, 14);
+            
+            return version < EUEFormatVersion.LatestVersion || hasPhysics;
         }
         catch (Exception)
         {
