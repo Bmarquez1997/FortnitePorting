@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CUE4Parse_Conversion.Options;
+using FortnitePorting.Exporting.Models;
 
 namespace FortnitePorting.ViewModels.Settings;
 
@@ -40,6 +42,14 @@ public partial class BlenderSettingsViewModel : BaseExportSettings
     [ObservableProperty] private bool _loopAnimation = false;
     [ObservableProperty] private bool _updateTimelineLength = false;
     [ObservableProperty] private bool _importSounds = false;
+
+    public override ExportSettings ToExportSettings()
+    {
+        var settings = base.ToExportSettings();
+        settings.MeshFormat = EMeshFormat.UEFormat;
+        settings.MeshQuality = EMeshQuality.All;
+        return settings;
+    }
 }
 public enum ERigType
 {

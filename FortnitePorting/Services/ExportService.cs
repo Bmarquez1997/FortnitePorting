@@ -10,7 +10,6 @@ using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.CustomizableObject;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
 using CUE4Parse.UE4.Assets.Exports.Material;
-using CUE4Parse.UE4.Assets.Exports.Rig;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -187,7 +186,6 @@ public class ExportService(
             UAnimSequenceBase => EExportType.Animation,
             UFontFace => EExportType.Font,
             UPoseAsset => EExportType.PoseAsset,
-            UDNAAsset => EExportType.PoseAsset,
             UMaterialInstance => EExportType.MaterialInstance,
             UMaterial => EExportType.Material,
             UCustomizableObject => EExportType.Mutable,

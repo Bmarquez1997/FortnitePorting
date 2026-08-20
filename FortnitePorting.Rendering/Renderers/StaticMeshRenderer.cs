@@ -1,4 +1,5 @@
-using CUE4Parse_Conversion.Meshes;
+using CUE4Parse_Conversion.Dto;
+using CUE4Parse_Conversion.Options;
 using CUE4Parse.GameTypes.FN.Assets.Exports.DataAssets;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -20,7 +21,8 @@ public class StaticMeshRenderer : MeshRenderer
 
     public StaticMeshRenderer(UStaticMesh staticMesh, List<KeyValuePair<UBuildingTextureData, int>>? textureData = null, int lodLevel = 0) : base(new ShaderProgram("shader"))
     {
-        if (!staticMesh.TryConvert(out var convertedMesh))
+        using var convertedMesh = new StaticMeshDto(staticMesh, EMeshQuality.All, ENaniteMeshFormat.NoNanite);
+        if (convertedMesh.LODs.Count == 0)
         {
             throw new RenderingXException("Failed to convert static mesh.");
         }
@@ -64,7 +66,7 @@ public class StaticMeshRenderer : MeshRenderer
             var section = sections[sectionIndex];
             Sections.Add(new Section(section.MaterialIndex, section.NumFaces * 3, section.FirstIndex));
 
-            if ((convertedMesh.Materials[section.MaterialIndex].Material?.TryLoad(out var sectionMaterial) ?? false) && sectionMaterial is UMaterialInterface materialInterface)
+            if ((staticMesh.Materials[section.MaterialIndex]?.TryLoad(out var sectionMaterial) ?? false) && sectionMaterial is UMaterialInterface materialInterface)
             {
                 var hasTextureData = sectionIndex == 0 && textureData?.Count > 0;
                 Materials[sectionIndex] = hasTextureData ? MaterialCache.GetOrCreateWithTextureData(materialInterface, textureData!) :  MaterialCache.GetOrCreate(materialInterface);

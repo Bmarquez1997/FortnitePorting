@@ -9,10 +9,10 @@ public class ExportSettings
     public EImageFormat ImageFormat { get; set; } = EImageFormat.PNG;
     public bool ExportMaterials { get; set; } = true;
     public EMeshFormat MeshFormat { get; set; } = EMeshFormat.UEFormat;
+    public EMeshQuality MeshQuality { get; set; } = EMeshQuality.All;
     public bool ExportNanite { get; set; } = false;
     public bool ImportInstancedFoliage { get; set; } = true;
     public bool ImportLights { get; set; } = true;
-    public EAnimFormat AnimFormat { get; set; } = EAnimFormat.UEFormat;
     public bool ImportLobbyPoses { get; set; } = false;
     public ESoundFormat SoundFormat { get; set; } = ESoundFormat.WAV;
     public bool OpenFoldersOnExport { get; set; } = false;
@@ -21,9 +21,10 @@ public class ExportSettings
     {
         return new ExportOptions(
             meshFormat: MeshFormat,
-            naniteMeshFormat: ExportNanite ? ENaniteMeshFormat.NaniteSeparateFile : ENaniteMeshFormat.NoNanite,
+            naniteMeshFormat: ExportNanite ? ENaniteMeshFormat.NaniteLast : ENaniteMeshFormat.NoNanite,
+            meshQuality: MeshQuality,
             compressionFormat: CompressionFormat,
-            exportMaterials: ExportMaterials
-        );
+            exportMorphTargets: true,
+            exportMaterials: false);
     }
 }

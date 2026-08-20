@@ -1,9 +1,9 @@
 using CUE4Parse_Conversion.Animations;
 using CUE4Parse_Conversion.Dto;
-using CUE4Parse_Conversion.Writers.ActorX.Structs.Animations;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Objects.Core.Math;
 using FortnitePorting.Rendering.Animation.Montage;
+using CUE4Parse_Conversion.Writers.ActorX.Structs.Animations;
 using FortnitePorting.Rendering.Extensions;
 
 namespace FortnitePorting.Rendering.Animation.Pose;
@@ -53,9 +53,9 @@ public partial class SkeletalPoseEvaluator
         }
     }
 
-    public SkeletalPoseEvaluator(MeshBoneDto[] refSkeleton, FTransform[]? refBonePose = null)
+    public SkeletalPoseEvaluator(IReadOnlyList<MeshBoneDto> refSkeleton, FTransform[]? refBonePose = null)
     {
-        var boneCount = refSkeleton.Length;
+        var boneCount = refSkeleton.Count;
         _boneNames = new string[boneCount];
         _boneNameToIndex = new Dictionary<string, int>(boneCount, StringComparer.OrdinalIgnoreCase);
         _refLocalPose = new FTransform[boneCount];

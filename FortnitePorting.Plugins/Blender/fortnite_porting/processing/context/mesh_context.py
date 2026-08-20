@@ -9,7 +9,7 @@ from ..enums import *
 from ..utils import *
 from ...utils import *
 from ...logger import Log
-from ...ueformat.importer.logic import UEFormatImport
+from ...ueformat.importer.import_context import UEFormatImport
 from ...ueformat.options import UEModelOptions
 
 VERTEX_CRUNCH_NAME = "FPv4 Vertex Crunch"
@@ -463,7 +463,7 @@ class MeshImportContext:
 
         mesh_path = os.path.join(self.assets_root, path.split(".")[0] + ".uemodel")
 
-        mesh, mesh_data = UEFormatImport(options).import_file(mesh_path)
+        mesh = UEFormatImport(options).import_file(mesh_path)
 
         if mesh is not None and self.primitive_type == EPrimitiveExportType.MUTABLE:
             bpy.context.view_layer.objects.active = get_armature_mesh(mesh)
@@ -471,7 +471,7 @@ class MeshImportContext:
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.set_normals_from_faces()
             bpy.ops.object.editmode_toggle()
-            
+
         return mesh
 
     def import_mutable_data(self, data):

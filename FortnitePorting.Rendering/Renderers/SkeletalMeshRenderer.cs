@@ -1,5 +1,5 @@
 using CUE4Parse_Conversion.Dto;
-using CUE4Parse_Conversion.Meshes;
+using CUE4Parse_Conversion.Options;
 using CUE4Parse_Conversion.Writers.ActorX.Structs.Animations;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Material;
@@ -28,7 +28,8 @@ public class SkeletalMeshRenderer : MeshRenderer
     public SkeletalMeshRenderer(USkeletalMesh skeletalMesh, UAnimationAsset? animation = null, int lodLevel = 0)
         : base(new ShaderProgram("skinned", "shader"))
     {
-        if (!skeletalMesh.TryConvert(out var convertedMesh))
+        using var convertedMesh = new SkeletalMeshDto(skeletalMesh);
+        if (convertedMesh.LODs.Count == 0)
         {
             throw new RenderingXException("Failed to convert skeletal mesh.");
         }
@@ -39,11 +40,6 @@ public class SkeletalMeshRenderer : MeshRenderer
         Pose = new SkeletalPoseEvaluator(convertedMesh.Bones, refPose);
         _uploadBones = new Matrix4[Pose.BoneCount];
         Array.Fill(_uploadBones, Matrix4.Identity);
-
-        if (convertedMesh.LODs.Count == 0)
-        {
-            throw new RenderingXException("Skeletal mesh has no LODs after conversion (check mappings).");
-        }
 
         var lod = convertedMesh.LODs[Math.Min(lodLevel, convertedMesh.LODs.Count - 1)];
 
@@ -84,7 +80,7 @@ public class SkeletalMeshRenderer : MeshRenderer
             var section = sections[sectionIndex];
             Sections.Add(new Section(section.MaterialIndex, section.NumFaces * 3, section.FirstIndex));
 
-            if (convertedMesh.Materials[section.MaterialIndex].Material?.TryLoad(out var sectionMaterial) ?? false)
+            if (skeletalMesh.Materials[section.MaterialIndex]?.TryLoad(out var sectionMaterial) ?? false)
             {
                 Materials[sectionIndex] = sectionMaterial switch
                 {
@@ -238,9 +234,10 @@ public class SkeletalMeshRenderer : MeshRenderer
         Span<float> indices = stackalloc float[InfluenceSlots];
         Span<float> weights = stackalloc float[InfluenceSlots];
 
-        var sources = vertex.Influences.Length <= InfluenceSlots
-            ? vertex.Influences
-            : vertex.Influences.OrderByDescending(i => i.Weight).Take(InfluenceSlots).ToArray();
+        var influences = vertex.Influences;
+        var sources = influences.Length <= InfluenceSlots
+            ? influences
+            : influences.OrderByDescending(i => i.Weight).Take(InfluenceSlots).ToArray();
 
         var weightSum = 0f;
         for (var i = 0; i < sources.Length; i++)

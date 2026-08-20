@@ -35,10 +35,12 @@ public partial class HomeViewModel(
         TaskService.Run(async () =>
         {
             var newsResponse = await _api.FortnitePorting.News();
-            News = [..newsResponse.Entries.Take(3)];
+            News = [..newsResponse.Entries.OrderByDescending(entry => entry.Date)];
 
             var featuredArtResponse = await _api.FortnitePorting.FeaturedArt();
-            FeaturedArt = [..featuredArtResponse.Entries.Random(3)];
+            var featured = featuredArtResponse.Entries.ToList();
+            featured.Shuffle();
+            FeaturedArt = [..featured];
 
             await _UEParse.LoadCoreSessionAsync();
         });
@@ -53,12 +55,18 @@ public partial class HomeViewModel(
                 new DialogButton
                 {
                     Text = "Donate",
+                    IsPrimary = true,
                     Action = LaunchKoFi
                 },
                 new DialogButton
                 {
                     Text = "Don't Ask Again",
                     Action = () => _settings.Application.DontAskAboutKofi = true
+                },
+                
+                new DialogButton
+                {
+                    Text = "Remind Me Later"
                 }
             ]);
         }

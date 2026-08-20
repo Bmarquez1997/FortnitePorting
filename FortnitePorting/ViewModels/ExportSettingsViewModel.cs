@@ -56,10 +56,11 @@ public partial class BaseExportSettings : ViewModelBase
     [ObservableProperty] private bool _importInstancedFoliage = true;
     [ObservableProperty] private bool _importLights = true;
     
-    [ObservableProperty] private EAnimFormat _animFormat = EAnimFormat.UEFormat;
     [ObservableProperty] private bool _importLobbyPoses = false;
     
     [ObservableProperty] private ESoundFormat _soundFormat = ESoundFormat.WAV;
+
+    public virtual ExportOptions CreateExportOptions() => ToExportSettings().CreateExportOptions();
 
     public virtual ExportSettings ToExportSettings() => new()
     {
@@ -67,10 +68,10 @@ public partial class BaseExportSettings : ViewModelBase
         ImageFormat = ImageFormat,
         ExportMaterials = ExportMaterials,
         MeshFormat = MeshFormat,
+        MeshQuality = EMeshQuality.All,
         ExportNanite = ExportNanite,
         ImportInstancedFoliage = ImportInstancedFoliage,
         ImportLights = ImportLights,
-        AnimFormat = AnimFormat,
         ImportLobbyPoses = ImportLobbyPoses,
         SoundFormat = SoundFormat
     };
