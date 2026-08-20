@@ -253,15 +253,6 @@ public enum EPrimitiveExportType
     Mutable
 }
 
-public enum EAnimFormat
-{
-    [Description("UEFormat (.ueanim)")]
-    UEFormat,
-
-    [Description("ActorX (.psa)")]
-    ActorX
-}
-
 public enum EImageFormat
 {
     [Description("PNG (.png)")]

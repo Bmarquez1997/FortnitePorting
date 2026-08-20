@@ -57,6 +57,7 @@ public partial class ExportContext
                 Path = ExportMeshFiles(mesh, files),
                 NumLods = LodCount(convertedMesh)
             };
+            ExportEmbeddedDna(convertedMesh);
 
             AddMeshMaterials(exportPart, convertedMesh);
             return exportPart;

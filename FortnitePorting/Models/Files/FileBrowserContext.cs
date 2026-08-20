@@ -60,7 +60,7 @@ public partial class FileBrowserContext : ObservableObject
         [EFileFilterType.Material] = ["Material"],
         [EFileFilterType.Sound] = ["SoundWave", "SoundCue"],
         [EFileFilterType.Font] = ["Font", "ufont"],
-        [EFileFilterType.PoseAsset] = ["PoseAsset"],
+        [EFileFilterType.PoseAsset] = ["PoseAsset", "DNAAsset"],
         [EFileFilterType.Map] = ["World", "umap"]
     };
 

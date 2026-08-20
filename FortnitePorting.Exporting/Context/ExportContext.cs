@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Animations;
+using CUE4Parse_Conversion.DNA;
 using CUE4Parse_Conversion.Dto;
 using CUE4Parse_Conversion.Formats.Animations;
 using CUE4Parse_Conversion.Formats.Meshes;
@@ -20,6 +21,7 @@ using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SplineMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine.Font;
+using CUE4Parse.UE4.Assets.Exports.Rig;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -57,7 +59,7 @@ public partial class ExportContext
         {
             USkeletalMesh or UStaticMesh or USkeleton or USplineMeshComponent or ALandscapeProxy => MeshExtension(Meta.Settings.MeshFormat),
             UAnimSequenceBase => AnimExtension(Meta.Settings.MeshFormat),
-            UPoseAsset => "uepose",
+            UPoseAsset or UDNAAsset => "uepose",
             UTexture => Meta.Settings.ImageFormat switch
             {
                 EImageFormat.PNG => "png",
@@ -95,6 +97,13 @@ public partial class ExportContext
             var assetName = $"{asset.Name}-{splineComponent.GetMeshId().AsSpan(0, 6)}";
             if (isNanite) assetName += "_Nanite";
             returnValue = $"{asset.Owner.Name}/{assetName}.{assetName}";
+        }
+
+        if (asset is UDNAAsset dnaAsset && !returnRealPath)
+        {
+            var ownerName = dnaAsset.Owner?.Name ?? dnaAsset.Name;
+            var dnaName = GetDnaLeafName(dnaAsset);
+            returnValue = $"{ownerName.SubstringBeforeLast('/')}/{dnaName}.{dnaName}";
         }
         
         var shouldExport = asset switch
@@ -156,6 +165,7 @@ public partial class ExportContext
 
                 using var dto = new SkeletalMeshDto(skeletalMesh, FileExportOptions.MeshQuality, FileExportOptions.NaniteMeshFormat);
                 WriteExportFiles(path, CreateMeshFormat().BuildSkeletalMesh(skeletalMesh.Name, skeletalMesh.GetPathName(), FileExportOptions, dto));
+                ExportEmbeddedDna(dto);
                 break;
             }
             case UStaticMesh staticMesh:
@@ -182,6 +192,18 @@ public partial class ExportContext
                     throw new NotSupportedException($"Anim streamable export is not supported for {FileExportOptions.MeshFormat}.");
 
                 WriteExportFiles(path, ueAnimFormat.BuildAnimStreamable(animStreamable.Name, animStreamable.GetPathName(), FileExportOptions, animStreamable));
+                break;
+            }
+            case UDNAAsset dnaAsset:
+            {
+                if (FileExportOptions.MeshFormat is not EMeshFormat.UEFormat)
+                    throw new NotSupportedException($"DNA asset export is not supported for {FileExportOptions.MeshFormat}.");
+
+                if (!dnaAsset.TryConvert(out var convertedPoseAsset))
+                    throw new Exception($"Failed to convert DNA asset '{dnaAsset.DnaFileName ?? dnaAsset.Name}'");
+
+                var poseFile = new UEFormatPoseFormat().Build(GetDnaLeafName(dnaAsset), dnaAsset.GetPathName(), FileExportOptions, convertedPoseAsset);
+                WriteExportFiles(path, [poseFile]);
                 break;
             }
             case UPoseAsset poseAsset:
@@ -299,6 +321,24 @@ public partial class ExportContext
         EMeshFormat.USD => "usda",
         _ => "ueanim"
     };
+
+    private void ExportEmbeddedDna(SkeletalMeshDto dto)
+    {
+        if (dto.AssetUserData is null) return;
+
+        foreach (var userData in dto.AssetUserData)
+        {
+            if (userData.TryLoad<UDNAAsset>(out var dna))
+                Export(dna);
+        }
+    }
+
+    private static string GetDnaLeafName(UDNAAsset dnaAsset)
+    {
+        var ownerName = dnaAsset.Owner?.Name ?? dnaAsset.Name;
+        var fileName = string.IsNullOrEmpty(dnaAsset.DnaFileName) ? ownerName : dnaAsset.DnaFileName;
+        return fileName.SubstringAfterLast("/").SubstringAfterLast("\\").SubstringBeforeLast(".");
+    }
 
     private static void WriteExportFiles(string basePath, IReadOnlyList<ExportFile> files)
     {
@@ -459,7 +499,13 @@ public partial class ExportContext
     public string GetExportPath(UObject obj, string ext, bool embeddedAsset = false, bool excludeGamePath = false)
     {
         string path;
-        if (excludeGamePath || obj.Owner is null)
+        if (obj is UDNAAsset dnaAsset)
+        {
+            var ownerName = dnaAsset.Owner?.Name ?? dnaAsset.Name;
+            var dnaName = GetDnaLeafName(dnaAsset);
+            path = excludeGamePath ? dnaName : $"{ownerName.SubstringBeforeLast('/')}/{dnaName}";
+        }
+        else if (excludeGamePath || obj.Owner is null)
         {
             path = obj.Name;
         }
