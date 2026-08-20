@@ -64,9 +64,7 @@ public class DependencyService : IService
             blenderFolder.Delete(true);
 
         var assets = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/Blender"), null);
-        WriteAssets(assets, App.PluginsFolder.FullName);
-        var assetsUeformat = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/UEFormat/Blender/io_scene_ueformat"), null);
-        WriteAssets(assetsUeformat, Path.Combine(App.PluginsFolder.FullName, "Blender", "fortnite_porting", "ueformat"), 36);
+        WriteAssets(assets);
     }
     
     private void EnsureUnrealPlugins()
@@ -76,17 +74,15 @@ public class DependencyService : IService
             unrealFolder.Delete(true);
 
         var assets = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/Unreal"), null);
-        WriteAssets(assets, App.PluginsFolder.FullName);
-        var assetsUeformat = AssetLoader.GetAssets(new Uri("avares://FortnitePorting.Plugins/UEFormat/Unreal/UEFormat"), null);
-        WriteAssets(assetsUeformat, App.PluginsFolder.FullName, 10);
+        WriteAssets(assets);
     }
 
-    private void WriteAssets(IEnumerable<Uri> assets, string rootFolder, int pathStartIndex = 1)
+    private void WriteAssets(IEnumerable<Uri> assets)
     {
         foreach (var asset in assets)
         {
             var assetStream = AssetLoader.Open(asset);
-            var targetFile = new FileInfo(Path.Combine(rootFolder, asset.AbsolutePath[pathStartIndex..]));
+            var targetFile = new FileInfo(Path.Combine(App.PluginsFolder.FullName, asset.AbsolutePath[1..]));
             targetFile.Directory?.Create();
             
             File.WriteAllBytes(targetFile.FullName, assetStream.ReadToEnd());
