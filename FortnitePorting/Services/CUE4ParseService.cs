@@ -23,6 +23,8 @@ using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Material;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
+using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.IO;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
@@ -44,6 +46,7 @@ using FortnitePorting.Framework;
 using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Information;
+using FortnitePorting.Rendering.Preview;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Views;
 using FortnitePorting.Views.Settings;
@@ -93,6 +96,8 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
     ];
 
     private const EGame LATEST_GAME_VERSION = EGame.GAME_UE6_0;
+
+    private FortniteVersionResponse? _resolvedVersion;
     
     public DirectoryInfo CacheFolder => new(Path.Combine(App.ApplicationDataFolder.FullName, ".cache"));
 
@@ -126,6 +131,8 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
             
             return;
         }
+
+        _resolvedVersion = null;
         
         var stages = GetType()
             .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
@@ -174,6 +181,7 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
         MaleLobbyMontages.Clear();
         FemaleLobbyMontages.Clear();
         SetNames.Clear();
+        _resolvedVersion = null;
     }
 
     public async Task LoadCoreSessionAsync()
@@ -189,6 +197,8 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
 
         await Files.Initialize();
         await FilesVM.Initialize();
+
+        App.TryFlushPendingUrlScheme();
     }
 
     public void UpdateStatus(string status)
@@ -216,6 +226,15 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
             EFortniteVersion.LatestInstalled => new HybridFileProvider(AppSettings.Installation.CurrentProfile.ArchiveDirectory, ExtraDirectories, new VersionContainer(LATEST_GAME_VERSION)),
             _ => new HybridFileProvider(AppSettings.Installation.CurrentProfile.ArchiveDirectory, [], new VersionContainer(AppSettings.Installation.CurrentProfile.UnrealVersion)),
         };
+
+        if (AppSettings.Installation.CurrentProfile.FortniteVersion is EFortniteVersion.LatestInstalled or EFortniteVersion.LatestOnDemand)
+        {
+            _resolvedVersion = await Api.FortnitePorting.FortniteVersion();
+            if (_resolvedVersion is not null)
+                Log.Information("Resolved Fortnite Version: {Version}", _resolvedVersion.Version);
+            else
+                Log.Warning("Failed to resolve latest Fortnite version keys/mappings from API");
+        }
         
         Log.Information("Installation Type: {Type}", AppSettings.Installation.CurrentProfile.FortniteVersion);
         Log.Information("Archive Path: {Path}", AppSettings.Installation.CurrentProfile.FortniteVersion is EFortniteVersion.LatestOnDemand ? "On-Demand" : AppSettings.Installation.CurrentProfile.ArchiveDirectory);
@@ -250,17 +269,17 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
     {
         if (AppSettings.Installation.CurrentProfile.FortniteVersion is not EFortniteVersion.LatestInstalled) return;
         
-        var aes = await Api.FortnitePorting.Aes();
-        if (aes is null) return;
+        var mainKey = _resolvedVersion?.Keys?.MainKey;
+        if (mainKey is null) return;
         
         var mainPakPath = Path.Combine(AppSettings.Installation.CurrentProfile.ArchiveDirectory,
             "pakchunk0-WindowsClient.pak");
         if (!File.Exists(mainPakPath)) return;
 
         var mainPakReader = new PakFileReader(mainPakPath);
-        if (mainPakReader.TestAesKey(new FAesKey(aes.MainKey.Key)))
+        if (mainPakReader.TestAesKey(new FAesKey(mainKey.Key)))
         {
-            Log.Information("Main key {Key} succeeded on pak {PakName}", aes.MainKey.Key, mainPakPath);
+            Log.Information("Main key {Key} succeeded on pak {PakName}", mainKey.Key, mainPakPath);
             return;
         }
         
@@ -376,17 +395,17 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
             case EFortniteVersion.LatestInstalled:
             case EFortniteVersion.LatestOnDemand:
             {
-                var aes = await Api.FortnitePorting.Aes();
-                if (aes is null)
+                var keys = _resolvedVersion?.Keys;
+                if (keys?.MainKey is null)
                 {
                     await LoadLocalKeys();
                     break;
                 }
 
-                Log.Information("Submitting Main Key {Key}", aes.MainKey.Key);
-                await Provider.SubmitKeyAsync(Globals.ZERO_GUID, new FAesKey(aes.MainKey.Key));
+                Log.Information("Submitting Main Key {Key}", keys.MainKey.Key);
+                await Provider.SubmitKeyAsync(Globals.ZERO_GUID, new FAesKey(keys.MainKey.Key));
                 
-                foreach (var key in aes.DynamicKeys)
+                foreach (var key in keys.ExtraKeys)
                 {
                     Log.Information("Submitting Dynamic Key {Key} with GUID {Guid}", key.Key, key.GUID);
                     await Provider.SubmitKeyAsync(new FGuid(key.GUID), new FAesKey(key.Key));
@@ -628,16 +647,17 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
 
     private async Task<string?> GetEndpointMappings()
     {
-        var mappings = await Api.FortnitePorting.Mappings();
+        var mappings = _resolvedVersion?.Mappings;
         if (mappings?.Url is null) return null;
 
         var mappingsFilePath = Path.Combine(App.DataFolder.FullName, mappings.Url.SubstringAfterLast("/"));
-        if (File.Exists(mappingsFilePath) && new FileInfo(mappingsFilePath).GetFileHashMD5().Equals(mappings.HashMD5)) return mappingsFilePath;
+        if (File.Exists(mappingsFilePath) && new FileInfo(mappingsFilePath).GetFileHashMD5().Equals(mappings.Md5Hash))
+            return mappingsFilePath;
             
         var createdFile = await Api.DownloadFileAsync(mappings.Url, mappingsFilePath);
         if (createdFile is { Exists: false}) return null;
             
-        File.SetCreationTime(mappingsFilePath, mappings.GetCreationTime());
+        File.SetCreationTime(mappingsFilePath, DateTime.Now);
 
         return mappingsFilePath;
     }
@@ -655,78 +675,100 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
     {
         return await Task.Run(() =>
         {
-            Bitmap? icon = null;
-            string? displayName = null;
-            string? exportType = null;
             var fileName = gameFilePath.SubstringAfterLast("/").SubstringBefore(".");
+            var fallbackIcon = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
 
             if (!Provider.TryLoadPackage(Provider.FixPath(gameFilePath), out var package))
-            {
-                icon = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
-                displayName = fileName;
-                return (icon, displayName, exportType);
-            }
+                return (fallbackIcon, fileName, null);
 
-            for (var i = 0; i < package.ExportMapLength; i++)
-            {
-                var pointer = new FPackageIndex(package, i + 1).ResolvedObject;
-                if (pointer?.Object is null) continue;
-                if (!pointer.Name.Text.Equals(fileName) &&
-                    !pointer.Name.Text.Equals(fileName + "_C")) continue;
+            var export = FindPrimaryExport(package, fileName);
+            if (export is null)
+                return (fallbackIcon, fileName, (string?) null);
 
-                var obj = ((AbstractUePackage) package).ConstructObject(pointer.Class, package);
-                exportType = obj.ExportType;
-
-                if (obj is UTexture && pointer.TryLoad(out var textureObj) &&
-                    textureObj is UTexture texture &&
-                    texture.Decode(maxMipSize: 128) is { } decodedTexture)
-                {
-                    if (texture is UTextureCube)
-                        decodedTexture = decodedTexture.ToPanorama();
-                    
-                    icon =  decodedTexture.ToWriteableBitmap();
-                    break;
-                }
-
-                var assetLoader = AssetLoading.Categories
-                    .SelectMany(category => category.Loaders)
-                    .FirstOrDefault(loader => loader.ClassNames.Contains(obj.ExportType));
-                if (assetLoader is not null && pointer.TryLoad(out var assetObj))
-                {
-                    icon = (assetLoader.LowResIconHandler(assetObj) ?? assetLoader.HighResIconHandler(assetObj))
-                        ?.Decode(maxMipSize: 128)?.ToWriteableBitmap();
-                    displayName = assetLoader.DisplayNameHandler(assetObj);
-                    break;
-                }
-
-                displayName = obj.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text;
-
-                if (obj.GetEditorIconBitmap() is { } editorIcon)
-                {
-                    icon = editorIcon;
-                    break;
-                }
-
-                if (Exporter.DetermineExportType(obj) is var fnExportType and not EExportType.None
-                    && $"avares://FortnitePorting/Assets/FN/{fnExportType}.png" is { } exportIconPath
-                    && AssetLoader.Exists(new Uri(exportIconPath)))
-                {
-                    icon = ImageExtensions.AvaresBitmap(exportIconPath);
-                    break;
-                }
-            }
-
-            // fallback: resolve export type from first export if named export didn't set it
-            if (exportType is null && new FPackageIndex(package, 1).ResolvedObject is { } zeroPointer)
-            {
-                var zeroObj = ((AbstractUePackage) package).ConstructObject(zeroPointer.Class, package);
-                exportType = zeroObj.ExportType;
-            }
-
-            icon ??= ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Unreal/DataAsset_64x.png");
-            displayName ??= fileName;
-            return (icon, displayName, exportType);
+            var (icon, displayName, exportType) = ResolveExportPreview(package, export);
+            return (icon ?? fallbackIcon, displayName ?? fileName, exportType);
         });
+    }
+
+    private static ResolvedObject? FindPrimaryExport(IPackage package, string fileName)
+    {
+        ResolvedObject? namedExport = null;
+        ResolvedObject? packageRootExport = null;
+
+        for (var i = 0; i < package.ExportMapLength; i++)
+        {
+            var pointer = new FPackageIndex(package, i + 1).ResolvedObject;
+            if (pointer?.Object is null) continue;
+
+            var outer = pointer.Outer;
+            var isPackageRoot = outer is null
+                                || outer.ExportIndex < 0
+                                || !ReferenceEquals(outer.Package, package);
+            if (isPackageRoot)
+                packageRootExport ??= pointer;
+
+            var nameMatches = pointer.Name.Text.Equals(fileName, StringComparison.OrdinalIgnoreCase)
+                              || pointer.Name.Text.Equals(fileName + "_C", StringComparison.OrdinalIgnoreCase);
+            if (!nameMatches) continue;
+
+            if (isPackageRoot)
+                return pointer;
+
+            namedExport ??= pointer;
+        }
+
+        return namedExport ?? packageRootExport;
+    }
+
+    private static (Bitmap? Icon, string? DisplayName, string? ExportType) ResolveExportPreview(
+        IPackage package, ResolvedObject pointer)
+    {
+        var obj = ((AbstractUePackage) package).ConstructObject(pointer.Class, package);
+        var exportType = obj.ExportType;
+        string? displayName = null;
+        Bitmap? icon = null;
+
+        if (obj is UTexture && pointer.TryLoad(out var textureObj) &&
+            textureObj is UTexture texture &&
+            texture.Decode(maxMipSize: 128) is { } decodedTexture)
+        {
+            if (texture is UTextureCube)
+                decodedTexture = decodedTexture.ToPanorama();
+
+            return (decodedTexture.ToWriteableBitmap(), displayName, exportType);
+        }
+
+        if (obj.ExportType is "StaticMesh" or "SkeletalMesh"
+            && pointer.TryLoad(out var meshObj)
+            && MeshPreviewRenderer.TryRender(meshObj) is { } meshPreview)
+        {
+            return (meshPreview.ToWriteableBitmap(), displayName, exportType);
+        }
+
+        var assetLoader = AssetLoading.Categories
+            .SelectMany(category => category.Loaders)
+            .FirstOrDefault(loader => loader.ClassNames.Contains(obj.ExportType));
+        if (assetLoader is not null && pointer.TryLoad(out var assetObj))
+        {
+            icon = (assetLoader.LowResIconHandler(assetObj) ?? assetLoader.HighResIconHandler(assetObj))
+                ?.Decode(maxMipSize: 128)?.ToWriteableBitmap();
+            displayName = assetLoader.DisplayNameHandler(assetObj);
+            return (icon, displayName, exportType);
+        }
+
+        displayName = obj.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text;
+
+        if (obj.GetEditorIconBitmap() is { } editorIcon)
+            return (editorIcon, displayName, exportType);
+
+        if (Exporter.DetermineExportType(obj) is var fnExportType and not EExportType.None
+            && $"avares://FortnitePorting/Assets/FN/{fnExportType}.png" is { } exportIconPath
+            && AssetLoader.Exists(new Uri(exportIconPath)))
+        {
+            return (ImageExtensions.AvaresBitmap(exportIconPath), displayName, exportType);
+        }
+
+        return (icon, displayName, exportType);
     }
 }
 

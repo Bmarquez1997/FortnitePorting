@@ -473,7 +473,7 @@ public partial class AssetLoader : ObservableObject
     {
         if (!IsPaused)
         {
-            _pauseSemaphore.Wait(); // Acquire the semaphore
+            _pauseSemaphore.Wait();
             IsPaused = true;
         }
     }
@@ -483,7 +483,7 @@ public partial class AssetLoader : ObservableObject
         if (IsPaused)
         {
             IsPaused = false;
-            _pauseSemaphore.Release(); // Release waiting tasks
+            _pauseSemaphore.Release();
         }
     }
     

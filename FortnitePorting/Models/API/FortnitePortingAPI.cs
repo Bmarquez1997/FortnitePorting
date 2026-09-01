@@ -26,8 +26,9 @@ public class FortnitePortingAPI(RestClient client) : APIBase(client)
     public async Task<GalleryResponse> Gallery() => await ExecuteAsync<GalleryResponse>("content/gallery");
     
     // Fortnite
-    public async Task<AesResponse?> Aes() => await ExecuteAsync<AesResponse>("fortnite/aes");
-    public async Task<MappingsResponse?> Mappings() => await ExecuteAsync<MappingsResponse>("fortnite/mappings");
+    public async Task<FortniteVersionResponse?> FortniteVersion(string version = "latest")
+        => await ExecuteAsync<FortniteVersionResponse>($"fortnite/versions/{version}");
+
     
     // Auth
     public async Task<AuthResponse?> AuthInfo() => await ExecuteAsync<AuthResponse?>("auth/info");
@@ -123,25 +124,4 @@ public class FortnitePortingAPI(RestClient client) : APIBase(client)
     );
 
     public async Task DeleteMap(string id) => await ExecuteAsync($"maps/{id}", Method.Delete, verbose: false);
-
-    // Articles
-    public async Task<ArticlesResponse?> GetArticles() =>
-        await ExecuteAsync<ArticlesResponse>("articles");
-
-    public async Task<string?> CreateArticle(object request) =>
-        await ExecuteAsync<string>("articles", Method.Post, verbose: false, body: request);
-
-    public async Task UpdateArticle(string id, object request) =>
-        await ExecuteAsync($"articles/{id}", Method.Put, verbose: false, body: request);
-
-    public async Task DeleteArticle(string id) =>
-        await ExecuteAsync($"articles/{id}", Method.Delete, verbose: false);
-
-    public async Task<UploadArticleImageResponse?> UploadArticleImage(byte[] data, string fileName)
-    {
-        var request = new RestRequest($"{BaseURL}/articles/images", Method.Post);
-        request.AddFile("file", data, fileName);
-        var response = await _client.ExecuteAsync<UploadArticleImageResponse>(request).ConfigureAwait(false);
-        return response.StatusCode == HttpStatusCode.OK ? response.Data : null;
-    }
 }
