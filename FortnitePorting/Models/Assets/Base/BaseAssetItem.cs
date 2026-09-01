@@ -49,8 +49,8 @@ public abstract partial class BaseAssetItem : ObservableObject
         {
             AssetItem assetItem => FilterExtensions.Filter(assetItem.CreationData.DisplayName, filter)
                                    || FilterExtensions.Filter(assetItem.CreationData.Object.Name, filter)
-                                   || (assetItem.SetName is not null && FilterExtensions.Filter(assetItem.SetName, filter))
-                                   || (assetItem.Series is not null && FilterExtensions.Filter(assetItem.Series.DisplayName.Text, filter)),
+                                   || FilterExtensions.Filter(assetItem.SetName, filter)
+                                   || FilterExtensions.Filter(assetItem.Series?.DisplayName?.Text, filter),
             CustomAssetItem customAssetItem => FilterExtensions.Filter(customAssetItem.CreationData.DisplayName, filter),
             _ => true
         };

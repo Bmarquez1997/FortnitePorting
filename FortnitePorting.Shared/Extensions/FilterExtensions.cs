@@ -2,8 +2,10 @@ namespace FortnitePorting.Shared.Extensions;
 
 public static class FilterExtensions
 {
-    public static bool Filter(string input, string filter)
+    public static bool Filter(string? input, string filter)
     {
+        if (input is null) return false;
+        
         var filters = filter.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return filters.All(x => input.Contains(x, StringComparison.OrdinalIgnoreCase));
     }

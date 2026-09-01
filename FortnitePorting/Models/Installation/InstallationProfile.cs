@@ -159,7 +159,6 @@ public partial class InstallationProfile : ObservableValidator
     public async Task RemoveEncryptionKeys(List<FileEncryptionKey> keysToRemove)
     {
         ExtraKeys.RemoveMany(keysToRemove);
-        SelectedExtraKeyIndex = 0;
     }
 
     public override string ToString()
