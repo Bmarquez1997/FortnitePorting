@@ -34,6 +34,7 @@ using FortnitePorting.Models.Assets.Custom;
 using FortnitePorting.Providers;
 using FortnitePorting.ViewModels;
 using FortnitePorting.Views;
+using Newtonsoft.Json;
 using Serilog;
 using BaseAssetInfo = FortnitePorting.Models.Assets.Base.BaseAssetInfo;
 
@@ -67,6 +68,13 @@ public class ExportService(
             var session = CreateSession(metaData);
             var exportData = await session.RunAsync([session.CreateTastyExport()]);
             await SendToPluginAsync(serverType, exportData, PluginSettingsFor(metaData.ExportLocation));
+
+            if (appSettings.Developer.WriteExportToJSONFile)
+            {
+                var jsonPath = Path.Combine(metaData.AssetsRoot, "ExportJSON", $"Export_{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.json");
+                Directory.CreateDirectory(jsonPath.SubstringBeforeLast("/"));
+                await File.WriteAllTextAsync(jsonPath, JsonConvert.SerializeObject(exportData));
+            }
         });
     }
 
