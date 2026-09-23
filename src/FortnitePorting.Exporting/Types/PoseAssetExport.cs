@@ -12,7 +12,7 @@ public class PoseAssetExport : BaseExport
 
     public PoseAssetExport(string name, UObject asset, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
-        if (asset is not (UPoseAsset or UDNAAsset)) return;
+        if (asset is not (UPoseAsset or UDNAObject)) return;
 
         if (metaData.ExportLocation.IsFolder)
         {

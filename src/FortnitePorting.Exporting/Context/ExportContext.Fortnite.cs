@@ -5,6 +5,7 @@ using CUE4Parse.GameTypes.FN.Assets.Exports;
 using CUE4Parse.GameTypes.FN.Assets.Exports.DataAssets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Material;
+using CUE4Parse.UE4.Assets.Exports.Rig;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
@@ -75,7 +76,17 @@ public partial class ExportContext
                         }
                         else if (skeletalMesh.ReferenceSkeleton.FinalRefBoneInfo.Any(bone => bone.Name.Text.Equals("FACIAL_C_FacialRoot", StringComparison.OrdinalIgnoreCase)))
                         {
-                            if (Meta.Provider.Provider.TryLoadPackageObject("/BRCosmetics/Characters/Player/Male/Medium/Heads/M_MED_Jonesy3L_Head/Meshes/3L/3L_lod2_Facial_Poses_PoseAsset", out UPoseAsset poseAsset))
+                            // Try to export character-specific DNA
+                            foreach (var userData in skeletalMesh.AssetUserData)
+                            {
+                                if (!TryGetDNA(userData, out var dna)) continue;
+                                if (dna.Layers is null) break;
+                                meta.PoseAsset = Export(dna);
+                                break;
+                            }
+                            
+                            // Fallback in case DNA exporting fails
+                            if (meta.PoseAsset is null && Meta.Provider.Provider.TryLoadPackageObject("/BRCosmetics/Characters/Player/Male/Medium/Heads/M_MED_Jonesy3L_Head/Meshes/3L/3L_lod2_Facial_Poses_PoseAsset", out UPoseAsset poseAsset))
                                 meta.PoseAsset = Export(poseAsset);
                         }
                     }
@@ -410,5 +421,12 @@ public partial class ExportContext
         }
 
         return extraMeshes;
+    }
+
+    private bool TryGetDNA(FPackageIndex userData, out UDNAObject dna)
+    {
+        dna = null;
+        if (userData.TryLoad(out dna)) return true;
+        return userData.TryLoad<UObject>(out var dnaAssetUserData) && dnaAssetUserData.TryGetValue(out dna, "DNAAsset");
     }
 }

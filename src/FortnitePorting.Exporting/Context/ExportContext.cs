@@ -59,7 +59,7 @@ public partial class ExportContext
         {
             USkeletalMesh or UStaticMesh or USkeleton or USplineMeshComponent or ALandscapeProxy => MeshExtension(Meta.Settings.MeshFormat),
             UAnimSequenceBase => AnimExtension(Meta.Settings.MeshFormat),
-            UPoseAsset or UDNAAsset => "uepose",
+            UPoseAsset or UDNAObject => "uepose",
             UTexture => Meta.Settings.ImageFormat switch
             {
                 EImageFormat.PNG => "png",
@@ -99,7 +99,7 @@ public partial class ExportContext
             returnValue = $"{asset.Owner.Name}/{assetName}.{assetName}";
         }
 
-        if (asset is UDNAAsset dnaAsset && !returnRealPath)
+        if (asset is UDNAObject dnaAsset && !returnRealPath)
         {
             var ownerName = dnaAsset.Owner?.Name ?? dnaAsset.Name;
             var dnaName = GetDnaLeafName(dnaAsset);
@@ -194,7 +194,7 @@ public partial class ExportContext
                 WriteExportFiles(path, ueAnimFormat.BuildAnimStreamable(animStreamable.Name, animStreamable.GetPathName(), FileExportOptions, animStreamable));
                 break;
             }
-            case UDNAAsset dnaAsset:
+            case UDNAObject dnaAsset:
             {
                 if (FileExportOptions.MeshFormat is not EMeshFormat.UEFormat)
                     throw new NotSupportedException($"DNA asset export is not supported for {FileExportOptions.MeshFormat}.");
@@ -333,7 +333,7 @@ public partial class ExportContext
         }
     }
 
-    private static string GetDnaLeafName(UDNAAsset dnaAsset)
+    private static string GetDnaLeafName(UDNAObject dnaAsset)
     {
         var ownerName = dnaAsset.Owner?.Name ?? dnaAsset.Name;
         var fileName = string.IsNullOrEmpty(dnaAsset.DnaFileName) ? ownerName : dnaAsset.DnaFileName;
@@ -503,7 +503,7 @@ public partial class ExportContext
     public string GetExportPath(UObject obj, string ext, bool embeddedAsset = false, bool excludeGamePath = false)
     {
         string path;
-        if (obj is UDNAAsset dnaAsset)
+        if (obj is UDNAObject dnaAsset)
         {
             var ownerName = dnaAsset.Owner?.Name ?? dnaAsset.Name;
             var dnaName = GetDnaLeafName(dnaAsset);

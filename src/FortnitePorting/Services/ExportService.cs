@@ -196,6 +196,7 @@ public class ExportService(
             UFontFace => EExportType.Font,
             UPoseAsset => EExportType.PoseAsset,
             UDNAAsset => EExportType.PoseAsset,
+            UDNA => EExportType.PoseAsset,
             UMaterialInstance => EExportType.MaterialInstance,
             UMaterial => EExportType.Material,
             UCustomizableObject => EExportType.Mutable,

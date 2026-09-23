@@ -17,7 +17,7 @@ public class ExportMasterSkeletonMeta : BaseMeta
 
 public class ExportPoseAssetMeta : BaseMeta
 {
-    public string PoseAsset;
+    public string? PoseAsset;
 }
 
 public class ExportAttachMeta : BaseMeta
