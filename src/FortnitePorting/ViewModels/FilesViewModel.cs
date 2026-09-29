@@ -274,8 +274,8 @@ public partial class FilesViewModel(
                         Action = () =>
                         {
                             UUnrealMaterial? parentMaterial = instance;
-                            while (parentMaterial is UMaterialInstanceConstant mic)
-                                parentMaterial = mic.Parent;
+                            while (parentMaterial is UMaterialInstanceConstant mic && mic.Parent.TryLoad<UUnrealMaterial>(out var nextParent))
+                                parentMaterial = nextParent;
                             if (parentMaterial is not null)
                                 MaterialPreviewWindow.Preview(parentMaterial);
                         }

@@ -1,5 +1,6 @@
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.Material.Editor;
+using CUE4Parse.UE4.Objects.UObject;
 using FortnitePorting.Rendering.Data.Programs;
 using FortnitePorting.Rendering.Data.Textures;
 using FortnitePorting.Rendering.Extensions;
@@ -200,7 +201,8 @@ public class Material
             SetLayerParameters(materialInstanceEditorData.StaticParameters);
         }
 
-        CheckLayerUsage(materialInstance.Parent);
+        if (materialInstance.Parent.TryLoad<UUnrealMaterial>(out var parentMaterial))
+            CheckLayerUsage(parentMaterial);
     }
 
     private void SetLayerParameters(FStaticParameterSet? staticParameterSet)
