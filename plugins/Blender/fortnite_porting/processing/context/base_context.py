@@ -20,6 +20,8 @@ class BaseImportContext:
         self.primitive_type = EPrimitiveExportType(data.get("PrimitiveType"))
         self.scale = 0.01 if self.options.get("ScaleDown") else 1
         self.meshes = []
+        self.mesh_indices = {}
+        self.metadata_cache = {}
         self.override_materials = []
         self.override_parameters = []
         self.override_morph_targets = []
@@ -58,6 +60,9 @@ class BaseImportContext:
         ensure_blend_data()
 
     def gather_metadata(self, *search_props):
+        if search_props in self.metadata_cache:
+            return dict(self.metadata_cache[search_props])
+
         out_props = {}
         for mesh in self.meshes:
             meta = mesh.get("Meta")
@@ -74,7 +79,8 @@ class BaseImportContext:
                                      "which will be ignored")
                         continue
                     out_props[found_key] = meta.get(found_key)
-        return out_props
+        self.metadata_cache[search_props] = out_props
+        return dict(out_props)
 
     def get_metadata(self, search_prop):
         for mesh in self.meshes:

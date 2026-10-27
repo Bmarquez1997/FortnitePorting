@@ -59,9 +59,10 @@ public class ExportService(
             if (serverType is EExportServerType.None)
                 return;
 
-            if (!await exportClient.IsRunning(serverType))
+            if (!await exportClient.IsRunning(serverType) && !await TryEnsurePluginServerRunningAsync(serverType, metaData))
             {
-                ShowPluginMissing(serverType, metaData.ExportLocation);
+                if (!metaData.CancellationToken.IsCancellationRequested)
+                    ShowPluginMissing(serverType, metaData.ExportLocation);
                 return;
             }
 
@@ -93,17 +94,28 @@ public class ExportService(
 
             if (serverType is EExportServerType.None)
             {
+                var exportedFolders = new HashSet<string>();
                 foreach (var export in exportFunction(session))
                 {
                     await export.WaitForExports();
-                    if (metaData.CancellationToken.IsCancellationRequested) return;
+                    exportedFolders.UnionWith(export.FolderPaths);
+
+                    if (metaData.CancellationToken.IsCancellationRequested) break;
                 }
+
+                if (metaData.Settings.OpenFoldersOnExport)
+                {
+                    exportedFolders.ForEach(folder => app.Launch(folder));
+                }
+
+                if (metaData.CancellationToken.IsCancellationRequested) return;
             }
             else
             {
-                if (!await exportClient.IsRunning(serverType))
+                if (!await exportClient.IsRunning(serverType) && !await TryEnsurePluginServerRunningAsync(serverType, metaData))
                 {
-                    ShowPluginMissing(serverType, metaData.ExportLocation);
+                    if (!metaData.CancellationToken.IsCancellationRequested)
+                        ShowPluginMissing(serverType, metaData.ExportLocation);
                     return;
                 }
 
@@ -280,6 +292,38 @@ public class ExportService(
         };
 
         await exportClient.SendExportAsync(serverType, wirePayload);
+    }
+
+    private async Task<bool> TryEnsurePluginServerRunningAsync(EExportServerType serverType, ExportDataMeta metaData)
+    {
+        var launchPath = appSettings.Plugin.ExportAutoLaunchPath(serverType.LocationType);
+        if (string.IsNullOrWhiteSpace(launchPath) || !File.Exists(launchPath))
+            return false;
+
+        var serverName = serverType.Description;
+        const string messageId = "ExportLaunch";
+
+        app.SetMainWindowTopmost(true, applyImmediately: true);
+        info.Message($"{serverName} Server", $"Waiting for {serverName} to connect...", id: messageId, autoClose: false);
+        try
+        {
+            if (ProcessExtensions.GetRunningProcess(launchPath) is null)
+                app.Launch(launchPath);
+
+            app.RefocusMainWindow();
+
+            return await exportClient.WaitUntilRunningAsync(
+                serverType,
+                TimeSpan.FromSeconds(30),
+                TimeSpan.FromMilliseconds(500),
+                metaData.CancellationToken,
+                whileWaiting: app.RefocusMainWindow);
+        }
+        finally
+        {
+            app.SetMainWindowTopmost(false, applyImmediately: true);
+            info.CloseMessage(messageId);
+        }
     }
 
     private void ShowPluginMissing(EExportServerType serverType, EExportLocation exportLocation)

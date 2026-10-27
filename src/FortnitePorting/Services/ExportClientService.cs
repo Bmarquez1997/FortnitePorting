@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AvaloniaEdit.Utils;
 using FortnitePorting.Models.Export;
@@ -36,6 +38,38 @@ public class ExportClientService : IService
         return _clients.TryGetValue(serverType, out var client) && await client.IsRunning();
     }
 
+    public async Task<bool> WaitUntilRunningAsync(
+        EExportServerType serverType,
+        TimeSpan timeout,
+        TimeSpan pollInterval,
+        CancellationToken cancellationToken = default,
+        Action? whileWaiting = null)
+    {
+        if (!_clients.TryGetValue(serverType, out _))
+            return false;
+
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.Elapsed < timeout)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (await IsRunning(serverType))
+                    return true;
+
+                whileWaiting?.Invoke();
+                await Task.Delay(pollInterval, cancellationToken);
+            }
+
+            return false;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+    }
+
     public async Task SendExportAsync<T>(EExportServerType serverType, T data)
     {
         if (_clients.TryGetValue(serverType, out var client))
@@ -62,10 +96,7 @@ public enum EExportServerType
     Blender = 40000,
     
     [Description("Unreal Engine")]
-    Unreal = 40001,
-    
-    [Description("Unity")]
-    Unity = 40002
+    Unreal = 40001
 }
 
 public static class EExportServerTypeExtensions
@@ -76,7 +107,6 @@ public static class EExportServerTypeExtensions
         {
             EExportLocation.Blender => EExportServerType.Blender,
             EExportLocation.Unreal => EExportServerType.Unreal,
-            EExportLocation.Unity => EExportServerType.Unity,
             _ => EExportServerType.None
         };
     }
@@ -87,7 +117,6 @@ public static class EExportServerTypeExtensions
         {
             EExportServerType.Blender => EExportLocation.Blender,
             EExportServerType.Unreal => EExportLocation.Unreal,
-            EExportServerType.Unity => EExportLocation.Unity,
             _ => EExportLocation.AssetsFolder
         };
     }

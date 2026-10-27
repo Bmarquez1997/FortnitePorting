@@ -1,4 +1,5 @@
 using CUE4Parse.FileProvider;
+using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Material.Parameters;
@@ -16,24 +17,15 @@ public static class CUE4ParseExtensions
     {
         public bool TryLoadEditorData<T>(out T? editorData) where T : UObject
         {
-            try
-            {
-                var provider = (AbstractFileProvider) asset.Owner!.Provider!;
-                var path = asset.GetPathName().SubstringBeforeLast(".") + ".o.uasset";
-                if (provider.TryLoadObjectExports(path, out var exports))
-                {
-                    editorData = exports.FirstOrDefault(export => export.GetType() == typeof(T)) as T;
-                    return editorData is not null;
-                }
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-
             editorData = null;
-            return false;
+            if (asset.Owner is not { } package)
+                return false;
+
+            editorData = package.GetExports().OfType<T>().FirstOrDefault();
+            return editorData is not null;
         }
+
+        public bool HasEditorData => asset.Owner is IoPackage { HasOptionalSegment: true };
 
         public string GetCleanedExportPath()
         {
@@ -42,15 +34,6 @@ public static class CUE4ParseExtensions
             if (path.StartsWith('/')) path = path[1..];
 
             return path;
-        }
-
-        public T? GetAnyOrDefault<T>(params string[] names)
-        {
-            foreach (var name in names)
-                if (asset.Properties.Any(x => x.Name.Text.Equals(name)))
-                    return asset.GetOrDefault<T>(name);
-
-            return default;
         }
 
         public FTransform GetAbsoluteTransformFromRootComponent()
@@ -103,18 +86,6 @@ public static class CUE4ParseExtensions
 
                 field.SetValue(obj, targetProperty.Tag?.GetValue(field.FieldType));
             }
-        }
-    }
-
-    extension(FStructFallback fallback)
-    {
-        public T? GetAnyOrDefault<T>(params string[] names)
-        {
-            foreach (var name in names)
-                if (fallback.Properties.Any(x => x.Name.Text.Equals(name)))
-                    return fallback.GetOrDefault<T>(name);
-
-            return default;
         }
     }
 
@@ -263,6 +234,15 @@ public static class CUE4ParseExtensions
 
     extension(IPropertyHolder propertyHolder)
     {
+        public T? GetAnyOrDefault<T>(params string[] names)
+        {
+            foreach (var name in names)
+                if (propertyHolder.Properties.Any(x => x.Name.Text.Equals(name)))
+                    return propertyHolder.GetOrDefault<T>(name);
+
+            return default;
+        }
+
         public List<KeyValuePair<T, int>> GetAllProperties<T>(string name)
         {
             var propertyTags = new List<FPropertyTag>();
@@ -282,6 +262,40 @@ public static class CUE4ParseExtensions
             }
 
             return values;
+        }
+
+        public string? GetObjectPath(params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (propertyHolder.TryGetValue(out FSoftObjectPath softPath, name) && !softPath.AssetPathName.IsNone)
+                    return softPath.AssetPathName.Text;
+
+                if (propertyHolder.TryGetValue(out FPackageIndex index, name) && !index.IsNull)
+                {
+                    var path = index.ResolvedObject?.GetPathName();
+                    if (!string.IsNullOrEmpty(path))
+                        return path;
+                }
+            }
+
+            return null;
+        }
+
+        public string? GetDataListObjectPath(params string[] names)
+        {
+            if (!propertyHolder.TryGetValue(out FInstancedStruct[] dataList, "DataList"))
+                return null;
+
+            foreach (var data in dataList)
+            {
+                if (data.NonConstStruct is null) continue;
+
+                var path = data.NonConstStruct.GetObjectPath(names);
+                if (path is not null) return path;
+            }
+
+            return null;
         }
 
         public T? GetDataListItem<T>(params string[] names)
