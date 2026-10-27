@@ -511,7 +511,7 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                          var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
                          foreach (var additionalData in additionalDatas)
                          {
-                             var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                             var previewImage = additionalData.NonConstStruct?.GetObjectPath("SmallPreviewImage", "LargePreviewImage");
                              if (previewImage is not null) return previewImage;
                          }
 
@@ -525,7 +525,7 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                          var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
                          foreach (var additionalData in additionalDatas)
                          {
-                             var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("LargePreviewImage", "SmallPreviewImage");
+                             var previewImage = additionalData.NonConstStruct?.GetObjectPath("LargePreviewImage", "SmallPreviewImage");
                              if (previewImage is not null) return previewImage;
                          }
 
@@ -575,12 +575,12 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                      LowResIconHandler = asset =>
                      {
                          var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                         return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                         return baseItemDefinition?.GetObjectPath("SmallPreviewImage", "LargePreviewImage");
                      },
                      HighResIconHandler = asset =>
                      {
                          var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                         return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("LargePreviewImage", "SmallPreviewImage");
+                         return baseItemDefinition?.GetObjectPath("LargePreviewImage", "SmallPreviewImage");
                      },
                      DisplayNameHandler = asset =>
                      {
